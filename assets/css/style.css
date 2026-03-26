@@ -751,6 +751,28 @@ footer {
     color: var(--bg-primary);
 }
 
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.footer-links a {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--accent-primary);
+}
+
+.footer-links span {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+}
+
 /* ============================================
    ANIMATIONS
 ============================================ */

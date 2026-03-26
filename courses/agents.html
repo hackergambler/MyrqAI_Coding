@@ -2,14 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423"
+     crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Agents Mastery | AI Coding Academy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Playfair+Display:ital,opsz,wght@0,5..1200,400..900;1,5..1200,400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
+<style>
+    /* AdSense Ad Containers */
+    .ad-container {
+        background: rgba(255,255,255,0.02);
+        border: 1px dashed rgba(255,255,255,0.1);
+        border-radius: var(--radius-md);
+        padding: var(--space-md);
+        margin: var(--space-xl) 0;
+        text-align: center;
+        min-height: 90px;
+    }
+    .ad-container-horizontal {
+        min-height: 90px;
+    }
+    .ad-container-square {
+        min-height: 250px;
+    }
+    .ad-container-vertical {
+        min-height: 600px;
+    }
+    .ad-label {
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: var(--space-xs);
+        opacity: 0.5;
+    }
+    /* Top bar for external links */
+    .top-bar {
+        background: linear-gradient(90deg, rgba(0,255,170,0.05) 0%, rgba(167,139,250,0.05) 100%);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 8px var(--space-xl);
+        font-size: 0.8rem;
+        position: relative;
+        z-index: 1001;
+    }
+    .top-bar-container {
+        max-width: 1440px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .top-bar-links {
+        display: flex;
+        gap: var(--space-lg);
+    }
+    .top-bar-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .top-bar-links a:hover {
+        color: var(--accent-primary);
+    }
+    .top-bar-links a .link-icon {
+        font-size: 0.9rem;
+    }
+    .top-bar-right {
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+    }
+    @media (max-width: 768px) {
+        .top-bar { padding: 6px var(--space-md); }
+        .top-bar-links { gap: var(--space-md); }
+        .top-bar-links a span:not(.link-icon) { display: none; }
+        .top-bar-right { display: none; }
+    }
+    </style>
 </head>
 <body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://www.library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span>AI Library</span></a>
+                <a href="https://www.ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span>AI Ladder</span></a>
+                <a href="https://www.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span>MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
     <nav class="nav">
         <div class="nav-container">
             <a href="../index.html" class="nav-logo">
@@ -855,5 +944,6 @@ result = agent.invoke({
     </footer>
 
     <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/donation-widget.js" defer></script>
 </body>
 </html>
