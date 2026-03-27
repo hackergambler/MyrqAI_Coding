@@ -1,1 +1,1 @@
-Add regex for NLP text preprocessing lesson
+Add new lessons and update MasterLibrary content
