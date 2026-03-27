@@ -3183,7 +3183,7 @@
           "duration": "22 min",
           "badge": "Intermediate",
           "prev": "autogpt-autonomous-agents",
-          "next": null,
+          "next": "graphrag-knowledge-graphs",
           "sections": [
             {
               "h2": "Why Use the Anthropic SDK",
@@ -3232,6 +3232,50 @@
               "code": {
                 "label": "Python - exercise starter",
                 "src": "# pip install anthropic\nimport sys\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\nSYSTEM = \"You are a senior researcher. Provide a thorough but concise overview of the given topic.\"\n\n# TODO: define a word_count tool schema\ntools = [\n    {\n        \"name\": \"word_count\",\n        \"description\": \"Count the number of words in a text string.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"text\": {\"type\": \"string\"}\n            },\n            \"required\": [\"text\"]\n        }\n    }\n]\n\ndef word_count(text: str) -> str:\n    return str(len(text.split()))\n\n# TODO: get topic from sys.argv[1]\ntopic = sys.argv[1] if len(sys.argv) > 1 else \"machine learning\"\n\n# TODO: stream the response, collect full text\nfull_text = \"\"\nwith client.messages.stream(\n    model=\"claude-haiku-4-5-20251001\",\n    max_tokens=800,\n    system=SYSTEM,\n    messages=[{\"role\": \"user\", \"content\": f\"Give an overview of: {topic}\"}]\n) as stream:\n    for chunk in stream.text_stream:\n        print(chunk, end=\"\", flush=True)\n        full_text += chunk\nprint()\n\n# TODO: call word_count tool and report result\n# TODO: save full_text to report.md"
+              }
+            }
+          ]
+        },
+        {
+          "id": "graphrag-knowledge-graphs",
+          "title": "GraphRAG: Knowledge Graph-Enhanced Retrieval",
+          "desc": "Move beyond flat vector search by combining knowledge graphs with RAG. Build entity extraction pipelines, link facts across documents, and answer multi-hop questions that defeat standard RAG.",
+          "duration": "30 min",
+          "badge": "Advanced",
+          "prev": "claude-api-anthropic-sdk",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Flat RAG Fails at Multi-Hop Questions",
+              "body": "Standard RAG retrieves chunks by cosine similarity. It works for single-fact lookups but collapses on questions like 'Which suppliers share a CEO with a company that ships to sanctioned regions?' — the answer requires joining facts across multiple documents. GraphRAG solves this by first extracting entities and relationships into a graph, then traversing that graph to answer complex questions.",
+              "tip": "GraphRAG was popularised by Microsoft's 2024 paper and is now production-ready via frameworks like LlamaIndex and Neo4j + LangChain.",
+              "code": {
+                "label": "Python - entity + relationship extraction with Claude",
+                "src": "import json\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\nEXTRACT_PROMPT = \"\"\"\nExtract entities and relationships from the text.\nReturn ONLY valid JSON in this exact schema:\n{\n  \"entities\": [{\"name\": str, \"type\": str, \"description\": str}],\n  \"relationships\": [{\"source\": str, \"relation\": str, \"target\": str}]\n}\n\"\"\"\n\ndef extract_graph(text: str) -> dict:\n    response = client.messages.create(\n        model=\"claude-haiku-4-5-20251001\",\n        max_tokens=1024,\n        system=EXTRACT_PROMPT,\n        messages=[{\"role\": \"user\", \"content\": text}]\n    )\n    return json.loads(response.content[0].text)\n\ndoc = \"\"\"\nAcme Corp is headquartered in Berlin and manufactures lithium batteries.\nIts CEO, Jana Müller, also chairs BatteryTech GmbH.\nBatteryTech supplies components to SolarGrid, which operates in Dubai.\n\"\"\"\n\ngraph = extract_graph(doc)\nprint(json.dumps(graph, indent=2))"
+              }
+            },
+            {
+              "h2": "Building an In-Memory Knowledge Graph",
+              "body": "We store extracted triples in an adjacency dict keyed by entity name. This lets us traverse relationships in O(1) per hop. For production, swap the dict for Neo4j or a managed graph DB like Amazon Neptune.",
+              "code": {
+                "label": "Python - in-memory graph store and traversal",
+                "src": "from collections import defaultdict\nfrom dataclasses import dataclass, field\nfrom typing import List\n\n@dataclass\nclass KnowledgeGraph:\n    # entity_name -> list of (relation, target)\n    edges: dict = field(default_factory=lambda: defaultdict(list))\n    # entity_name -> metadata dict\n    nodes: dict = field(default_factory=dict)\n\n    def add_entity(self, name: str, etype: str, desc: str):\n        self.nodes[name] = {\"type\": etype, \"description\": desc}\n\n    def add_relationship(self, source: str, relation: str, target: str):\n        self.edges[source].append({\"relation\": relation, \"target\": target})\n\n    def neighbors(self, entity: str, depth: int = 2) -> List[str]:\n        \"\"\"BFS up to `depth` hops.\"\"\"\n        visited, queue = set(), [(entity, 0)]\n        while queue:\n            node, d = queue.pop(0)\n            if node in visited or d > depth:\n                continue\n            visited.add(node)\n            for edge in self.edges.get(node, []):\n                queue.append((edge[\"target\"], d + 1))\n        return list(visited - {entity})\n\n    def subgraph_context(self, entity: str, depth: int = 2) -> str:\n        \"\"\"Return all facts within `depth` hops as plain text.\"\"\"\n        related = self.neighbors(entity, depth)\n        lines = []\n        for n in [entity] + related:\n            for edge in self.edges.get(n, []):\n                lines.append(f\"{n} --[{edge['relation']}]--> {edge['target']}\")\n        return \"\\n\".join(lines)\n\n# Populate from previous extraction\nkg = KnowledgeGraph()\ngraph_data = {\n  \"entities\": [\n    {\"name\": \"Acme Corp\", \"type\": \"Company\", \"description\": \"Lithium battery manufacturer\"},\n    {\"name\": \"Jana Müller\", \"type\": \"Person\", \"description\": \"CEO of Acme Corp\"},\n    {\"name\": \"BatteryTech GmbH\", \"type\": \"Company\", \"description\": \"Component supplier\"},\n    {\"name\": \"SolarGrid\", \"type\": \"Company\", \"description\": \"Operates in Dubai\"}\n  ],\n  \"relationships\": [\n    {\"source\": \"Acme Corp\", \"relation\": \"headquartered_in\", \"target\": \"Berlin\"},\n    {\"source\": \"Jana Müller\", \"relation\": \"CEO_of\", \"target\": \"Acme Corp\"},\n    {\"source\": \"Jana Müller\", \"relation\": \"chairs\", \"target\": \"BatteryTech GmbH\"},\n    {\"source\": \"BatteryTech GmbH\", \"relation\": \"supplies\", \"target\": \"SolarGrid\"},\n    {\"source\": \"SolarGrid\", \"relation\": \"operates_in\", \"target\": \"Dubai\"}\n  ]\n}\nfor e in graph_data[\"entities\"]:\n    kg.add_entity(e[\"name\"], e[\"type\"], e[\"description\"])\nfor r in graph_data[\"relationships\"]:\n    kg.add_relationship(r[\"source\"], r[\"relation\"], r[\"target\"])\n\nprint(kg.subgraph_context(\"Jana Müller\"))"
+              }
+            },
+            {
+              "h2": "GraphRAG Query Pipeline",
+              "body": "The full pipeline: (1) identify the anchor entity in the user's question, (2) retrieve the local subgraph, (3) pass the subgraph as context to the LLM, (4) return a grounded answer. This lets you answer multi-hop questions with precise, hallucination-resistant citations.",
+              "code": {
+                "label": "Python - end-to-end GraphRAG query",
+                "src": "from anthropic import Anthropic\n\nclient = Anthropic()\n\ndef graphrag_query(kg: KnowledgeGraph, question: str, anchor: str) -> str:\n    # 1. Retrieve subgraph context\n    context = kg.subgraph_context(anchor, depth=3)\n\n    # 2. Build grounded prompt\n    prompt = f\"\"\"You are a precise analyst. Answer the question using ONLY the\ngraph context below. Cite the specific relationships that support your answer.\n\nGraph context:\n{context}\n\nQuestion: {question}\"\"\"\n\n    # 3. LLM inference\n    response = client.messages.create(\n        model=\"claude-haiku-4-5-20251001\",\n        max_tokens=512,\n        messages=[{\"role\": \"user\", \"content\": prompt}]\n    )\n    return response.content[0].text\n\nq = \"Which company that Jana Müller is connected to operates in Dubai?\"\nprint(graphrag_query(kg, q, anchor=\"Jana Müller\"))"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a full GraphRAG pipeline for a small corpus:\n\n1. Write a function `ingest_documents(docs: list[str]) -> KnowledgeGraph` that:\n   - Calls the Claude extraction prompt on each document\n   - Merges all entities and relationships into a single `KnowledgeGraph`\n2. Add an `entity_search(kg, keyword)` function that returns all entities whose name or description contains the keyword.\n3. Build an interactive CLI loop: the user types a question and an anchor entity; your system prints the answer with cited relationships.\n4. Bonus: replace the in-memory dict with **NetworkX** (`pip install networkx`) and visualise the graph using `nx.draw()`.\n\nTest corpus:\n- Document 1: \"OpenAI was founded by Sam Altman and Elon Musk. Sam Altman is also CEO of Y Combinator alumni Loopt.\"\n- Document 2: \"Microsoft invested $13B in OpenAI. Microsoft CEO Satya Nadella announced the deal in 2023.\"\n- Document 3: \"Elon Musk founded xAI to compete with OpenAI. xAI released the Grok model.\"",
+              "code": {
+                "label": "Python - exercise starter",
+                "src": "# pip install anthropic networkx\nfrom knowledge_graph import KnowledgeGraph, extract_graph  # your implementations\n\ncorpus = [\n    \"OpenAI was founded by Sam Altman and Elon Musk. Sam Altman is also CEO of Y Combinator alumni Loopt.\",\n    \"Microsoft invested $13B in OpenAI. Microsoft CEO Satya Nadella announced the deal in 2023.\",\n    \"Elon Musk founded xAI to compete with OpenAI. xAI released the Grok model.\"\n]\n\n# TODO: implement ingest_documents\ndef ingest_documents(docs: list) -> KnowledgeGraph:\n    kg = KnowledgeGraph()\n    for doc in docs:\n        graph_data = extract_graph(doc)\n        for e in graph_data.get(\"entities\", []):\n            kg.add_entity(e[\"name\"], e[\"type\"], e.get(\"description\", \"\"))\n        for r in graph_data.get(\"relationships\", []):\n            kg.add_relationship(r[\"source\"], r[\"relation\"], r[\"target\"])\n    return kg\n\n# TODO: implement entity_search\ndef entity_search(kg: KnowledgeGraph, keyword: str) -> list:\n    keyword = keyword.lower()\n    return [\n        name for name, meta in kg.nodes.items()\n        if keyword in name.lower() or keyword in meta.get(\"description\", \"\").lower()\n    ]\n\n# TODO: interactive CLI loop\nkg = ingest_documents(corpus)\nprint(\"Entities:\", list(kg.nodes.keys()))\nprint(\"Connections from OpenAI:\", kg.neighbors(\"OpenAI\", depth=2))"
               }
             }
           ]

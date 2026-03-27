@@ -1,1 +1,1 @@
-Add and update MasterLibrary lessons and content
+Add GraphRAG knowledge graph lesson to MasterLibrary
