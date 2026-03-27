@@ -1,1 +1,1 @@
-Fix prompting tutorial lesson navigation links
+Fix prompting course tutorial links for few-shot and chain-of-thought
