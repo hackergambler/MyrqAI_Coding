@@ -1,1 +1,1 @@
-Add self-supervised learning lesson and refactor MasterLibrary content
+Add Mixture of Experts architecture lesson to MasterLibrary
