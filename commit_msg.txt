@@ -1,1 +1,1 @@
-Fix vision tutorial previous lesson navigation link
+Fix agents tutorial lesson navigation links
