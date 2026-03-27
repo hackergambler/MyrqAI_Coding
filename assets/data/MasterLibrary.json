@@ -1627,7 +1627,7 @@
           "duration": "45 min",
           "badge": "Intermediate",
           "prev": "distributed-training",
-          "next": "rnns-lstms",
+          "next": "advanced-cnn-architectures",
           "sections": [
             {
               "h2": "Convolution, Pooling & Receptive Fields",
@@ -1656,12 +1656,55 @@
           ]
         },
         {
+          "id": "advanced-cnn-architectures",
+          "title": "Advanced CNN Architectures: ResNet, EfficientNet and MobileNet",
+          "desc": "Deep-dive into skip connections (ResNet), compound scaling (EfficientNet) and depthwise separable convolutions (MobileNet). Build and benchmark modern CNN architectures in PyTorch.",
+          "badge": "Intermediate",
+          "duration": "50 min",
+          "prev": "cnns-vision",
+          "next": "rnns-lstms",
+          "sections": [
+            {
+              "h2": "Skip Connections: The ResNet Breakthrough",
+              "body": "Plain deep networks suffer from vanishing gradients and degradation \u2014 adding more layers actually hurts accuracy. ResNet (He et al., 2015) solved this with skip connections: the input of a block is added directly to its output (H(x) = F(x) + x). The network only needs to learn the residual F(x), not the full mapping. This lets gradients flow unchanged through the shortcut path, enabling training of 100+ layer networks. A bottleneck block reduces channels with 1\u00d71 conv, applies 3\u00d73 conv, then expands again \u2014 cutting compute by ~4\u00d7.",
+              "code": {
+                "label": "Python - ResNet Residual Block in PyTorch",
+                "src": "import torch\nimport torch.nn as nn\n\nclass ResidualBlock(nn.Module):\n    \"\"\"Standard ResNet residual block with optional projection shortcut.\"\"\"\n    expansion = 1\n\n    def __init__(self, in_channels, out_channels, stride=1):\n        super().__init__()\n        self.conv1 = nn.Conv2d(in_channels, out_channels, 3,\n                               stride=stride, padding=1, bias=False)\n        self.bn1   = nn.BatchNorm2d(out_channels)\n        self.relu  = nn.ReLU(inplace=True)\n        self.conv2 = nn.Conv2d(out_channels, out_channels, 3,\n                               padding=1, bias=False)\n        self.bn2   = nn.BatchNorm2d(out_channels)\n\n        # Projection shortcut: needed when spatial size or channels change\n        self.shortcut = nn.Sequential()\n        if stride != 1 or in_channels != out_channels:\n            self.shortcut = nn.Sequential(\n                nn.Conv2d(in_channels, out_channels, 1,\n                          stride=stride, bias=False),\n                nn.BatchNorm2d(out_channels)\n            )\n\n    def forward(self, x):\n        out = self.relu(self.bn1(self.conv1(x)))\n        out = self.bn2(self.conv2(out))\n        out += self.shortcut(x)   # <-- the skip connection\n        return self.relu(out)\n\n# Test it\nblock = ResidualBlock(64, 128, stride=2)  # halves spatial, doubles channels\nx = torch.randn(4, 64, 32, 32)\nprint(block(x).shape)  # \u2192 torch.Size([4, 128, 16, 16])"
+              }
+            },
+            {
+              "h2": "EfficientNet: Compound Scaling",
+              "body": "EfficientNet (Tan & Le, 2019) showed that accuracy improves best when width (channels), depth (layers), and resolution (input size) are scaled together using a fixed ratio. The compound coefficient \u03c6 controls how much to scale each dimension simultaneously. EfficientNet-B0 is the base; B7 scales all three dims up. The core building block is the MBConv (mobile inverted bottleneck): expand channels 6\u00d7, apply depthwise conv, squeeze back, plus a squeeze-and-excitation module to recalibrate channel importance.",
+              "code": {
+                "label": "Python - Load EfficientNet-B0 and adapt for custom classes",
+                "src": "import torch\nimport torch.nn as nn\nfrom torchvision import models\n\n# Load EfficientNet-B0 pre-trained on ImageNet\nweights = models.EfficientNet_B0_Weights.IMAGENET1K_V1\nmodel = models.efficientnet_b0(weights=weights)\n\nprint('Original classifier:', model.classifier)\n# Sequential(\n#   (0): Dropout(p=0.2)\n#   (1): Linear(in_features=1280, out_features=1000, bias=True)\n# )\n\n# Replace classifier for 10 custom classes\nmodel.classifier = nn.Sequential(\n    nn.Dropout(p=0.3),\n    nn.Linear(model.classifier[1].in_features, 10)\n)\n\n# Freeze backbone, train only the new head first\nfor param in model.features.parameters():\n    param.requires_grad = False\n\ntrainable = sum(p.numel() for p in model.parameters() if p.requires_grad)\ntotal     = sum(p.numel() for p in model.parameters())\nprint(f'Trainable: {trainable:,} / Total: {total:,}')\n\n# Quick forward pass check\nx = torch.randn(2, 3, 224, 224)\nprint('Output shape:', model(x).shape)  # \u2192 (2, 10)"
+              }
+            },
+            {
+              "h2": "MobileNet: Depthwise Separable Convolutions",
+              "body": "MobileNet targets edge devices by replacing standard conv (k\u00d7k\u00d7Cin\u00d7Cout) with two cheaper ops: (1) Depthwise conv \u2014 one filter per input channel (k\u00d7k\u00d7Cin), and (2) Pointwise conv \u2014 1\u00d71 across all channels (Cin\u00d7Cout). Together they use ~8\u20139\u00d7 fewer multiply-adds than a 3\u00d73 standard conv. MobileNetV2 adds linear bottlenecks and inverted residuals. MobileNetV3 adds hard-swish activation and SE modules for the best accuracy/latency trade-off.",
+              "code": {
+                "label": "Python - Depthwise separable conv block + MobileNetV3 benchmark",
+                "src": "import torch\nimport torch.nn as nn\nfrom torchvision import models\nimport time\n\n# --- Depthwise separable conv: the MobileNet building block ---\nclass DepthwiseSeparableConv(nn.Module):\n    def __init__(self, in_ch, out_ch, stride=1):\n        super().__init__()\n        self.dw = nn.Conv2d(in_ch, in_ch, kernel_size=3,\n                            stride=stride, padding=1,\n                            groups=in_ch, bias=False)  # depthwise\n        self.pw = nn.Conv2d(in_ch, out_ch, kernel_size=1, bias=False)  # pointwise\n        self.bn = nn.BatchNorm2d(out_ch)\n        self.act = nn.ReLU6(inplace=True)\n\n    def forward(self, x):\n        return self.act(self.bn(self.pw(self.dw(x))))\n\n# Parameter comparison vs standard conv\nstd_conv = nn.Conv2d(32, 64, 3, padding=1)\ndw_sep   = DepthwiseSeparableConv(32, 64)\nprint(f'Standard conv params:    {sum(p.numel() for p in std_conv.parameters()):,}')\nprint(f'Depthwise sep params:    {sum(p.numel() for p in dw_sep.parameters()):,}')\n# Depthwise sep is ~8x fewer parameters\n\n# --- Load MobileNetV3-Small for fast inference ---\nmodel = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1)\nmodel.eval()\n\nx = torch.randn(1, 3, 224, 224)\nwith torch.no_grad():\n    t0 = time.perf_counter()\n    for _ in range(50):\n        _ = model(x)\n    print(f'MobileNetV3-Small: {(time.perf_counter()-t0)/50*1000:.1f} ms/inference (CPU)')\nprint(f'Model params: {sum(p.numel() for p in model.parameters())/1e6:.1f}M')"
+              }
+            },
+            {
+              "h2": "Exercise: Benchmark Three Architectures",
+              "body": "Load ResNet-18, EfficientNet-B0, and MobileNetV3-Small. For each model: (1) count total parameters, (2) time 100 forward passes on a batch of 8 images (224\u00d7224), and (3) print a summary table. Then replace the classifier of the best accuracy/speed trade-off model to classify 3 custom categories and verify the output shape. Experiment with unfreezing the last stage of the backbone and observe how trainable parameter count changes.",
+              "code": {
+                "label": "Python - Architecture benchmark scaffold",
+                "src": "import torch\nimport time\nfrom torchvision import models\n\nconfigs = [\n    ('ResNet-18',        models.resnet18,        models.ResNet18_Weights.IMAGENET1K_V1),\n    ('EfficientNet-B0',  models.efficientnet_b0, models.EfficientNet_B0_Weights.IMAGENET1K_V1),\n    ('MobileNetV3-S',   models.mobilenet_v3_small, models.MobileNet_V3_Small_Weights.IMAGENET1K_V1),\n]\n\nx = torch.randn(8, 3, 224, 224)  # batch of 8\n\nprint(f'{'Model':<20} {'Params (M)':<14} {'Latency (ms)'}')\nprint('-' * 48)\nfor name, fn, wts in configs:\n    m = fn(weights=wts).eval()\n    params = sum(p.numel() for p in m.parameters()) / 1e6\n    with torch.no_grad():\n        t0 = time.perf_counter()\n        for _ in range(100):\n            _ = m(x)\n        latency = (time.perf_counter() - t0) / 100 * 1000\n    print(f'{name:<20} {params:<14.1f} {latency:.1f}')\n\n# TODO: pick the best model and adapt it for 3 classes\n# model.fc = ... (ResNet) or model.classifier[-1] = ... (EfficientNet/MobileNet)"
+              }
+            }
+          ]
+        },
+        {
           "id": "rnns-lstms",
           "title": "RNNs & LSTMs for Sequential Data",
           "desc": "Understand recurrent neural networks, the vanishing gradient problem, and how LSTMs solve it with gates. Build a character-level language model and a time-series forecaster in PyTorch.",
           "duration": "40 min",
           "badge": "Intermediate",
-          "prev": "cnns-vision",
+          "prev": "advanced-cnn-architectures",
           "next": "gans-fundamentals",
           "sections": [
             {
