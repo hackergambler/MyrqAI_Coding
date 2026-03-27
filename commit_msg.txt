@@ -1,1 +1,1 @@
-Add GANs fundamentals lesson with DCGAN and WGAN-GP
+Add GANs and expand MasterLibrary lesson content
