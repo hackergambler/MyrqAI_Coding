@@ -1,1 +1,1 @@
-Add MLOps model monitoring and drift detection lesson
+Add LangChain fundamentals lesson with LCEL chains and tools

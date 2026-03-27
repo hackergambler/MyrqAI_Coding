@@ -2328,7 +2328,7 @@
           "duration": "35 min",
           "badge": "Advanced",
           "prev": "mlops-docker-deployment",
-          "next": null,
+          "next": "langchain-fundamentals",
           "sections": [
             {
               "h2": "Why Models Degrade in Production",
@@ -2370,6 +2370,59 @@
               "code": {
                 "label": "Python - exercise starter",
                 "src": "import numpy as np\nfrom scipy import stats\n\nnp.random.seed(7)\n\n# Step 1: baseline\nbaseline = {\n    'credit_score': np.random.normal(680, 50, 2000),\n    'debt_ratio':   np.random.normal(0.35, 0.08, 2000),\n}\n\n# Step 2: production windows\nweek1 = {\n    'credit_score': np.random.normal(680, 50, 500),\n    'debt_ratio':   np.random.normal(0.35, 0.08, 500),\n}\nweek5 = {\n    # TODO: fill in the drifted distributions\n    'credit_score': ...,\n    'debt_ratio':   ...,\n}\n\n# Step 3: run KS tests\n# TODO: use ModelMonitor or write KS loop directly\n\n# Step 4: prediction monitoring\n# TODO: log_predictions with 65% positive rate for week 5\n\n# Step 5: bonus\ndef should_retrain(reports, health) -> bool:\n    # TODO: return True if any feature drifted OR prediction alert fired\n    pass"
+              }
+            }
+          ]
+        },
+        {
+          "id": "langchain-fundamentals",
+          "title": "LangChain Fundamentals: Chains, Prompts and Tools",
+          "desc": "Build your first LangChain application: connect prompts, LLMs, memory, and tools into composable chains using the LCEL interface.",
+          "duration": "35 min",
+          "badge": "Intermediate",
+          "prev": "mlops-model-monitoring",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why LangChain?",
+              "body": "LangChain is the most widely used framework for building LLM-powered applications. It gives you composable building blocks — prompts, LLMs, parsers, memory, and tools — that chain together via the LangChain Expression Language (LCEL). Instead of writing glue code for every new AI feature, you describe a pipeline once and let LangChain handle invocation, streaming, retries, and observability.",
+              "tip": "LangChain v0.2+ uses LCEL (| pipe syntax) as the preferred way to compose chains. Avoid the older LLMChain / ConversationChain classes in new code.",
+              "code": {
+                "label": "bash - install langchain",
+                "src": "# Install core packages\npip install langchain langchain-openai langchain-community python-dotenv\n\n# Verify\npython -c \"import langchain; print(langchain.__version__)\""
+              }
+            },
+            {
+              "h2": "Your First LCEL Chain",
+              "body": "LCEL uses the | operator to connect components. Data flows left to right: a PromptTemplate formats your input, the LLM generates a completion, and an output parser extracts the result. Every component implements invoke(), stream(), and batch() automatically.",
+              "code": {
+                "label": "Python - simple LCEL chain",
+                "src": "import os\nfrom dotenv import load_dotenv\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nload_dotenv()  # loads OPENAI_API_KEY from .env\n\n# 1. Define the prompt template\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a concise technical assistant.\"),\n    (\"human\", \"{question}\")\n])\n\n# 2. Configure the LLM\nllm = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\n\n# 3. Build the chain with | (pipe)\nchain = prompt | llm | StrOutputParser()\n\n# 4. Invoke\nresponse = chain.invoke({\"question\": \"What is gradient descent in one sentence?\"})\nprint(response)"
+              }
+            },
+            {
+              "h2": "Adding Memory to a Chain",
+              "body": "By default, LLMs are stateless: each call knows nothing about the previous one. LangChain's RunnableWithMessageHistory wraps any chain with a memory store so the model can reference prior turns. You supply a session_id per user, and LangChain handles loading/saving history transparently.",
+              "tip": "Use InMemoryChatMessageHistory for development and Redis or DynamoDB-backed stores in production.",
+              "code": {
+                "label": "Python - chain with conversation memory",
+                "src": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.runnables.history import RunnableWithMessageHistory\nfrom langchain_core.chat_history import InMemoryChatMessageHistory\nfrom langchain_core.output_parsers import StrOutputParser\n\nllm = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\n\n# Prompt includes a placeholder for chat history\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a helpful Python tutor.\"),\n    MessagesPlaceholder(variable_name=\"history\"),\n    (\"human\", \"{input}\")\n])\n\nchain = prompt | llm | StrOutputParser()\n\n# In-memory store keyed by session_id\nstore = {}\ndef get_history(session_id: str):\n    if session_id not in store:\n        store[session_id] = InMemoryChatMessageHistory()\n    return store[session_id]\n\n# Wrap the chain with memory\nchain_with_memory = RunnableWithMessageHistory(\n    chain,\n    get_history,\n    input_messages_key=\"input\",\n    history_messages_key=\"history\"\n)\n\ncfg = {\"configurable\": {\"session_id\": \"user-42\"}}\nprint(chain_with_memory.invoke({\"input\": \"What is a list comprehension?\"}, config=cfg))\nprint(chain_with_memory.invoke({\"input\": \"Give me an example of what you just explained.\"}, config=cfg))"
+              }
+            },
+            {
+              "h2": "Tool Use: Giving LLMs Superpowers",
+              "body": "Tools let an LLM take actions — search the web, run code, query a database — beyond generating text. In LangChain you define a tool with the @tool decorator and bind it to an LLM that supports function calling. The LLM decides when to call which tool; LangChain routes the call and feeds the result back.",
+              "code": {
+                "label": "Python - custom tools with @tool decorator",
+                "src": "from langchain_core.tools import tool\nfrom langchain_openai import ChatOpenAI\nfrom langchain.agents import create_tool_calling_agent, AgentExecutor\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\n\n# --- Define Tools ---\n@tool\ndef calculate(expression: str) -> str:\n    \"\"\"Safely evaluate a math expression. Example: '2 ** 10'\"\"\"\n    allowed = set(\"0123456789+-*/()., **\")\n    if not all(c in allowed for c in expression.replace(\" \", \"\")):\n        return \"Error: unsafe expression\"\n    try:\n        return str(eval(expression))  # noqa: S307\n    except Exception as e:\n        return f\"Error: {e}\"\n\n@tool\ndef unit_convert(value: float, from_unit: str, to_unit: str) -> str:\n    \"\"\"Convert between common units. Supports: km/miles, kg/lbs, celsius/fahrenheit\"\"\"\n    conversions = {\n        (\"km\", \"miles\"): lambda x: x * 0.621371,\n        (\"miles\", \"km\"): lambda x: x * 1.60934,\n        (\"kg\", \"lbs\"): lambda x: x * 2.20462,\n        (\"lbs\", \"kg\"): lambda x: x * 0.453592,\n        (\"celsius\", \"fahrenheit\"): lambda x: x * 9/5 + 32,\n        (\"fahrenheit\", \"celsius\"): lambda x: (x - 32) * 5/9,\n    }\n    fn = conversions.get((from_unit.lower(), to_unit.lower()))\n    if not fn:\n        return f\"No conversion from {from_unit} to {to_unit}\"\n    return f\"{value} {from_unit} = {fn(value):.4f} {to_unit}\"\n\n# --- Build Agent ---\ntools = [calculate, unit_convert]\nllm = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a helpful assistant with calculation tools.\"),\n    (\"human\", \"{input}\"),\n    MessagesPlaceholder(variable_name=\"agent_scratchpad\")\n])\n\nagent = create_tool_calling_agent(llm, tools, prompt)\nexecutor = AgentExecutor(agent=agent, tools=tools, verbose=True)\n\nresult = executor.invoke({\"input\": \"How many miles is 42 km? Also, what is 2**16?\"})\nprint(\"\\nFinal answer:\", result[\"output\"])"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a LangChain-powered recipe assistant that remembers conversation context and can do unit conversions:\n\n1. Create a ChatPromptTemplate with system message: 'You are a helpful recipe assistant.' and a MessagesPlaceholder for history.\n2. Attach the unit_convert tool from this lesson.\n3. Wrap the chain with RunnableWithMessageHistory using in-memory storage.\n4. Run this 3-turn conversation:\n   - Turn 1: 'How do I make a basic pasta sauce?'\n   - Turn 2: 'How much is 200 grams of tomatoes in lbs?'\n   - Turn 3: 'Can you repeat the first step from the recipe you just described?'\n5. Verify the model correctly references its earlier answers in Turn 3.\n\nBonus: Add a @tool called scale_recipe(servings, original_servings, ingredient_amount) that scales ingredient quantities proportionally.",
+              "code": {
+                "label": "Python - exercise starter",
+                "src": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.runnables.history import RunnableWithMessageHistory\nfrom langchain_core.chat_history import InMemoryChatMessageHistory\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.tools import tool\n\n# TODO: define unit_convert tool (from lesson)\n\n# TODO: build prompt with MessagesPlaceholder for history\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a helpful recipe assistant.\"),\n    MessagesPlaceholder(variable_name=\"history\"),\n    (\"human\", \"{input}\")\n])\n\n# TODO: create chain and wrap with RunnableWithMessageHistory\nllm = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\nchain = prompt | llm | StrOutputParser()\n\nstore = {}\ndef get_history(session_id):\n    if session_id not in store:\n        store[session_id] = InMemoryChatMessageHistory()\n    return store[session_id]\n\n# chain_with_memory = RunnableWithMessageHistory(...)\n\ncfg = {\"configurable\": {\"session_id\": \"recipe-session\"}}\n# Turn 1: ask about pasta sauce\n# Turn 2: unit conversion\n# Turn 3: reference earlier answer"
               }
             }
           ]
