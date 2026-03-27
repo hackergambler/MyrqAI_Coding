@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Prompt Caching — Reduce Costs 5x | AI Coding Academy</title>
+    <meta name="description" content="Learn Claude's prompt caching feature: cache large system prompts, reduce latency, and cut API costs by up to 90% with ephemeral and persistent cache blocks.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .lesson-container { max-width: 900px; margin: 0 auto; padding: calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl); }
+        .lesson-header { margin-bottom: var(--space-3xl); }
+        .lesson-meta { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+        .lesson-meta-item { display: flex; align-items: center; gap: var(--space-xs); font-size: 0.9rem; color: var(--text-muted); }
+        .lesson-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); margin-bottom: var(--space-lg); line-height: 1.2; }
+        .lesson-description { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.7; }
+        .lesson-content { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-2xl); margin-bottom: var(--space-2xl); }
+        .lesson-content h2 { font-family: var(--font-heading); font-size: 1.5rem; margin: var(--space-2xl) 0 var(--space-lg); color: var(--accent-primary); }
+        .lesson-content h2:first-child { margin-top: 0; }
+        .lesson-content h3 { font-family: var(--font-heading); font-size: 1.2rem; margin: var(--space-xl) 0 var(--space-md); color: var(--accent-secondary); }
+        .lesson-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); }
+        .lesson-content ul, .lesson-content ol { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); padding-left: var(--space-xl); }
+        .lesson-content li { margin-bottom: var(--space-sm); }
+        .lesson-content code { background: rgba(0,255,170,0.1); color: var(--accent-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; overflow-x: auto; position: relative; }
+        .code-block-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center; }
+        .code-block-label .copy-btn { cursor: pointer; color: var(--accent-primary); border: 1px solid var(--accent-primary); background: transparent; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.65; color: #e6edf3; white-space: pre; }
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .tip-box { background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .tip-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-primary); margin-bottom: var(--space-sm); }
+        .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .warn-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-warning); margin-bottom: var(--space-sm); }
+        .info-box { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .info-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .tip-box p, .warn-box p, .info-box p { margin: 0; color: var(--text-secondary); line-height: 1.7; }
+        .toc { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-2xl); }
+        .toc h3 { font-family: var(--font-heading); color: var(--accent-primary); margin-bottom: var(--space-md); }
+        .toc ol { padding-left: var(--space-xl); color: var(--text-secondary); }
+        .toc li { margin-bottom: var(--space-xs); }
+        .toc a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+        .lesson-nav { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); }
+        .lesson-nav a { flex: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; transition: var(--transition-base); }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); }
+        .lesson-nav .next { text-align: right; }
+        .savings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin: var(--space-lg) 0; }
+        .savings-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-md); padding: var(--space-lg); text-align: center; }
+        .savings-card .big-num { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--accent-primary); }
+        .savings-card .label { font-size: 0.85rem; color: var(--text-muted); margin-top: var(--space-xs); }
+        @media (max-width: 768px) { .lesson-nav { flex-direction: column; } .lesson-nav .next { text-align: left; } .savings-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+                <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+            <ul class="nav-menu">
+                <li><a href="../../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search..."><kbd>⌘K</kbd></div>
+                <a href="../../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <div class="lesson-container">
+        <div class="lesson-header">
+            <div class="lesson-meta">
+                <span class="badge badge-intermediate">Intermediate</span>
+                <span class="lesson-meta-item">⏱ 20 min</span>
+                <span class="lesson-meta-item">🟣 Claude API</span>
+            </div>
+            <h1 class="lesson-title">Claude Prompt Caching</h1>
+            <p class="lesson-description">Cache large system prompts and context once, then reuse them across requests — slashing token costs by up to 90% and reducing time-to-first-token on repeated calls.</p>
+        </div>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <div class="toc">
+            <h3>In This Lesson</h3>
+            <ol>
+                <li><a href="#what-is-caching">What Is Prompt Caching?</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#basic-example">Basic Example</a></li>
+                <li><a href="#cache-points">Placing Cache Breakpoints</a></li>
+                <li><a href="#use-cases">Real-World Use Cases</a></li>
+                <li><a href="#exercise">Hands-On Exercise</a></li>
+            </ol>
+        </div>
+
+        <div class="lesson-content">
+            <h2 id="what-is-caching">What Is Prompt Caching?</h2>
+            <p>Prompt caching lets you store a prefix of your prompt (system instructions, documents, few-shot examples) on Anthropic's servers. On subsequent requests that share the same prefix, Claude skips reprocessing those tokens — delivering faster responses and dramatically lower costs.</p>
+
+            <div class="savings-grid">
+                <div class="savings-card">
+                    <div class="big-num">90%</div>
+                    <div class="label">Cost reduction on cached tokens</div>
+                </div>
+                <div class="savings-card">
+                    <div class="big-num">85%</div>
+                    <div class="label">Latency reduction for large prompts</div>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-box-title">When To Use It</div>
+                <p>Prompt caching pays off when you have a large, static context (system prompt, reference docs, examples) that you reuse across many requests. The minimum cacheable prefix is 1,024 tokens for Claude Haiku and 2,048 tokens for Sonnet/Opus.</p>
+            </div>
+
+            <h2 id="how-it-works">How It Works</h2>
+            <p>You mark cache breakpoints in your request using <code>cache_control</code> blocks. When Claude processes the request, it checks whether those prefix tokens are already cached:</p>
+            <ul>
+                <li><strong>Cache miss</strong> — normal input token price; result is stored for 5 minutes (ephemeral).</li>
+                <li><strong>Cache hit</strong> — cached token price (~10% of normal), no reprocessing.</li>
+            </ul>
+            <p>Cache TTL is 5 minutes by default. Every cache hit refreshes the TTL, so active conversations stay warm automatically.</p>
+
+            <div class="warn-box">
+                <div class="warn-box-title">Cache Write Cost</div>
+                <p>Writing to the cache costs 25% more than a normal input token. You break even after just 2 cache hits, so for any prompt called 3+ times the math strongly favors caching.</p>
+            </div>
+
+            <h2 id="basic-example">Basic Example</h2>
+            <p>To enable caching, set <code>betas=["prompt-caching-2024-07-31"]</code> and add <code>"cache_control": {"type": "ephemeral"}</code> to the content block you want cached.</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn">Copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+
+client = anthropic.<cl>Anthropic</cl>()
+
+<span class="cm"># Large system prompt — only processed once, then cached</span>
+SYSTEM_PROMPT = <span class="st">"""
+You are an expert Python tutor with deep knowledge of data structures,
+algorithms, and best practices. When answering questions you always:
+1. Explain the concept clearly
+2. Provide a working code example
+3. Highlight common pitfalls
+4. Suggest further reading
+
+[... imagine this is 3000+ tokens of detailed instructions ...]
+"""</span>
+
+<span class="kw">def</span> <span class="fn">ask_claude</span>(user_question: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    response = client.beta.messages.<span class="fn">create</span>(
+        model=<span class="st">"claude-opus-4-6"</span>,
+        max_tokens=<span class="nu">1024</span>,
+        <span class="cm"># Enable the prompt caching beta</span>
+        betas=[<span class="st">"prompt-caching-2024-07-31"</span>],
+        system=[
+            {
+                <span class="st">"type"</span>: <span class="st">"text"</span>,
+                <span class="st">"text"</span>: SYSTEM_PROMPT,
+                <span class="cm"># Mark this block as cacheable</span>
+                <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}
+            }
+        ],
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user_question}]
+    )
+    <span class="kw">return</span> response.content[<span class="nu">0</span>].text
+
+<span class="cm"># First call: cache miss — system prompt is processed + cached</span>
+answer1 = <span class="fn">ask_claude</span>(<span class="st">"Explain binary search trees"</span>)
+
+<span class="cm"># Second call: cache hit — system prompt costs 90% less</span>
+answer2 = <span class="fn">ask_claude</span>(<span class="st">"What are Python decorators?"</span>)</pre>
+            </div>
+
+            <h2 id="cache-points">Placing Cache Breakpoints</h2>
+            <p>You can have up to <strong>4 cache breakpoints</strong> per request. Each breakpoint caches everything from the start of the prompt up to that point. Place them strategically:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python — multi-block caching<button class="copy-btn">Copy</button></div>
+                <pre>response = client.beta.messages.<span class="fn">create</span>(
+    model=<span class="st">"claude-opus-4-6"</span>,
+    max_tokens=<span class="nu">2048</span>,
+    betas=[<span class="st">"prompt-caching-2024-07-31"</span>],
+    system=[
+        <span class="cm"># Block 1: static role definition (always the same)</span>
+        {
+            <span class="st">"type"</span>: <span class="st">"text"</span>,
+            <span class="st">"text"</span>: <span class="st">"You are a senior software engineer..."</span>,
+            <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}
+        },
+        <span class="cm"># Block 2: per-session document (changes per user session)</span>
+        {
+            <span class="st">"type"</span>: <span class="st">"text"</span>,
+            <span class="st">"text"</span>: codebase_context,   <span class="cm"># injected at session start</span>
+            <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}
+        }
+    ],
+    messages=conversation_history   <span class="cm"># grows per turn</span>
+)</pre>
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-box-title">Caching Conversation History</div>
+                <p>You can also cache the <code>messages</code> array up to the last user turn. Add <code>cache_control</code> to the final assistant message in history. This is useful for long multi-turn conversations where earlier turns never change.</p>
+            </div>
+
+            <h2 id="use-cases">Real-World Use Cases</h2>
+            <h3>1. Document Q&amp;A</h3>
+            <p>Load a large PDF or codebase into the system prompt once. All follow-up questions hit the cache — turning a slow, expensive operation into a fast, cheap one.</p>
+            <div class="code-block">
+                <div class="code-block-label">python — document Q&amp;A<button class="copy-btn">Copy</button></div>
+                <pre><span class="kw">with</span> <span class="fn">open</span>(<span class="st">"technical_spec.txt"</span>) <span class="kw">as</span> f:
+    document = f.<span class="fn">read</span>()   <span class="cm"># Could be 10,000+ tokens</span>
+
+<span class="kw">def</span> <span class="fn">query_document</span>(question):
+    <span class="kw">return</span> client.beta.messages.<span class="fn">create</span>(
+        model=<span class="st">"claude-opus-4-6"</span>,
+        max_tokens=<span class="nu">1024</span>,
+        betas=[<span class="st">"prompt-caching-2024-07-31"</span>],
+        system=[{
+            <span class="st">"type"</span>: <span class="st">"text"</span>,
+            <span class="st">"text"</span>: <span class="st">f"Answer questions using this document:\n\n{document}"</span>,
+            <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}
+        }],
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}]
+    ).content[<span class="nu">0</span>].text
+
+<span class="cm"># All 3 queries share one cached document — pay for the document once</span>
+<span class="fn">query_document</span>(<span class="st">"What are the rate limits?"</span>)
+<span class="fn">query_document</span>(<span class="st">"Summarise the authentication section"</span>)
+<span class="fn">query_document</span>(<span class="st">"List all API endpoints"</span>)</pre>
+            </div>
+
+            <h3>2. Checking Cache Usage</h3>
+            <p>The response's <code>usage</code> object tells you exactly how many tokens were read from cache vs. freshly processed:</p>
+            <div class="code-block">
+                <div class="code-block-label">python — inspect cache stats<button class="copy-btn">Copy</button></div>
+                <pre>response = client.beta.messages.<span class="fn">create</span>( ... )
+
+usage = response.usage
+<span class="fn">print</span>(<span class="st">f"Input tokens:          {usage.input_tokens}"</span>)
+<span class="fn">print</span>(<span class="st">f"Cache write tokens:    {usage.cache_creation_input_tokens}"</span>)
+<span class="fn">print</span>(<span class="st">f"Cache read tokens:     {usage.cache_read_input_tokens}"</span>)
+<span class="fn">print</span>(<span class="st">f"Output tokens:         {usage.output_tokens}"</span>)
+
+<span class="cm"># Calculate real savings</span>
+normal_cost   = (usage.input_tokens + usage.cache_creation_input_tokens) * <span class="nu">0.000015</span>
+cached_cost   = usage.cache_read_input_tokens * <span class="nu">0.0000015</span>  <span class="cm"># 10x cheaper</span>
+<span class="fn">print</span>(<span class="st">f"Savings: ${normal_cost - cached_cost:.4f}"</span>)</pre>
+            </div>
+
+            <h2 id="exercise">Hands-On Exercise</h2>
+            <p>Build a simple CLI chatbot that caches its system prompt and logs cache hit/miss stats after each turn.</p>
+            <div class="code-block">
+                <div class="code-block-label">exercise.py<button class="copy-btn">Copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+
+client = anthropic.<cl>Anthropic</cl>()
+
+SYSTEM = <span class="st">"""
+You are a concise Python expert. Keep answers under 150 words.
+Always include a one-line code snippet when relevant.
+Use plain language — no jargon without explanation.
+"""</span>  <span class="cm"># Pad this to &gt;1024 tokens in real usage</span>
+
+history = []
+cache_hits = <span class="nu">0</span>
+cache_misses = <span class="nu">0</span>
+
+<span class="fn">print</span>(<span class="st">"Python Expert Chatbot (type 'quit' to exit)\n"</span>)
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    user_input = <span class="fn">input</span>(<span class="st">"You: "</span>)
+    <span class="kw">if</span> user_input.lower() == <span class="st">"quit"</span>:
+        <span class="kw">break</span>
+
+    history.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user_input})
+
+    response = client.beta.messages.<span class="fn">create</span>(
+        model=<span class="st">"claude-haiku-4-5-20251001"</span>,  <span class="cm"># cheapest model</span>
+        max_tokens=<span class="nu">300</span>,
+        betas=[<span class="st">"prompt-caching-2024-07-31"</span>],
+        system=[{<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: SYSTEM,
+                 <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}}],
+        messages=history
+    )
+
+    reply = response.content[<span class="nu">0</span>].text
+    history.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: reply})
+
+    u = response.usage
+    <span class="kw">if</span> u.cache_read_input_tokens > <span class="nu">0</span>:
+        cache_hits += <span class="nu">1</span>
+        status = <span class="st">f"[CACHE HIT — {u.cache_read_input_tokens} tokens saved]"</span>
+    <span class="kw">else</span>:
+        cache_misses += <span class="nu">1</span>
+        status = <span class="st">f"[CACHE MISS — {u.cache_creation_input_tokens} tokens written]"</span>
+
+    <span class="fn">print</span>(<span class="st">f"\nClaude: {reply}"</span>)
+    <span class="fn">print</span>(<span class="st">f"{status} | Hits: {cache_hits}  Misses: {cache_misses}\n"</span>)</pre>
+            </div>
+
+            <div class="info-box">
+                <div class="info-box-title">Expected Output</div>
+                <p>First message: <code>CACHE MISS — N tokens written</code>. Every subsequent message: <code>CACHE HIT — N tokens saved</code>. The system prompt is only processed once per 5-minute window.</p>
+            </div>
+        </div>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <div class="lesson-nav">
+            <a href="tool-use.html">
+                <div class="lesson-nav-label">Previous</div>
+                <div class="lesson-nav-title">Tool Use & Agents</div>
+            </a>
+            <a href="messages-api.html" class="next">
+                <div class="lesson-nav-label">Next</div>
+                <div class="lesson-nav-title">Messages API Deep Dive</div>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul><li><a href="../../tutorials/index.html">All Tutorials</a></li><li><a href="../../courses/index.html">Courses</a></li><li><a href="../../projects/index.html">Projects</a></li><li><a href="../../debugging/index.html">Debugging</a></li></ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://ailadder.myrqai.com" target="_blank">AI Ladder</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li><li><a href="https://myrqai.com/admin/contact" target="_blank">Contact Us</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/donation-widget.js" defer></script>
+    <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pre = this.closest('.code-block').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                this.textContent = '✓ Copied';
+                setTimeout(() => this.textContent = 'Copy', 1500);
+            });
+        });
+    });
+    </script>
+</body>
+</html>

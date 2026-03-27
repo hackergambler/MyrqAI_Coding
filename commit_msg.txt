@@ -1,1 +1,1 @@
-Remove trailing slashes from external nav links
+Add prompt-caching link and clear commit message file
