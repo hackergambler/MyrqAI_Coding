@@ -1,1 +1,1 @@
-Add new lessons and update MasterLibrary content
+Add MLOps model monitoring and drift detection lesson

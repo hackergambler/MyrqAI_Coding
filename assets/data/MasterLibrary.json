@@ -2283,7 +2283,7 @@
           "duration": "40 min",
           "badge": "Advanced",
           "prev": "llm-caching",
-          "next": null,
+          "next": "mlops-model-monitoring",
           "sections": [
             {
               "h2": "Why Docker for ML Deployments",
@@ -2317,6 +2317,59 @@
               "code": {
                 "label": "Python - sentiment model training skeleton",
                 "src": "# train_sentiment.py\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_extraction.text import CountVectorizer\nimport joblib, os\n\ntexts = [\n    'I love this product', 'absolutely fantastic experience', 'great quality',\n    'best purchase ever', 'highly recommend', 'wonderful service',\n    'terrible quality', 'worst product I have ever bought', 'complete waste of money',\n    'broken on arrival', 'very disappointed', 'do not buy this',\n]\nlabels = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]  # 1=positive, 0=negative\n\nvec = CountVectorizer(ngram_range=(1, 2))\nX = vec.fit_transform(texts)\nclf = LogisticRegression(max_iter=200).fit(X, labels)\n\nos.makedirs('model', exist_ok=True)\njoblib.dump({'vec': vec, 'clf': clf}, 'model/sentiment.pkl')\nprint('Saved to model/sentiment.pkl')\n\n# Quick sanity check\ntest = vec.transform(['amazing product'])\nprob = clf.predict_proba(test)[0]\nprint(f'Test: positive={prob[1]:.2f}, negative={prob[0]:.2f}')"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mlops-model-monitoring",
+          "title": "MLOps: Model Monitoring and Drift Detection",
+          "desc": "Learn how to detect when a deployed ML model degrades in production by monitoring prediction distributions, feature drift, and performance metrics over time.",
+          "duration": "35 min",
+          "badge": "Advanced",
+          "prev": "mlops-docker-deployment",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Models Degrade in Production",
+              "body": "A model that scores 95% accuracy at launch may silently drop to 70% six months later — without raising a single error or exception. This is called model drift. It happens because the real world changes: user behavior shifts, upstream data pipelines change schemas, seasonal patterns flip, and the population you trained on diverges from the one you now serve. Monitoring catches these changes before they cause business damage.",
+              "tip": "Never assume a deployed model stays healthy. Production data distribution is always shifting. Even a great model without monitoring is a ticking time bomb.",
+              "code": {
+                "label": "Python - simulate data drift",
+                "src": "import numpy as np\nimport matplotlib.pyplot as plt\n\nnp.random.seed(42)\n\n# Training distribution: feature values centered around 0\ntrain_feature = np.random.normal(loc=0.0, scale=1.0, size=1000)\n\n# Production (6 months later): distribution has drifted right\nprod_feature = np.random.normal(loc=1.5, scale=1.2, size=1000)\n\nplt.figure(figsize=(8, 4))\nplt.hist(train_feature, bins=40, alpha=0.6, label='Training data', color='steelblue')\nplt.hist(prod_feature, bins=40, alpha=0.6, label='Production data (drifted)', color='tomato')\nplt.legend()\nplt.title('Feature Distribution Drift')\nplt.xlabel('Feature Value')\nplt.ylabel('Count')\nplt.tight_layout()\nplt.savefig('drift_plot.png', dpi=120)\nprint('Saved drift_plot.png')"
+              }
+            },
+            {
+              "h2": "Statistical Drift Detection with KS Test",
+              "body": "The Kolmogorov-Smirnov (KS) test is the simplest and most widely used method for detecting distribution shift. It compares two samples and returns a p-value: if p < 0.05, the distributions are statistically different — a signal that drift has occurred. Run it feature-by-feature on a rolling window of production data vs your training baseline.",
+              "code": {
+                "label": "Python - KS drift detection per feature",
+                "src": "from scipy import stats\nimport numpy as np\n\nnp.random.seed(42)\n\n# Baseline training statistics (stored when model was deployed)\nbaseline = {\n    'age':    np.random.normal(35, 10, 2000),\n    'income': np.random.normal(60000, 15000, 2000),\n    'score':  np.random.normal(0.5, 0.1, 2000),\n}\n\n# Simulated production window (1 week of new requests)\nproduction = {\n    'age':    np.random.normal(38, 11, 500),       # slight drift\n    'income': np.random.normal(60200, 14800, 500), # stable\n    'score':  np.random.normal(0.65, 0.12, 500),   # significant drift!\n}\n\nprint(f\"{'Feature':<12} {'KS Stat':>10} {'p-value':>12} {'Drifted?':>10}\")\nprint('-' * 48)\nfor feature in baseline:\n    stat, pval = stats.ks_2samp(baseline[feature], production[feature])\n    drifted = 'YES' if pval < 0.05 else 'OK'\n    print(f'{feature:<12} {stat:>10.4f} {pval:>12.4e} {drifted:>10}')"
+              }
+            },
+            {
+              "h2": "Monitoring Prediction Distribution",
+              "body": "Even without ground-truth labels, you can catch model problems by monitoring the output distribution. If a binary classifier that normally predicts 30% positives suddenly predicts 80% positives, something has changed upstream. Track prediction statistics — mean, std, percentiles, and class balance — on a rolling basis.",
+              "tip": "Prediction distribution monitoring is your first line of defense because it requires no labels. Ground-truth-based metrics (accuracy, F1) often arrive weeks later via human review pipelines.",
+              "code": {
+                "label": "Python - track prediction statistics over time",
+                "src": "import numpy as np\nimport pandas as pd\nfrom datetime import datetime, timedelta\n\nnp.random.seed(0)\n\ndef simulate_week(n=500, positive_rate=0.30):\n    return np.random.binomial(1, positive_rate, n).tolist()\n\n# Simulate 8 weeks: drift starts at week 6\nweeks = []\nfor w in range(8):\n    rate = 0.30 if w < 5 else 0.30 + (w - 4) * 0.12\n    preds = simulate_week(positive_rate=min(rate, 1.0))\n    date = datetime(2025, 1, 6) + timedelta(weeks=w)\n    weeks.append({\n        'week': date.strftime('%Y-%m-%d'),\n        'n_predictions': len(preds),\n        'positive_rate': round(np.mean(preds), 3),\n        'alert': 'DRIFT' if abs(np.mean(preds) - 0.30) > 0.10 else 'OK'\n    })\n\ndf = pd.DataFrame(weeks)\nprint(df.to_string(index=False))"
+              }
+            },
+            {
+              "h2": "Building a Simple Monitoring Class",
+              "body": "A minimal production monitor runs on a schedule (e.g., nightly), pulls the last N predictions from your logging store, computes drift metrics, and fires an alert if thresholds are breached. Below is a self-contained class you can drop into any ML serving system.",
+              "code": {
+                "label": "Python - ModelMonitor class",
+                "src": "from scipy import stats\nimport numpy as np\nfrom dataclasses import dataclass\nfrom typing import Dict, List\n\n@dataclass\nclass DriftReport:\n    feature: str\n    ks_stat: float\n    p_value: float\n    drifted: bool\n\nclass ModelMonitor:\n    \"\"\"Lightweight monitor: stores baseline stats and runs drift checks.\"\"\"\n\n    def __init__(self, ks_threshold: float = 0.05):\n        self.ks_threshold = ks_threshold\n        self.baseline: Dict[str, np.ndarray] = {}\n        self.prediction_log: List[float] = []\n\n    def set_baseline(self, data: Dict[str, np.ndarray]):\n        self.baseline = {k: np.array(v) for k, v in data.items()}\n        print(f'Baseline set for: {list(self.baseline.keys())}')\n\n    def log_predictions(self, predictions: List[float]):\n        self.prediction_log.extend(predictions)\n\n    def check_feature_drift(self, current: Dict[str, np.ndarray]) -> List[DriftReport]:\n        reports = []\n        for feat, values in current.items():\n            if feat not in self.baseline:\n                continue\n            stat, pval = stats.ks_2samp(self.baseline[feat], np.array(values))\n            reports.append(DriftReport(\n                feature=feat, ks_stat=round(stat, 4),\n                p_value=round(pval, 6), drifted=pval < self.ks_threshold\n            ))\n        return reports\n\n    def prediction_health(self, expected_mean: float, tolerance: float = 0.10):\n        if not self.prediction_log:\n            return {'status': 'no data'}\n        current_mean = float(np.mean(self.prediction_log))\n        deviation = abs(current_mean - expected_mean)\n        return {\n            'current_mean': round(current_mean, 4),\n            'expected_mean': expected_mean,\n            'deviation': round(deviation, 4),\n            'alert': deviation > tolerance\n        }\n\n# --- Demo ---\nnp.random.seed(42)\nmonitor = ModelMonitor()\nmonitor.set_baseline({'age': np.random.normal(35, 10, 2000)})\nmonitor.log_predictions(np.random.binomial(1, 0.45, 500).tolist())\n\nreports = monitor.check_feature_drift({'age': np.random.normal(40, 11, 400)})\nfor r in reports:\n    status = 'DRIFTED' if r.drifted else 'OK'\n    print(f'{r.feature}: KS={r.ks_stat}, p={r.p_value} -> {status}')\n\nhealth = monitor.prediction_health(expected_mean=0.30)\nprint('Prediction health:', health)"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a drift detection pipeline for a loan approval model:\n\n1. Generate a training baseline: 2,000 samples with features `credit_score` ~ N(680, 50) and `debt_ratio` ~ N(0.35, 0.08).\n2. Simulate two production windows:\n   - Week 1 (stable): same distributions.\n   - Week 5 (drifted): `credit_score` ~ N(620, 60), `debt_ratio` ~ N(0.50, 0.10).\n3. Use the `ModelMonitor` class to run KS tests on both windows and print a report.\n4. Add prediction monitoring: the training positive rate is 40%. In week 5, simulate predictions with a 65% positive rate. Flag the alert.\n5. **Bonus**: write a `should_retrain(reports, health) -> bool` function that returns `True` if any feature drifted OR the prediction alert fired.\n\nExpected output (week 5):\n```\ncredit_score: KS=0.18, p=0.000001 -> DRIFTED\ndebt_ratio:   KS=0.21, p=0.000000 -> DRIFTED\nPrediction health: {'current_mean': 0.65, 'expected_mean': 0.4, 'deviation': 0.25, 'alert': True}\nshould_retrain -> True\n```",
+              "code": {
+                "label": "Python - exercise starter",
+                "src": "import numpy as np\nfrom scipy import stats\n\nnp.random.seed(7)\n\n# Step 1: baseline\nbaseline = {\n    'credit_score': np.random.normal(680, 50, 2000),\n    'debt_ratio':   np.random.normal(0.35, 0.08, 2000),\n}\n\n# Step 2: production windows\nweek1 = {\n    'credit_score': np.random.normal(680, 50, 500),\n    'debt_ratio':   np.random.normal(0.35, 0.08, 500),\n}\nweek5 = {\n    # TODO: fill in the drifted distributions\n    'credit_score': ...,\n    'debt_ratio':   ...,\n}\n\n# Step 3: run KS tests\n# TODO: use ModelMonitor or write KS loop directly\n\n# Step 4: prediction monitoring\n# TODO: log_predictions with 65% positive rate for week 5\n\n# Step 5: bonus\ndef should_retrain(reports, health) -> bool:\n    # TODO: return True if any feature drifted OR prediction alert fired\n    pass"
               }
             }
           ]
