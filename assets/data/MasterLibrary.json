@@ -1825,7 +1825,7 @@
           "duration": "45 min",
           "badge": "Expert",
           "prev": "agent-memory-systems",
-          "next": null,
+          "next": "streaming-llm-responses",
           "sections": [
             {
               "h2": "Speculative Decoding with a Draft Model",
@@ -1833,6 +1833,49 @@
               "code": {
                 "label": "Python - speculative decoding concept + HuggingFace implementation",
                 "src": "from transformers import AutoModelForCausalLM, AutoTokenizer\nimport torch\n\n# Draft model: small and fast\ndraft_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-125m',          # 125M params \u2014 very fast\n    torch_dtype=torch.float16, device_map='cuda'\n)\n# Target model: large and accurate\ntarget_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-6.7b',          # 6.7B params \u2014 accurate\n    torch_dtype=torch.float16, device_map='cuda'\n)\ntokenizer = AutoTokenizer.from_pretrained('facebook/opt-6.7b')\n\nprompt  = 'The transformer architecture was introduced in'\ninputs  = tokenizer(prompt, return_tensors='pt').to('cuda')\n\n# Standard generation (baseline)\nimport time\nt0 = time.time()\nout_standard = target_model.generate(**inputs, max_new_tokens=50, do_sample=False)\nstandard_ms = (time.time() - t0) * 1000\n\n# Speculative decoding \u2014 target verifies draft tokens in parallel\nt0 = time.time()\nout_speculative = target_model.generate(\n    **inputs, max_new_tokens=50, do_sample=False,\n    assistant_model=draft_model,   # HuggingFace speculative decoding\n    assistant_early_exit=True,\n)\nspeculative_ms = (time.time() - t0) * 1000\n\nprint(f'Standard:    {standard_ms:.0f}ms')\nprint(f'Speculative: {speculative_ms:.0f}ms  ({standard_ms/speculative_ms:.1f}x speedup)')\nprint(tokenizer.decode(out_speculative[0], skip_special_tokens=True))"
+              }
+            }
+          ]
+        },
+        {
+          "id": "streaming-llm-responses",
+          "title": "Streaming LLM Responses: Server-Sent Events and Real-Time UX",
+          "desc": "Implement token-by-token streaming from LLM APIs using Server-Sent Events (SSE), handle backpressure, and build a responsive chat UI that displays output as it is generated.",
+          "duration": "35 min",
+          "badge": "Advanced",
+          "prev": "llm-serving-optimization",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Streaming Matters",
+              "body": "A 70B model generating 500 tokens at 30 tok/s takes ~17 seconds. Without streaming, users stare at a blank screen. With streaming, the first token appears in ~100 ms, time-to-first-token (TTFT) drops dramatically, and perceived latency falls even though total latency is the same. Most LLM APIs (OpenAI, Anthropic, vLLM) expose streaming via Server-Sent Events (SSE): a long-lived HTTP connection where the server pushes `data:` lines as each token is ready.",
+              "code": {
+                "label": "Python - streaming with the OpenAI SDK",
+                "src": "from openai import OpenAI\n\nclient = OpenAI()  # reads OPENAI_API_KEY from env\n\n# stream=True returns an iterator of ChatCompletionChunk objects\nstream = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content': 'Explain gradient descent in 3 sentences.'}],\n    stream=True,\n)\n\n# Print each token as it arrives\nfor chunk in stream:\n    delta = chunk.choices[0].delta\n    if delta.content:          # content can be None for role/finish chunks\n        print(delta.content, end='', flush=True)\nprint()  # final newline\n\n# --- Collect the full response while still streaming ---\nfull_text = ''\nstream2 = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content': 'What is backpropagation?'}],\n    stream=True,\n)\nfor chunk in stream2:\n    token = chunk.choices[0].delta.content or ''\n    full_text += token\n    print(token, end='', flush=True)\nprint(f'\\n\\nTotal chars collected: {len(full_text)}')"
+              }
+            },
+            {
+              "h2": "Streaming with the Anthropic SDK",
+              "body": "Anthropic's Claude API also supports streaming. The SDK provides a context-manager style that handles SSE parsing and reconnection automatically. Use `stream.text_stream` for a simple string iterator or `stream.get_final_message()` to retrieve usage stats after the stream closes.",
+              "code": {
+                "label": "Python - streaming with the Anthropic SDK",
+                "src": "import anthropic\n\nclient = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env\n\n# --- Simple token stream ---\nwith client.messages.stream(\n    model='claude-3-5-haiku-20241022',\n    max_tokens=256,\n    messages=[{'role': 'user', 'content': 'Explain attention in transformers.'}],\n) as stream:\n    for text_chunk in stream.text_stream:\n        print(text_chunk, end='', flush=True)\n\n# --- Capture usage after stream completes ---\nwith client.messages.stream(\n    model='claude-3-5-haiku-20241022',\n    max_tokens=256,\n    messages=[{'role': 'user', 'content': 'What is a vector database?'}],\n) as stream:\n    full_response = ''\n    for text_chunk in stream.text_stream:\n        full_response += text_chunk\n        print(text_chunk, end='', flush=True)\n    final = stream.get_final_message()\nprint(f'\\n\\nInput tokens:  {final.usage.input_tokens}')\nprint(f'Output tokens: {final.usage.output_tokens}')"
+              }
+            },
+            {
+              "h2": "FastAPI Streaming Endpoint",
+              "body": "To serve streaming responses in your own backend, use FastAPI's `StreamingResponse` with an async generator that yields SSE-formatted lines. The frontend uses the browser's native `EventSource` API or `fetch` with a `ReadableStream` to consume the events.",
+              "code": {
+                "label": "Python - FastAPI SSE endpoint + JavaScript frontend",
+                "src": "# backend/main.py\nfrom fastapi import FastAPI\nfrom fastapi.responses import StreamingResponse\nfrom openai import AsyncOpenAI\nimport asyncio, json\n\napp = FastAPI()\nasync_client = AsyncOpenAI()\n\nasync def token_generator(prompt: str):\n    \"\"\"Yield SSE-formatted chunks as the LLM streams tokens.\"\"\"\n    stream = await async_client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': prompt}],\n        stream=True,\n    )\n    async for chunk in stream:\n        token = chunk.choices[0].delta.content\n        if token:\n            # SSE format: 'data: <json>\\n\\n'\n            yield f'data: {json.dumps({\"token\": token})}\\n\\n'\n        if chunk.choices[0].finish_reason == 'stop':\n            yield 'data: [DONE]\\n\\n'\n\n@app.get('/stream')\nasync def stream_endpoint(prompt: str):\n    return StreamingResponse(\n        token_generator(prompt),\n        media_type='text/event-stream',\n        headers={\n            'Cache-Control': 'no-cache',\n            'X-Accel-Buffering': 'no',   # disable nginx buffering\n        },\n    )\n\n# ---- frontend (vanilla JS) ----\n# const response = await fetch('/stream?prompt=Hello');\n# const reader = response.body.getReader();\n# const decoder = new TextDecoder();\n# while (true) {\n#   const { done, value } = await reader.read();\n#   if (done) break;\n#   const lines = decoder.decode(value).split('\\n\\n');\n#   for (const line of lines) {\n#     if (line.startsWith('data: ') && line !== 'data: [DONE]') {\n#       const { token } = JSON.parse(line.slice(6));\n#       document.getElementById('output').textContent += token;\n#     }\n#   }\n# }"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a minimal streaming chat CLI:\n\n1. Accept user input from stdin in a loop.\n2. Send it to `gpt-4o-mini` (or Claude) with `stream=True`.\n3. Print each token as it arrives without a newline.\n4. After the stream ends, print the total token count.\n5. Bonus: add a `--no-stream` flag to compare latency with/without streaming.\n\nExpected output:\n```\nYou: What is RLHF?\nAssistant: RLHF stands for Reinforcement Learning from Human Feedback...\n[128 tokens | 4.2 s]\n```",
+              "code": {
+                "label": "Python - streaming CLI skeleton",
+                "src": "import sys, time\nfrom openai import OpenAI\n\nclient = OpenAI()\nhistory = []\n\nwhile True:\n    user_input = input('You: ').strip()\n    if user_input.lower() in ('exit', 'quit'):\n        break\n    history.append({'role': 'user', 'content': user_input})\n\n    print('Assistant: ', end='', flush=True)\n    t0 = time.time()\n    token_count = 0\n    reply = ''\n\n    stream = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=history,\n        stream=True,\n    )\n    for chunk in stream:\n        token = chunk.choices[0].delta.content or ''\n        print(token, end='', flush=True)\n        reply += token\n        token_count += bool(token)\n\n    elapsed = time.time() - t0\n    print(f'\\n[{token_count} tokens | {elapsed:.1f}s]\\n')\n    history.append({'role': 'assistant', 'content': reply})"
               }
             }
           ]

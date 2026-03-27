@@ -1,1 +1,1 @@
-Update and expand MasterLibrary lessons and content structure
+Add streaming LLM responses lesson to MasterLibrary
