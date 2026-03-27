@@ -64,10 +64,10 @@ Every lesson MUST follow this structure:
 1. Title & Objective
 2. Concept Explanation (simple + clear)
 3. Code Example (REQUIRED)
-4. Step-by-step explanation of code
+4. Step-by-step explanation
 5. Hands-on Exercise (REQUIRED)
 6. Real-world use case
-7. Difficulty level (Beginner / Intermediate / Advanced)
+7. Difficulty level
 
 ⚠️ NEVER create a lesson without:
 
@@ -76,33 +76,91 @@ Every lesson MUST follow this structure:
 
 ---
 
+## 🧪 Debugging System (MANDATORY)
+
+Debugging is NOT a tool. It is structured learning content.
+
+Each debugging entry MUST include:
+
+1. Error message
+2. Why it occurs
+3. Root cause
+4. Step-by-step fix
+5. Code before (buggy)
+6. Code after (fixed)
+
+Rules:
+
+* ❌ Do NOT create code editors or execution tools
+* ❌ Do NOT create placeholder debugging pages
+* ✅ Focus on real-world error explanations
+
+---
+
+## 📁 Projects System (MANDATORY)
+
+Projects must be real-world, hands-on builds.
+
+Each project MUST include:
+
+1. Title
+2. Description
+3. Difficulty
+4. Step-by-step guide
+5. Code examples
+6. Final output
+
+Rules:
+
+* ❌ Do NOT create empty or placeholder projects
+* ✅ Ensure projects are usable
+* ✅ Link projects with lessons where relevant
+
+---
+
+## 🔗 Navigation & Page Integrity (CRITICAL)
+
+* Every link (href) MUST work
+* If a page is missing → CREATE it
+* No broken navigation allowed
+
+Required sections:
+
+* tutorials/
+* courses/
+* debugging/
+* projects/
+
+---
+
+## 🧪 System QA Rules
+
+Before committing:
+
+* Ensure all pages open correctly
+* Ensure no blank pages
+* Verify no broken links
+* Check UI layout is stable
+* Ensure no critical console errors
+
+---
+
 ## 🎯 Task Execution Rules
 
 * Do EXACTLY ONE task per run
-* Prefer improving existing lessons over adding new ones
-* Only add new lessons if missing from roadmap
+* Prefer improving existing content over adding new
+* Only add new lessons if missing
 * Keep changes small and focused
-* Maintain lesson chain (prev / next links)
+* Maintain lesson chain (prev/next)
 
 ---
 
 ## ⚡ Efficiency Rules (Token Optimization)
 
-* DO NOT scan the entire project
-* ONLY read necessary files
-* Prefer editing a single file per run
-* Avoid repeating large context
-
----
-
-## 🧪 Validation Rules
-
-Before committing:
-
-* Ensure files were actually modified
-* Validate JSON structure
-* Verify lesson navigation links
-* Ensure no broken references
+* DO NOT scan entire project
+* ONLY read required files
+* Prefer editing a single file
+* Avoid large repeated context
 
 ---
 
@@ -111,28 +169,37 @@ Before committing:
 * Use `ContentEngine.js` with `MasterLibrary.json`
 * Sidebar must reflect 4-tier structure
 * Lessons must load dynamically
-* Maintain clean, scalable architecture
+* Maintain scalable architecture
 
 ---
 
 ## 🎨 UI / UX Requirements
 
-* Lessons must be readable and clean
-* Code blocks must be properly formatted
-* Navigation must be intuitive
-* Avoid breaking existing UI
+* Clean, readable lessons
+* Proper code formatting
+* Smooth navigation
+* No UI breaking changes
 
 ---
 
 ## 🚀 Product-Level Expectations
 
-This is NOT just a content generator.
+This is NOT just content.
 
 The platform must:
 
 * Teach through coding
 * Provide hands-on learning
-* Feel like a real AI education product
+* Include debugging knowledge
+* Include real-world projects
+
+---
+
+## 🚫 Content Integrity Rules
+
+* Do NOT claim fake numbers unless implemented
+* Ensure displayed content actually exists
+* Prefer accuracy over exaggeration
 
 ---
 
@@ -140,12 +207,13 @@ The platform must:
 
 * Run autonomously using CLI
 * If rate limited → wait and retry
-* Continue until meaningful progress is made
-* Create `finished.txt` ONLY when:
+* Continue until meaningful progress
 
-  * All tiers are complete
-  * No missing lessons
-  * No broken links
+Create `finished.txt` ONLY when:
+
+* All tiers complete
+* No missing content
+* No broken links
 
 ---
 
