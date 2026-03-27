@@ -1,1 +1,1 @@
-Add DBSCAN clustering lesson to MasterLibrary
+Add hierarchical clustering lesson to MasterLibrary

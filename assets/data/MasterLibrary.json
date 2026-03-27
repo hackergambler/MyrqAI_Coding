@@ -2190,7 +2190,7 @@
           "duration": "30 min",
           "badge": "Intermediate",
           "prev": "ensemble-stacking",
-          "next": null,
+          "next": "hierarchical-clustering",
           "sections": [
             {
               "h2": "Why K-Means Fails on Non-Globular Clusters",
@@ -2241,6 +2241,72 @@
               "code": {
                 "label": "Python - exercise starter",
                 "src": "from sklearn.datasets import make_circles\nfrom sklearn.cluster import DBSCAN, KMeans\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import silhouette_score\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nX, _ = make_circles(n_samples=300, noise=0.05, factor=0.4, random_state=42)\nX_scaled = StandardScaler().fit_transform(X)\n\n# TODO 1: fit KMeans(n_clusters=2) and DBSCAN(eps=0.15, min_samples=5)\n# TODO 2: plot side-by-side scatter with colour = cluster label\n# TODO 3: compute silhouette for KMeans; compute silhouette for DBSCAN (non-noise only)\n# TODO 4: add 20 noise points and verify DBSCAN labels them -1\n\n# Expected: DBSCAN perfectly separates the rings; K-Means fails\n# Expected: DBSCAN silhouette > KMeans silhouette by a large margin"
+              }
+            }
+          ]
+        },
+        {
+          "id": "hierarchical-clustering",
+          "title": "Hierarchical Clustering: Dendrograms and Agglomerative Methods",
+          "desc": "Learn hierarchical clustering — an unsupervised technique that builds a tree of clusters (dendrogram) without specifying k upfront. Master linkage methods, cutting dendrograms, and real-world use cases.",
+          "duration": "28 min",
+          "badge": "Intermediate",
+          "prev": "dbscan-clustering",
+          "next": null,
+          "sections": [
+            {
+              "h2": "What is Hierarchical Clustering?",
+              "body": "Hierarchical clustering builds a nested tree of clusters called a **dendrogram**. Unlike K-Means, you don't need to choose the number of clusters upfront — you cut the dendrogram at any height to get any number of clusters.\n\nThere are two strategies:\n- **Agglomerative (bottom-up)**: start with every point as its own cluster, then repeatedly merge the closest pair of clusters.\n- **Divisive (top-down)**: start with one giant cluster and recursively split it.\n\nAgglomerative is the standard approach and what scikit-learn implements.",
+              "tip": "Hierarchical clustering is deterministic — unlike K-Means it produces the same result every run. This makes it ideal for reproducible research pipelines.",
+              "code": {
+                "label": "Python (scipy) - Build a dendrogram from scratch",
+                "src": "from scipy.cluster.hierarchy import linkage, dendrogram, fcluster\nfrom sklearn.datasets import make_blobs\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Small dataset so the dendrogram is readable\nX, y_true = make_blobs(n_samples=30, centers=3, cluster_std=0.8, random_state=42)\n\n# Build the linkage matrix using 'ward' linkage\nZ = linkage(X, method='ward')\n\n# Plot the dendrogram\nplt.figure(figsize=(12, 5))\ndendrogram(Z, leaf_rotation=90, leaf_font_size=8)\nplt.axhline(y=6, color='red', linestyle='--', label='cut here → 3 clusters')\nplt.xlabel('Sample index')\nplt.ylabel('Distance (Ward)')\nplt.title('Dendrogram: hierarchical clustering of make_blobs')\nplt.legend()\nplt.tight_layout()\nplt.savefig('dendrogram.png', dpi=120)\n\n# Extract flat cluster labels by cutting at height 6\nlabels = fcluster(Z, t=6, criterion='distance')\nprint('Cluster labels:', labels)\nprint('Unique clusters:', set(labels))"
+              }
+            },
+            {
+              "h2": "Linkage Methods: Ward, Complete, Average, Single",
+              "body": "The **linkage method** defines how the distance between two clusters is measured during merging:\n\n| Method | Distance = | Best for |\n|--------|-----------|----------|\n| **Ward** | Increase in total within-cluster variance | Compact, equal-size clusters |\n| **Complete** | Max distance between any two points | Compact clusters, robust to outliers |\n| **Average** | Mean distance between all point pairs | Balanced approach |\n| **Single** | Min distance between any two points | Elongated/chain-like clusters |\n\nWard linkage almost always produces the best results for general use — it minimises variance rather than just distance.",
+              "tip": "Single linkage is prone to 'chaining' — one noisy point can bridge two clusters. Unless you're hunting for elongated shapes, avoid it.",
+              "code": {
+                "label": "Python - compare all four linkage methods",
+                "src": "from scipy.cluster.hierarchy import linkage, fcluster\nfrom sklearn.datasets import make_moons\nfrom sklearn.metrics import adjusted_rand_score\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nX, y_true = make_moons(n_samples=200, noise=0.08, random_state=42)\n\nmethods = ['ward', 'complete', 'average', 'single']\nfig, axes = plt.subplots(1, 4, figsize=(16, 4))\n\nfor ax, method in zip(axes, methods):\n    Z = linkage(X, method=method)\n    labels = fcluster(Z, t=2, criterion='maxclust')\n    ari = adjusted_rand_score(y_true, labels)\n    ax.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis', s=20)\n    ax.set_title(f'{method.capitalize()}\\nARI={ari:.2f}')\n    ax.axis('off')\n\nplt.suptitle('Linkage methods on two-moons dataset', fontsize=12)\nplt.tight_layout()\nplt.savefig('linkage_comparison.png', dpi=120)\n# Ward and complete tend to outperform single linkage here"
+              }
+            },
+            {
+              "h2": "Scikit-learn AgglomerativeClustering",
+              "body": "For larger datasets, use scikit-learn's `AgglomerativeClustering` which integrates with the standard `fit_predict` API. You can specify the number of clusters directly or use a distance threshold — no need to manually cut a dendrogram.",
+              "tip": "Use `connectivity` matrices to constrain merges to spatially adjacent points. This is especially powerful for image segmentation where only neighboring pixels should be merged.",
+              "code": {
+                "label": "Python (scikit-learn) - AgglomerativeClustering API",
+                "src": "from sklearn.cluster import AgglomerativeClustering\nfrom sklearn.datasets import make_blobs\nfrom sklearn.metrics import silhouette_score\nimport numpy as np\n\nX, y_true = make_blobs(n_samples=300, centers=4, cluster_std=0.7, random_state=42)\n\n# Method 1: specify number of clusters\nagg = AgglomerativeClustering(n_clusters=4, linkage='ward')\nlabels = agg.fit_predict(X)\nprint(f'Silhouette score (n_clusters=4): {silhouette_score(X, labels):.3f}')\n\n# Method 2: use a distance threshold (auto-determines n_clusters)\nagg_thresh = AgglomerativeClustering(\n    n_clusters=None,\n    distance_threshold=5.0,\n    linkage='ward'\n)\nlabels_thresh = agg_thresh.fit_predict(X)\nprint(f'Clusters found via threshold: {agg_thresh.n_clusters_}')\nprint(f'Silhouette score (threshold): {silhouette_score(X, labels_thresh):.3f}')"
+              },
+              "exercise": {
+                "title": "Cluster Iris Flowers with Hierarchical Clustering",
+                "description": "Use agglomerative clustering on the classic Iris dataset and evaluate how well it recovers the true species labels.",
+                "steps": [
+                  "Load the Iris dataset with <code>from sklearn.datasets import load_iris</code>",
+                  "Standardize the features with <code>StandardScaler</code> (important before distance-based methods)",
+                  "Fit <code>AgglomerativeClustering(n_clusters=3, linkage='ward')</code>",
+                  "Compute the <code>adjusted_rand_score</code> between predicted labels and true labels",
+                  "Plot a dendrogram using <code>scipy.cluster.hierarchy.linkage</code> and <code>dendrogram</code>",
+                  "Try all four linkage methods and compare their ARI scores in a table"
+                ]
+              }
+            },
+            {
+              "h2": "Choosing the Number of Clusters from a Dendrogram",
+              "body": "The dendrogram reveals the natural number of clusters — look for the **largest vertical gap** (the longest horizontal line you can draw without crossing any merges). This gap corresponds to the level at which two very dissimilar clusters were merged, suggesting the merge above it was forced.\n\nAlternatively, use the **elbow method** on the merge distances stored in `Z[:, 2]` (the third column of the linkage matrix). A sharp increase signals the right cut.",
+              "code": {
+                "label": "Python - automatic cluster count from merge distances",
+                "src": "from scipy.cluster.hierarchy import linkage\nfrom sklearn.datasets import make_blobs\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nX, _ = make_blobs(n_samples=200, centers=4, cluster_std=0.6, random_state=42)\nZ = linkage(X, method='ward')\n\n# Z[:, 2] holds the distance at which each merge happened\nmerge_distances = Z[:, 2]\nlast_k = 15  # inspect the last 15 merges\n\n# Acceleration = second derivative of merge distances\naccel = np.diff(merge_distances[-last_k:], 2)\nk_suggested = accel.argmax() + 2  # +2 because diff reduces length by 2\n\nplt.figure(figsize=(8, 4))\nplt.plot(range(2, last_k), merge_distances[-last_k+2:][::-1], marker='o')\nplt.xlabel('Number of clusters k')\nplt.ylabel('Merge distance')\nplt.title(f'Elbow method suggests k = {k_suggested}')\nplt.axvline(x=k_suggested, color='red', linestyle='--')\nplt.savefig('elbow_hierarchical.png', dpi=120)\nprint(f'Suggested number of clusters: {k_suggested}')"
+              }
+            },
+            {
+              "h2": "Real-World Use Case: Customer Segmentation",
+              "body": "Hierarchical clustering excels at **customer segmentation** when you want an interpretable, exploratory view of customer groups. The dendrogram lets stakeholders visually inspect how granular the segmentation should be — from 2 broad segments down to 10 niche micro-segments — without re-running the algorithm.",
+              "code": {
+                "label": "Python - customer segmentation with hierarchical clustering",
+                "src": "import numpy as np\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.datasets import make_blobs\nimport pandas as pd\n\nnp.random.seed(42)\nn = 200\n\n# Simulate customer data: recency, frequency, monetary (RFM)\ncustomers = pd.DataFrame({\n    'recency_days':   np.random.exponential(30, n),\n    'frequency':      np.random.poisson(5, n),\n    'monetary_usd':   np.random.lognormal(4, 1, n),\n    'support_tickets': np.random.poisson(1, n),\n})\n\n# Scale — mandatory for distance-based methods\nscaler = StandardScaler()\nX = scaler.fit_transform(customers)\n\n# Cluster into 4 segments\nagg = AgglomerativeClustering(n_clusters=4, linkage='ward')\ncustomers['segment'] = agg.fit_predict(X)\n\n# Profile each segment\nprofile = customers.groupby('segment').agg(['mean', 'count'])\nprint(profile[['recency_days', 'frequency', 'monetary_usd']].round(1))\n# Segments should reveal: high-value, at-risk, new, and dormant customers"
               }
             }
           ]
