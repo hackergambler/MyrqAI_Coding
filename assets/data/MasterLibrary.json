@@ -1281,7 +1281,7 @@
           "desc": "Build leakage-proof ML pipelines with ColumnTransformer, custom transformers, and end-to-end serialization for deployment.",
           "duration": "35 min",
           "badge": "Intermediate",
-          "prev": "multimodal-inputs",
+          "prev": null,
           "next": "model-evaluation",
           "sections": [
             {
@@ -2141,7 +2141,7 @@
           "duration": "35 min",
           "badge": "Intermediate",
           "prev": "gaussian-processes",
-          "next": "transformer-architecture",
+          "next": "dbscan-clustering",
           "sections": [
             {
               "h2": "Why Stacking Beats Individual Models",
@@ -2488,7 +2488,7 @@
           "desc": "Q, K, V matrices, scaled dot-product attention, multi-head attention, positional encoding, and the complete encoder block \u2014 all implemented from scratch in NumPy and PyTorch.",
           "duration": "45 min",
           "badge": "Advanced",
-          "prev": "feature-selection",
+          "prev": null,
           "next": "rlhf-deep-dive",
           "sections": [
             {
@@ -3369,7 +3369,7 @@
           "duration": "35 min",
           "badge": "Advanced",
           "prev": "object-detection-yolo",
-          "next": "rag-production",
+          "next": "mixture-of-experts",
           "sections": [
             {
               "h2": "Why Graphs? When Tabular and Grid Data Aren't Enough",
@@ -3676,7 +3676,7 @@
           "desc": "Beyond the basic RAG tutorial: chunking strategies, hybrid BM25 + semantic search, cross-encoder re-ranking, context window management, and RAG evaluation with RAGAS.",
           "duration": "50 min",
           "badge": "Advanced",
-          "prev": "transfer-learning",
+          "prev": null,
           "next": "agent-systems",
           "sections": [
             {
