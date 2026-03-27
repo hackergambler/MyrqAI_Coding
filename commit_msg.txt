@@ -1,1 +1,1 @@
-Fix LangChain Ollama next lesson navigation link
+Add HuggingFace local inference card to local-llms course page
