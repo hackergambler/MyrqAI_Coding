@@ -276,7 +276,7 @@
           "duration": "30 min",
           "badge": "Beginner",
           "prev": "batch-processing",
-          "next": "multimodal-inputs",
+          "next": "numpy-for-ai",
           "sections": [
             {
               "h2": "Strict Mode and Schema Enforcement",
@@ -290,12 +290,57 @@
           ]
         },
         {
+          "id": "numpy-for-ai",
+          "title": "NumPy for AI: Arrays, Math & Data Prep",
+          "desc": "Master NumPy arrays, vectorized operations, broadcasting, and linear algebra — the foundation of every ML framework from scikit-learn to PyTorch.",
+          "duration": "30 min",
+          "badge": "Beginner",
+          "prev": "openai-function-calling",
+          "next": "multimodal-inputs",
+          "sections": [
+            {
+              "h2": "Why NumPy Powers Every ML Framework",
+              "body": "NumPy's ndarray is the universal currency of ML. PyTorch tensors, TensorFlow tensors, and pandas DataFrames all convert to/from NumPy arrays. Vectorized operations run in C, making them 100–1000x faster than Python loops — critical when processing millions of data points.",
+              "tip": "Always prefer vectorized NumPy operations over Python loops. If you find yourself writing `for i in range(len(arr)):`, there's almost certainly a faster NumPy equivalent.",
+              "code": {
+                "label": "Python - NumPy arrays vs Python lists (speed comparison)",
+                "src": "import numpy as np\nimport time\n\n# Python list approach\ndata = list(range(1_000_000))\nstart = time.time()\nresult = [x * 2 + 1 for x in data]\nprint(f\"Python loop: {time.time() - start:.3f}s\")\n\n# NumPy vectorized approach\narr = np.arange(1_000_000)\nstart = time.time()\nresult = arr * 2 + 1  # operates on entire array at once\nprint(f\"NumPy vectorized: {time.time() - start:.3f}s\")\n\n# Array creation patterns used in ML\nzeros = np.zeros((3, 4))          # zero matrix — common weight initialization\nones  = np.ones((2, 5))           # ones matrix\nrand  = np.random.randn(100, 10)  # standard normal — Xavier init style\nlinsp = np.linspace(0, 1, 50)     # evenly spaced — for plotting losses\n\nprint(rand.shape, rand.dtype)     # (100, 10) float64"
+              }
+            },
+            {
+              "h2": "Indexing, Slicing & Reshaping",
+              "body": "Slicing NumPy arrays is how you extract features, split datasets, and feed batches to models. Boolean indexing filters rows by condition — replacing slow loops with single expressions. Reshape and transpose reorder dimensions to match what a model layer expects.",
+              "code": {
+                "label": "Python - slicing, boolean indexing, reshape",
+                "src": "import numpy as np\n\n# Simulate a dataset: 1000 samples, 5 features\nX = np.random.randn(1000, 5)\ny = (X[:, 0] + X[:, 1] > 0).astype(int)  # binary labels\n\n# Slicing: first 800 rows = train, last 200 = test\nX_train, X_test = X[:800], X[800:]\ny_train, y_test = y[:800], y[800:]\nprint(f\"Train: {X_train.shape}, Test: {X_test.shape}\")\n\n# Boolean indexing: filter only positive-label rows\npos_mask = y_train == 1\nX_pos = X_train[pos_mask]\nprint(f\"Positive samples: {X_pos.shape}\")\n\n# Reshape: flatten 2D array to 1D (e.g., before a Dense layer)\nflat = X_train.reshape(-1)       # all elements in one vector\nbatch = X_train.reshape(8, -1)   # 8 batches of equal size\nprint(f\"Batched shape: {batch.shape}\")\n\n# Transpose: (1000, 5) -> (5, 1000) — needed for some matrix ops\nX_T = X.T\nprint(f\"Transposed: {X_T.shape}\")"
+              }
+            },
+            {
+              "h2": "Linear Algebra Operations for ML",
+              "body": "Matrix multiplication, dot products, and norms are the core of neural network forward passes, similarity search, and PCA. NumPy's `linalg` module covers everything from inverses to eigendecomposition — operations that underpin PCA, SVD, and least-squares regression.",
+              "code": {
+                "label": "Python - matrix math, dot products, norms",
+                "src": "import numpy as np\n\n# Matrix multiplication — the core of every neural net layer\n# Forward pass: output = input @ weights + bias\nX      = np.random.randn(32, 128)  # batch of 32, 128 input features\nW      = np.random.randn(128, 64)  # weight matrix\nb      = np.zeros(64)              # bias vector\nout    = X @ W + b                 # shape: (32, 64)\nprint(f\"Layer output: {out.shape}\")\n\n# Dot product — used in attention scores and cosine similarity\nv1 = np.array([1.0, 2.0, 3.0])\nv2 = np.array([4.0, 5.0, 6.0])\ndot = np.dot(v1, v2)  # 32.0\nprint(f\"Dot product: {dot}\")\n\n# Cosine similarity — used in embedding search\ndef cosine_sim(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\nprint(f\"Cosine similarity: {cosine_sim(v1, v2):.4f}\")\n\n# Least-squares regression via normal equation: w = (X^T X)^-1 X^T y\nnp.random.seed(42)\nX_data = np.c_[np.ones(100), np.random.randn(100, 2)]  # add bias column\ntrue_w = np.array([1.0, 2.0, -1.5])\ny_data = X_data @ true_w + np.random.randn(100) * 0.1\n\n# Solve analytically\nw_hat = np.linalg.lstsq(X_data, y_data, rcond=None)[0]\nprint(f\"Estimated weights: {w_hat.round(2)}\")"
+              }
+            },
+            {
+              "h2": "Broadcasting & Normalization",
+              "body": "Broadcasting lets NumPy operate on arrays of different shapes without copying data. It's the mechanism behind feature normalization, adding biases across a batch, and computing pairwise distances — all without explicit loops.",
+              "tip": "Normalization is non-negotiable before training. Unnormalized features cause gradient descent to oscillate wildly — one feature on a 0–1 scale and another on 0–10,000 will dominate the loss landscape.",
+              "code": {
+                "label": "Python - broadcasting, standardization, min-max scaling",
+                "src": "import numpy as np\n\n# Dataset: 500 samples, 4 features with very different scales\nnp.random.seed(0)\nX = np.column_stack([\n    np.random.randint(20, 70, 500),        # age: 20-70\n    np.random.randint(30000, 200000, 500), # salary: 30k-200k\n    np.random.uniform(0, 1, 500),          # score: 0-1\n    np.random.randint(0, 50, 500),         # years_exp: 0-50\n]).astype(float)\n\n# Z-score standardization (mean=0, std=1) — most common for neural nets\nmean = X.mean(axis=0)  # shape (4,) — one mean per feature\nstd  = X.std(axis=0)\nX_std = (X - mean) / std  # broadcasting: (500,4) - (4,) works automatically\nprint(f\"Standardized mean: {X_std.mean(axis=0).round(3)}\")\nprint(f\"Standardized std:  {X_std.std(axis=0).round(3)}\")\n\n# Min-max scaling to [0, 1] — useful for image pixel values\nX_min = X.min(axis=0)\nX_max = X.max(axis=0)\nX_norm = (X - X_min) / (X_max - X_min)\nprint(f\"Min-max range: [{X_norm.min():.2f}, {X_norm.max():.2f}]\")"
+              }
+            }
+          ]
+        },
+        {
           "id": "multimodal-inputs",
           "title": "Multimodal AI: Vision, Audio and Documents",
           "desc": "Send images, audio, and PDFs to GPT-4o and Claude. Extract text from images, transcribe audio, analyze charts, and build document Q&A pipelines.",
           "duration": "30 min",
           "badge": "Beginner",
-          "prev": "openai-function-calling",
+          "prev": "numpy-for-ai",
           "next": "sklearn-pipelines",
           "sections": [
             {
