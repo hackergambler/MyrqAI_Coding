@@ -1,1 +1,1 @@
-Add Constitutional AI and RLAIF lesson to MasterLibrary
+Add Graph Neural Networks lesson to MasterLibrary
