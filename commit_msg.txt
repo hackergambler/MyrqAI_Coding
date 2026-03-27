@@ -1,1 +1,1 @@
-Fix lesson count and remove duplicate sidebar entries
+Fix Claude tutorial lesson navigation order
