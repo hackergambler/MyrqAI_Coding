@@ -1,1 +1,1 @@
-Fix agents tutorial navigation links between lessons
+Fix incorrect lesson link in Gemini course sidebar
