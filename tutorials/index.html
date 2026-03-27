@@ -677,5 +677,16 @@
     <script src="../assets/js/ContentEngine.js"></script>
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
+    <script>
+        // Filter button active state toggle within each group
+        document.querySelectorAll('.filter-group').forEach(group => {
+            group.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
