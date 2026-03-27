@@ -1,1 +1,1 @@
-Add RLHF lesson and update MasterLibrary content
+Add object detection lesson and update MasterLibrary content
