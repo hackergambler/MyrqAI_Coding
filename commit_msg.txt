@@ -1,1 +1,1 @@
-Fix tutorial card links to point to specific lesson pages
+Fix project card tutorial links by difficulty level
