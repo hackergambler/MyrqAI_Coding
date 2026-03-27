@@ -1,1 +1,1 @@
-Fix Claude tutorial nav order: messages-api → prompt-caching → tool-use
+Update Claude course sidebar lesson names and descriptions
