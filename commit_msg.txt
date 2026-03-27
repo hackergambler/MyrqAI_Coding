@@ -1,1 +1,1 @@
-Add debugging lab link to debugging index page
+Fix beginner tutorial card links to correct pages
