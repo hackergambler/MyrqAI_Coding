@@ -1,1 +1,1 @@
-Add Python logging and error handling lesson to MasterLibrary
+Fix exercise JSON structure in MasterLibrary lesson
