@@ -1,1 +1,1 @@
-Add diffusion models DDPM lesson to MasterLibrary
+Add Gaussian Processes lesson to MasterLibrary
