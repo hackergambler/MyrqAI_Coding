@@ -1,1 +1,1 @@
-Fix structured-outputs lesson ID and navigation links
+Add LLM caching strategies lesson with Redis and semantic cache

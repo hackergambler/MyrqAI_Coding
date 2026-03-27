@@ -1984,7 +1984,7 @@
           "duration": "40 min",
           "badge": "Advanced",
           "prev": "streaming-llm-responses",
-          "next": null,
+          "next": "llm-caching",
           "sections": [
             {
               "h2": "Why Structured Outputs Matter",
@@ -2017,6 +2017,51 @@
               "code": {
                 "label": "Python - resume parser skeleton",
                 "src": "from pydantic import BaseModel, Field\nfrom openai import OpenAI\nfrom enum import Enum\n\nclient = OpenAI()\n\nclass SeniorityLevel(str, Enum):\n    junior = 'junior'\n    mid    = 'mid'\n    senior = 'senior'\n    staff  = 'staff'\n\nclass Education(BaseModel):\n    degree: str\n    institution: str\n\nclass Resume(BaseModel):\n    name: str\n    email: str\n    years_experience: int\n    skills: list[str]\n    education: list[Education]\n    summary: str = Field(max_length=150)\n    seniority_level: SeniorityLevel\n\nRAW_RESUME = \"\"\"\nJane Doe | jane@example.com\n8 years in ML engineering. Led teams at Google Brain and Stripe.\nSkills: Python, PyTorch, Kubernetes, MLflow, SQL\nMS Computer Science, Stanford (2016)\n\"\"\"\n\ncompletion = client.beta.chat.completions.parse(\n    model='gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'Extract resume data accurately.'},\n        {'role': 'user',   'content': RAW_RESUME}\n    ],\n    response_format=Resume,\n)\n\nr: Resume = completion.choices[0].message.parsed\nprint(f'Name:        {r.name}')\nprint(f'Email:       {r.email}')\nprint(f'Experience:  {r.years_experience} years  [{r.seniority_level}]')\nprint(f'Skills:      {', '.join(r.skills)}')\nprint(f'Education:   {[(e.degree, e.institution) for e in r.education]}')\nprint(f'Summary:     {r.summary}')"
+              }
+            }
+          ]
+        },
+        {
+          "id": "llm-caching",
+          "title": "LLM Caching Strategies: Cut Costs and Latency",
+          "desc": "Implement semantic caching, prompt prefix caching, and exact-match caching to reduce API costs by up to 90% and slash response latency for repeated or similar queries.",
+          "duration": "35 min",
+          "badge": "Advanced",
+          "prev": "structured-outputs",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Cache LLM Responses",
+              "body": "LLM API calls are expensive and slow. A GPT-4o call costs ~$5/M tokens and takes 2–10 seconds. Many production apps repeatedly ask similar or identical questions — a customer support bot sees the same FAQs thousands of times a day. Caching short-circuits the API call and returns a stored answer in milliseconds at near-zero cost. Three strategies exist: exact-match (identical prompts), semantic (similar meaning), and prefix caching (shared system prompt tokens).",
+              "tip": "Start with exact-match caching — it is trivial to implement and often covers 30–50% of traffic in production chatbots and pipelines.",
+              "code": {
+                "label": "Python - exact-match cache with Redis TTL",
+                "src": "import hashlib, json\nfrom openai import OpenAI\nimport redis\n\nclient = OpenAI()\ncache = redis.Redis(host='localhost', port=6379, decode_responses=True)\nCACHE_TTL = 3600  # seconds\n\ndef cache_key(messages: list, model: str) -> str:\n    \"\"\"Deterministic hash of the full prompt.\"\"\"\n    payload = json.dumps({'model': model, 'messages': messages}, sort_keys=True)\n    return 'llm:' + hashlib.sha256(payload.encode()).hexdigest()\n\ndef cached_completion(messages: list, model='gpt-4o-mini') -> str:\n    key = cache_key(messages, model)\n\n    # 1. Check cache\n    hit = cache.get(key)\n    if hit:\n        print('[CACHE HIT]')\n        return hit\n\n    # 2. Cache miss — call the API\n    print('[API CALL]')\n    resp = client.chat.completions.create(model=model, messages=messages)\n    answer = resp.choices[0].message.content\n\n    # 3. Store with TTL\n    cache.setex(key, CACHE_TTL, answer)\n    return answer\n\n# First call → API CALL\nprint(cached_completion([{'role': 'user', 'content': 'What is gradient descent?'}]))\n# Second identical call → CACHE HIT (instant, free)\nprint(cached_completion([{'role': 'user', 'content': 'What is gradient descent?'}]))"
+              }
+            },
+            {
+              "h2": "Semantic Caching with Embeddings",
+              "body": "Exact-match caching misses paraphrases: 'What is backprop?' and 'Explain backpropagation' are different strings but mean the same thing. Semantic caching embeds each query, stores the vector, and on a new query finds the nearest cached vector. If cosine similarity exceeds a threshold (typically 0.92–0.96), return the cached answer instead of calling the LLM.",
+              "tip": "Tune your similarity threshold carefully. Too low (0.85) returns wrong cached answers; too high (0.99) misses near-duplicates. 0.92–0.95 works well for most FAQ-style workloads.",
+              "code": {
+                "label": "Python - semantic cache with FAISS",
+                "src": "import numpy as np\nimport faiss\nfrom openai import OpenAI\n\nclient = OpenAI()\nDIM = 1536   # text-embedding-3-small dimension\nTHRESHOLD = 0.92\n\n# In-memory stores (use Redis + FAISS on disk in production)\nindex = faiss.IndexFlatIP(DIM)   # inner product = cosine similarity on unit vecs\ncached_answers: list[str] = []\ncached_queries: list[str] = []\n\ndef embed(text: str) -> np.ndarray:\n    resp = client.embeddings.create(model='text-embedding-3-small', input=text)\n    vec = np.array(resp.data[0].embedding, dtype=np.float32)\n    return vec / np.linalg.norm(vec)  # normalize for cosine similarity\n\ndef semantic_cached_completion(query: str) -> str:\n    vec = embed(query).reshape(1, -1)\n\n    if index.ntotal > 0:\n        scores, ids = index.search(vec, 1)\n        if scores[0][0] >= THRESHOLD:\n            matched = cached_queries[ids[0][0]]\n            print(f'[SEMANTIC HIT] matched: \"{matched}\" (score {scores[0][0]:.3f})')\n            return cached_answers[ids[0][0]]\n\n    print('[API CALL]')\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': query}]\n    )\n    answer = resp.choices[0].message.content\n\n    # Store in cache\n    index.add(vec)\n    cached_answers.append(answer)\n    cached_queries.append(query)\n    return answer\n\nprint(semantic_cached_completion('What is gradient descent?'))\n# Paraphrase hits the cache\nprint(semantic_cached_completion('Can you explain gradient descent to me?'))"
+              }
+            },
+            {
+              "h2": "Prompt Prefix Caching (Anthropic / OpenAI)",
+              "body": "Both Anthropic and OpenAI offer server-side prompt caching at the API level. When you send the same long system prompt repeatedly, the provider caches the KV (key-value) attention states for those tokens. Subsequent calls with the same prefix skip recomputing them — you get a 50–90% discount on cached input tokens and lower latency. This is automatic on Anthropic for prompts over 1024 tokens; on OpenAI you enable it per-request.",
+              "code": {
+                "label": "Python - Anthropic prompt caching for long system prompts",
+                "src": "import anthropic\n\nclient = anthropic.Anthropic()\n\n# A long document loaded once and cached across all user queries\nLONG_DOCUMENT = open('policy_manual.txt').read()  # e.g. 50,000 tokens\n\ndef ask_about_document(question: str) -> str:\n    response = client.messages.create(\n        model='claude-opus-4-6',\n        max_tokens=1024,\n        system=[\n            {\n                'type': 'text',\n                'text': f'You are a policy assistant. Use this document to answer questions:\\n\\n{LONG_DOCUMENT}',\n                'cache_control': {'type': 'ephemeral'},  # cache these tokens\n            }\n        ],\n        messages=[{'role': 'user', 'content': question}],\n    )\n\n    usage = response.usage\n    cache_read = getattr(usage, 'cache_read_input_tokens', 0)\n    cache_write = getattr(usage, 'cache_creation_input_tokens', 0)\n    print(f'Cache write: {cache_write} | Cache read: {cache_read} | Output: {usage.output_tokens}')\n    return response.content[0].text\n\n# First call: pays for cache write (discounted vs normal)\nprint(ask_about_document('What is the vacation policy?'))\n# Second call: reads from cache at 90% discount\nprint(ask_about_document('How many sick days do employees get?'))"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a **cached Q&A chatbot** that combines exact-match and semantic caching:\n\n1. Use an in-memory dict for exact-match cache (keyed by SHA-256 of query).\n2. Use OpenAI embeddings + a simple list + cosine similarity for semantic cache (threshold 0.93).\n3. On each query: check exact cache → check semantic cache → call API.\n4. Print which cache layer was hit (or `[API]` if neither).\n5. Track and display hit rates after 10 test queries.\n\nTest queries to run (in order):\n```\n1. What is a transformer model?\n2. What is a transformer model?          # exact hit\n3. Explain transformer models to me      # semantic hit\n4. What is BERT?\n5. Can you explain what BERT is?         # semantic hit\n```\n\nExpected: ~60% cache hit rate after 5 queries.",
+              "code": {
+                "label": "Python - combined cache skeleton",
+                "src": "import hashlib, json\nimport numpy as np\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# --- exact cache ---\nexact_cache: dict[str, str] = {}\n\n# --- semantic cache ---\nsem_queries: list[str] = []\nsem_answers: list[str] = []\nsem_vectors: list[np.ndarray] = []\nTHRESHOLD = 0.93\n\nstats = {'exact': 0, 'semantic': 0, 'api': 0}\n\ndef embed(text: str) -> np.ndarray:\n    r = client.embeddings.create(model='text-embedding-3-small', input=text)\n    v = np.array(r.data[0].embedding, dtype=np.float32)\n    return v / np.linalg.norm(v)\n\ndef cosine(a: np.ndarray, b: np.ndarray) -> float:\n    return float(np.dot(a, b))\n\ndef ask(query: str) -> str:\n    # 1. Exact match\n    key = hashlib.sha256(query.encode()).hexdigest()\n    if key in exact_cache:\n        stats['exact'] += 1\n        print(f'[EXACT HIT]   {query[:50]}')\n        return exact_cache[key]\n\n    # 2. Semantic match\n    vec = embed(query)\n    for i, sv in enumerate(sem_vectors):\n        if cosine(vec, sv) >= THRESHOLD:\n            stats['semantic'] += 1\n            print(f'[SEMANTIC HIT] {query[:50]} ~ \"{sem_queries[i][:40]}\"')\n            return sem_answers[i]\n\n    # 3. API call\n    stats['api'] += 1\n    print(f'[API]         {query[:50]}')\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': query}]\n    )\n    answer = resp.choices[0].message.content\n    exact_cache[key] = answer\n    sem_queries.append(query)\n    sem_answers.append(answer)\n    sem_vectors.append(vec)\n    return answer\n\ntest_qs = [\n    'What is a transformer model?',\n    'What is a transformer model?',\n    'Explain transformer models to me',\n    'What is BERT?',\n    'Can you explain what BERT is?',\n]\nfor q in test_qs:\n    ask(q)\n\ntotal = sum(stats.values())\nprint(f'\\nHit rate: {(stats[\"exact\"]+stats[\"semantic\"])/total*100:.0f}%  (exact={stats[\"exact\"]}, semantic={stats[\"semantic\"]}, api={stats[\"api\"]})')"
               }
             }
           ]
