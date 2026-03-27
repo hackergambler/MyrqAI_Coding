@@ -1,1 +1,1 @@
-Fix LangChain getting-started prev lesson link to Claude Vision
+Fix Gemini function-calling next lesson navigation link
