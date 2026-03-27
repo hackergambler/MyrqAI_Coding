@@ -37,7 +37,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          MAX_RUNS=10
+          MAX_RUNS=50
           COUNT=0
 
           echo "🚀 Starting Autonomous AI Dev System..."
