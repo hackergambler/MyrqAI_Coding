@@ -1,1 +1,1 @@
-Add active learning lesson to MasterLibrary
+Add adversarial training lesson to MasterLibrary
