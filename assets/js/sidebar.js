@@ -7,41 +7,25 @@ async function initSidebar() {
     if (!sidebarContainer) return;
 
     try {
-        const response = await fetch('../assets/data/master_library.json');
+        const response = await fetch('../assets/data/MasterLibrary.json');
         const data = await response.json();
-        const lessons = data.lessons;
+        const tracks = data.tracks;
 
-        // 1. Group lessons by Tier
-        const TIER_LABELS = {
-            "foundations": "Level 1: Foundations",
-            "machine_learning": "Level 2: Core ML",
-            "deep_learning": "Level 3: Deep Engine",
-            "modern_ai": "Level 4: Modern Expert"
-        };
-
-        const grouped = {};
-        Object.keys(TIER_LABELS).forEach(tier => grouped[tier] = []);
-        
-        Object.entries(lessons).forEach(([id, info]) => {
-            if (grouped[info.tier]) {
-                grouped[info.tier].push({ id, ...info });
-            }
-        });
-
-        // 2. Build HTML
+        // 1. Build HTML from tracks array
         let html = '';
-        Object.entries(TIER_LABELS).forEach(([tierKey, label]) => {
-            const tierLessons = grouped[tierKey];
+        tracks.forEach(track => {
+            const label = `Level ${track.tier}: ${track.title}`;
+            const lessons = track.lessons || [];
             html += `
                 <div class="sidebar-tier">
                     <button class="tier-trigger" onclick="this.parentElement.classList.toggle('active')">
                         <span class="tier-icon">▹</span>
                         <span class="tier-title">${label}</span>
-                        <span class="tier-count">${tierLessons.length}</span>
+                        <span class="tier-count">${lessons.length}</span>
                     </button>
                     <div class="tier-content">
-                        ${tierLessons.map(l => `
-                            <a href="${l.url}" class="sidebar-item ${window.location.search.includes(l.id) ? 'active' : ''}">
+                        ${lessons.map(l => `
+                            <a href="/learn/lesson.html?id=${l.id}&type=lesson" class="sidebar-item ${window.location.search.includes(l.id) ? 'active' : ''}">
                                 <span class="item-id">${l.id.split('-')[0]}</span>
                                 <span class="item-title">${l.title}</span>
                             </a>

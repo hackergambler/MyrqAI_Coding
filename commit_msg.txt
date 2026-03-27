@@ -1,1 +1,1 @@
-Add SVM lesson to MasterLibrary
+Update sidebar to use new MasterLibrary tracks structure
