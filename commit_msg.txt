@@ -1,1 +1,1 @@
-Fix project card links to point to correct pages
+Fix project card link to workflow-automation page
