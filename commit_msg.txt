@@ -1,1 +1,1 @@
-Add prompt-caching link and clear commit message file
+Fix broken OpenAI chat completions tutorial link
