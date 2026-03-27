@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming RAG — Real-Time Answer Generation | AI Coding Academy</title>
+    <meta name="description" content="Stream RAG answers token-by-token for a responsive UX. Learn to stream with LangChain, OpenAI, and raw SSE in Python — with full working code examples.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .lesson-container { max-width: 900px; margin: 0 auto; padding: calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl); }
+        .lesson-header { margin-bottom: var(--space-3xl); }
+        .lesson-meta { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+        .lesson-meta-item { display: flex; align-items: center; gap: var(--space-xs); font-size: 0.9rem; color: var(--text-muted); }
+        .lesson-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); margin-bottom: var(--space-lg); line-height: 1.2; }
+        .lesson-description { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.7; }
+        .lesson-content { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-2xl); margin-bottom: var(--space-2xl); }
+        .lesson-content h2 { font-family: var(--font-heading); font-size: 1.5rem; margin: var(--space-2xl) 0 var(--space-lg); color: var(--accent-primary); }
+        .lesson-content h2:first-child { margin-top: 0; }
+        .lesson-content h3 { font-family: var(--font-heading); font-size: 1.2rem; margin: var(--space-xl) 0 var(--space-md); color: var(--accent-secondary); }
+        .lesson-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); }
+        .lesson-content ul, .lesson-content ol { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); padding-left: var(--space-xl); }
+        .lesson-content li { margin-bottom: var(--space-sm); }
+        .lesson-content code { background: rgba(0,255,170,0.1); color: var(--accent-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; overflow-x: auto; position: relative; }
+        .code-block-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center; }
+        .code-block-label .copy-btn { cursor: pointer; color: var(--accent-primary); border: 1px solid var(--accent-primary); background: transparent; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.65; color: #e6edf3; white-space: pre; }
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .tip-box { background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .tip-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-primary); margin-bottom: var(--space-sm); }
+        .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .warn-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-warning); margin-bottom: var(--space-sm); }
+        .info-box { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .info-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .tip-box p, .warn-box p, .info-box p { margin: 0; color: var(--text-secondary); line-height: 1.7; }
+        .toc { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-2xl); }
+        .toc h3 { font-family: var(--font-heading); color: var(--accent-primary); margin-bottom: var(--space-md); }
+        .toc ol { padding-left: var(--space-xl); color: var(--text-secondary); }
+        .toc li { margin-bottom: var(--space-xs); }
+        .toc a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+        .lesson-nav { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); }
+        .lesson-nav a { flex: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; transition: var(--transition-base); }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); }
+        .lesson-nav .next { text-align: right; }
+        @media (max-width: 768px) { .lesson-nav { flex-direction: column; } .lesson-nav .next { text-align: left; } }
+    </style>
+</head><body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+                <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+            <ul class="nav-menu">
+                <li><a href="../../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search..."><kbd>⌘K</kbd></div>
+                <a href="../../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+    <div class="lesson-container">
+        <div class="breadcrumb">
+            <a href="../../index.html">Home</a><span class="separator">/</span>
+            <a href="../index.html">Tutorials</a><span class="separator">/</span>
+            <a href="../../courses/rag.html">RAG</a><span class="separator">/</span>
+            <span>Streaming RAG</span>
+        </div>
+        <header class="lesson-header">
+            <div class="lesson-meta">
+                <span class="badge badge-intermediate">Intermediate</span>
+                <span class="lesson-meta-item">⏱️ 20 min</span>
+            </div>
+            <h1 class="lesson-title">Streaming RAG: Real-Time Answer Generation</h1>
+            <p class="lesson-description">Waiting for a full RAG response feels slow. Streaming delivers tokens as they're generated — giving users instant feedback. Learn to stream RAG answers with LangChain, the OpenAI SDK, and Server-Sent Events for the web.</p>
+        </header>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="toc">
+            <h3>In This Lesson</h3>
+            <ol>
+                <li><a href="#why-stream">Why Stream RAG Answers?</a></li>
+                <li><a href="#langchain-stream">Streaming with LangChain</a></li>
+                <li><a href="#openai-stream">Streaming with OpenAI SDK Directly</a></li>
+                <li><a href="#fastapi-sse">Serving Streams via FastAPI + SSE</a></li>
+                <li><a href="#exercise">Hands-on Exercise</a></li>
+            </ol>
+        </nav>
+
+        <div class="lesson-content">
+            <h2 id="why-stream">Why Stream RAG Answers?</h2>
+            <p>A standard RAG call waits until the LLM finishes generating before sending anything back. For a 200-token answer at typical GPT-4o speed (~50 tokens/sec), that's a 4-second blank wait. Streaming fixes this by sending tokens as they arrive, making the UI feel instant.</p>
+            <ul>
+                <li><strong>Perceived latency drops</strong> — users see the first word in &lt;1 second instead of waiting 4+ seconds</li>
+                <li><strong>Early exit</strong> — users can interrupt generation if the answer is already clear</li>
+                <li><strong>Live progress</strong> — ideal for long answers like summaries or step-by-step explanations</li>
+            </ul>
+            <div class="info-box"><div class="info-box-title">ℹ️ Retrieval is not streamed</div><p>Only the LLM <em>generation</em> step can be streamed. The retrieval step (embedding + vector search) still runs synchronously upfront — typically in 100–300 ms — before the first token is sent.</p></div>
+
+            <h2 id="langchain-stream">Streaming with LangChain</h2>
+            <p>LangChain's LCEL (LangChain Expression Language) chains expose a <code>.stream()</code> method that yields chunks as the LLM generates them. Enabling it requires no special setup — just swap <code>.invoke()</code> for <code>.stream()</code>.</p>
+<div class="code-block">
+<div class="code-block-label"><span>bash — install dependencies</span><button class="copy-btn">Copy</button></div>
+<pre>pip install langchain langchain-openai langchain-community faiss-cpu</pre>
+</div>
+
+<div class="code-block">
+<div class="code-block-label"><span>Python — streaming RAG with LangChain LCEL</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI, OpenAIEmbeddings
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+<span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnablePassthrough
+<span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> StrOutputParser
+<span class="kw">import</span> os
+
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+<span class="cm"># Build a small vector store</span>
+docs = [
+    <span class="st">"Python's asyncio library enables single-threaded concurrent I/O."</span>,
+    <span class="st">"FastAPI is built on top of Starlette and uses asyncio natively."</span>,
+    <span class="st">"Server-Sent Events (SSE) push updates from server to browser over HTTP."</span>,
+    <span class="st">"LangChain's .stream() method yields AIMessageChunk objects."</span>,
+]
+vectorstore = FAISS.from_texts(docs, OpenAIEmbeddings())
+retriever = vectorstore.as_retriever(search_kwargs={<span class="st">"k"</span>: <span class="nu">2</span>})
+
+<span class="cm"># Build the RAG prompt</span>
+prompt = ChatPromptTemplate.from_template(
+    <span class="st">"""Answer the question using only the context below.
+
+Context: {context}
+
+Question: {question}
+Answer:"""</span>
+)
+
+<span class="cm"># LCEL chain</span>
+rag_chain = (
+    {<span class="st">"context"</span>: retriever, <span class="st">"question"</span>: RunnablePassthrough()}
+    | prompt
+    | ChatOpenAI(model=<span class="st">"gpt-4o-mini"</span>, temperature=<span class="nu">0</span>)
+    | StrOutputParser()
+)
+
+<span class="cm"># Stream tokens to stdout</span>
+<span class="kw">print</span>(<span class="st">"Answer: "</span>, end=<span class="st">""</span>, flush=<span class="kw">True</span>)
+<span class="kw">for</span> chunk <span class="kw">in</span> rag_chain.stream(<span class="st">"What is FastAPI built on?"</span>):
+    <span class="kw">print</span>(chunk, end=<span class="st">""</span>, flush=<span class="kw">True</span>)
+<span class="kw">print</span>()  <span class="cm"># newline after done</span></pre>
+</div>
+            <div class="tip-box"><div class="tip-box-title">💡 StrOutputParser is required</div><p>Without <code>StrOutputParser()</code>, <code>.stream()</code> yields <code>AIMessageChunk</code> objects. The parser extracts the <code>.content</code> string automatically, giving you clean token strings.</p></div>
+
+            <h2 id="openai-stream">Streaming with OpenAI SDK Directly</h2>
+            <p>If you're not using LangChain, the OpenAI SDK's <code>stream=True</code> flag gives the same effect. You retrieve context yourself, then pass it to a streaming chat completion.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — streaming RAG with raw OpenAI SDK</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">import</span> os
+
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+client = OpenAI()
+embeddings = OpenAIEmbeddings()
+
+<span class="cm"># Build vector store (same as before)</span>
+docs = [
+    <span class="st">"Python's asyncio library enables single-threaded concurrent I/O."</span>,
+    <span class="st">"FastAPI is built on top of Starlette and uses asyncio natively."</span>,
+    <span class="st">"Server-Sent Events (SSE) push updates from server to browser over HTTP."</span>,
+]
+vectorstore = FAISS.from_texts(docs, embeddings)
+
+<span class="kw">def</span> <span class="fn">stream_rag</span>(question: <span class="cl">str</span>):
+    <span class="cm"># 1. Retrieve relevant chunks</span>
+    results = vectorstore.similarity_search(question, k=<span class="nu">2</span>)
+    context = <span class="st">"\n"</span>.join(r.page_content <span class="kw">for</span> r <span class="kw">in</span> results)
+
+    <span class="cm"># 2. Stream generation with context injected</span>
+    stream = client.chat.completions.create(
+        model=<span class="st">"gpt-4o-mini"</span>,
+        stream=<span class="kw">True</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"Answer only from the provided context."</span>},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"Context:\n{context}\n\nQuestion: {question}"</span>},
+        ],
+    )
+
+    <span class="cm"># 3. Yield each token chunk</span>
+    <span class="kw">for</span> chunk <span class="kw">in</span> stream:
+        delta = chunk.choices[<span class="nu">0</span>].delta.content
+        <span class="kw">if</span> delta:
+            <span class="kw">yield</span> delta
+
+<span class="cm"># Print streaming output</span>
+<span class="kw">for</span> token <span class="kw">in</span> stream_rag(<span class="st">"What is SSE?"</span>):
+    <span class="kw">print</span>(token, end=<span class="st">""</span>, flush=<span class="kw">True</span>)
+<span class="kw">print</span>()</pre>
+</div>
+
+            <h2 id="fastapi-sse">Serving Streams via FastAPI + SSE</h2>
+            <p>To stream RAG answers to a web browser, use <strong>Server-Sent Events (SSE)</strong> — a simple HTTP protocol where the server pushes newline-delimited <code>data:</code> frames. FastAPI's <code>StreamingResponse</code> makes this trivial.</p>
+<div class="code-block">
+<div class="code-block-label"><span>bash — install FastAPI + Uvicorn</span><button class="copy-btn">Copy</button></div>
+<pre>pip install fastapi uvicorn</pre>
+</div>
+
+<div class="code-block">
+<div class="code-block-label"><span>Python — FastAPI streaming RAG endpoint</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> StreamingResponse
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">import</span> asyncio, os
+
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+app = FastAPI()
+client = OpenAI()
+
+<span class="cm"># Build vector store at startup</span>
+docs = [
+    <span class="st">"Python's asyncio library enables single-threaded concurrent I/O."</span>,
+    <span class="st">"FastAPI is built on top of Starlette and uses asyncio natively."</span>,
+    <span class="st">"Server-Sent Events push updates from server to browser over HTTP."</span>,
+]
+vectorstore = FAISS.from_texts(docs, OpenAIEmbeddings())
+
+<span class="kw">async def</span> <span class="fn">rag_stream_generator</span>(question: <span class="cl">str</span>):
+    <span class="cm"># Retrieve synchronously (fast, ~100ms)</span>
+    results = vectorstore.similarity_search(question, k=<span class="nu">2</span>)
+    context = <span class="st">"\n"</span>.join(r.page_content <span class="kw">for</span> r <span class="kw">in</span> results)
+
+    <span class="cm"># SSE format: each frame is "data: &lt;token&gt;\n\n"</span>
+    stream = client.chat.completions.create(
+        model=<span class="st">"gpt-4o-mini"</span>,
+        stream=<span class="kw">True</span>,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"Answer only from context."</span>},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"Context:\n{context}\n\nQuestion: {question}"</span>},
+        ],
+    )
+    <span class="kw">for</span> chunk <span class="kw">in</span> stream:
+        token = chunk.choices[<span class="nu">0</span>].delta.content
+        <span class="kw">if</span> token:
+            <span class="kw">yield</span> <span class="st">f"data: {token}\n\n"</span>
+            <span class="kw">await</span> asyncio.sleep(<span class="nu">0</span>)  <span class="cm"># yield control to event loop</span>
+    <span class="kw">yield</span> <span class="st">"data: [DONE]\n\n"</span>
+
+<span class="cl">@app</span>.get(<span class="st">"/rag/stream"</span>)
+<span class="kw">async def</span> <span class="fn">stream_answer</span>(q: <span class="cl">str</span>):
+    <span class="kw">return</span> StreamingResponse(
+        rag_stream_generator(q),
+        media_type=<span class="st">"text/event-stream"</span>,
+        headers={<span class="st">"Cache-Control"</span>: <span class="st">"no-cache"</span>, <span class="st">"X-Accel-Buffering"</span>: <span class="st">"no"</span>},
+    )
+
+<span class="cm"># Run: uvicorn app:app --reload</span>
+<span class="cm"># Test: curl "http://localhost:8000/rag/stream?q=What+is+FastAPI"</span></pre>
+</div>
+            <div class="warn-box"><div class="warn-box-title">⚠️ Disable proxy buffering</div><p>Nginx and other reverse proxies buffer responses by default, which defeats streaming. Set <code>X-Accel-Buffering: no</code> in the response headers (shown above) and add <code>proxy_buffering off;</code> in your Nginx config.</p></div>
+
+            <h3>Consuming SSE in the browser</h3>
+<div class="code-block">
+<div class="code-block-label"><span>JavaScript — reading the SSE stream</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">const</span> source = <span class="kw">new</span> <span class="cl">EventSource</span>(<span class="st">"/rag/stream?q=What+is+FastAPI"</span>);
+<span class="kw">const</span> output = document.<span class="fn">getElementById</span>(<span class="st">"answer"</span>);
+
+source.<span class="fn">addEventListener</span>(<span class="st">"message"</span>, (e) =&gt; {
+  <span class="kw">if</span> (e.data === <span class="st">"[DONE]"</span>) { source.<span class="fn">close</span>(); <span class="kw">return</span>; }
+  output.textContent += e.data;  <span class="cm">// append each token</span>
+});
+
+source.<span class="fn">addEventListener</span>(<span class="st">"error"</span>, () =&gt; source.<span class="fn">close</span>());</pre>
+</div>
+
+            <h2 id="exercise">Hands-on Exercise</h2>
+            <p>Build a streaming Q&amp;A endpoint over a small product FAQ and measure time-to-first-token (TTFT) vs. a non-streaming call.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — exercise: measure TTFT for streaming vs blocking</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">import</span> time
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">import</span> os
+
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+client = OpenAI()
+faq = [
+    <span class="st">"Refunds are processed within 5 business days."</span>,
+    <span class="st">"Premium plan includes unlimited API calls and priority support."</span>,
+    <span class="st">"Free tier is limited to 100 requests per day."</span>,
+    <span class="st">"You can cancel your subscription anytime from account settings."</span>,
+]
+vs = FAISS.from_texts(faq, OpenAIEmbeddings())
+
+<span class="kw">def</span> <span class="fn">build_messages</span>(q):
+    ctx = <span class="st">"\n"</span>.join(r.page_content <span class="kw">for</span> r <span class="kw">in</span> vs.similarity_search(q, k=<span class="nu">2</span>))
+    <span class="kw">return</span> [
+        {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"Answer from context only."</span>},
+        {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"Context:\n{ctx}\n\nQuestion: {q}"</span>},
+    ]
+
+question = <span class="st">"How long do refunds take?"</span>
+
+<span class="cm"># --- Blocking (no stream) ---</span>
+t0 = time.perf_counter()
+resp = client.chat.completions.create(model=<span class="st">"gpt-4o-mini"</span>, messages=build_messages(question))
+blocking_latency = time.perf_counter() - t0
+<span class="kw">print</span>(<span class="st">f"Blocking latency (full response): {blocking_latency:.2f}s"</span>)
+<span class="kw">print</span>(<span class="st">f"Answer: {resp.choices[0].message.content}\n"</span>)
+
+<span class="cm"># --- Streaming (time to first token) ---</span>
+t0 = time.perf_counter()
+first_token_time = <span class="kw">None</span>
+full_answer = <span class="st">""</span>
+<span class="kw">for</span> chunk <span class="kw">in</span> client.chat.completions.create(
+    model=<span class="st">"gpt-4o-mini"</span>, stream=<span class="kw">True</span>, messages=build_messages(question)
+):
+    token = chunk.choices[<span class="nu">0</span>].delta.content
+    <span class="kw">if</span> token:
+        <span class="kw">if</span> first_token_time <span class="kw">is</span> <span class="kw">None</span>:
+            first_token_time = time.perf_counter() - t0
+        full_answer += token
+streaming_latency = time.perf_counter() - t0
+<span class="kw">print</span>(<span class="st">f"Streaming TTFT: {first_token_time:.2f}s"</span>)
+<span class="kw">print</span>(<span class="st">f"Streaming total: {streaming_latency:.2f}s"</span>)
+<span class="kw">print</span>(<span class="st">f"Answer: {full_answer}"</span>)</pre>
+</div>
+            <p><strong>Expected outcome:</strong> Blocking latency and streaming total latency will be similar, but TTFT for streaming should be 5–10× lower — typically under 0.5 seconds. This is the improvement users actually perceive.</p>
+
+            <h3>Real-world use case</h3>
+            <p>A customer-support chatbot at a SaaS company switched from blocking to streaming RAG. Their P50 time-to-first-token dropped from 3.8 seconds to 0.4 seconds. User satisfaction scores improved by 22% — not because answers were more accurate, but simply because users saw the bot start responding immediately rather than showing a loading spinner for 4 seconds.</p>
+        </div>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="lesson-nav">
+            <a href="rag-evaluation.html" class="prev">
+                <div class="lesson-nav-label">← Previous</div>
+                <div class="lesson-nav-title">RAG Evaluation</div>
+            </a>
+            <a href="../../tutorials/openai/getting-started.html" class="next">
+                <div class="lesson-nav-label">Next →</div>
+                <div class="lesson-nav-title">OpenAI Getting Started</div>
+            </a>
+        </nav>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul><li><a href="../../tutorials/index.html">All Tutorials</a></li><li><a href="../../courses/index.html">Courses</a></li><li><a href="../../projects/index.html">Projects</a></li><li><a href="../../debugging/index.html">Debugging</a></li></ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://ailadder.myrqai.com" target="_blank">AI Ladder</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li><li><a href="https://myrqai.com/admin/contact" target="_blank">Contact Us</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/donation-widget.js" defer></script>
+    <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pre = this.closest('.code-block').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                this.textContent = '✓ Copied';
+                setTimeout(() => this.textContent = 'Copy', 1500);
+            });
+        });
+    });
+    </script>
+</body>
+</html>

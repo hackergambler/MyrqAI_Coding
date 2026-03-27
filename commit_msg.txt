@@ -1,1 +1,1 @@
-Fix project card links to point to correct project pages
+Fix RAG evaluation and course links to Streaming RAG
