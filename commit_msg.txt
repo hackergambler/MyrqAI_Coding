@@ -1,1 +1,1 @@
-Fix Gemini function-calling next lesson navigation link
+Fix RAG tutorial lesson navigation links
