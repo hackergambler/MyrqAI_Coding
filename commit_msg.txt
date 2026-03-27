@@ -1,1 +1,1 @@
-Add RAG hybrid search lesson link and clear commit_msg.txt
+Fix project card links to point to correct pages
