@@ -868,7 +868,7 @@
           "duration": "20 min",
           "badge": "Beginner",
           "prev": "probability-statistics-ml",
-          "next": null,
+          "next": "git-version-control",
           "sections": [
             {
               "h2": "Why SQL Is Essential for AI",
@@ -915,6 +915,65 @@
                   "Run the query with duckdb.query(...).df() and print value_counts on high_value"
                 ],
                 "starter": "import duckdb\nimport pandas as pd\n\n# Simulate the tables\norders = pd.DataFrame({\n    'order_id':    [1,2,3,4,5,6,7,8],\n    'customer_id': [1,1,1,2,2,3,3,3],\n    'amount':      [200,150,300,50,80,500,600,700],\n    'status':      ['completed','completed','cancelled','completed','completed','completed','completed','completed'],\n    'created_at':  ['2024-01-01']*8\n})\nlabels = pd.DataFrame({\n    'customer_id': [1, 2, 3],\n    'high_value':  [0, 0, 1]\n})\n\n# TODO: Write a DuckDB SQL query that:\n# 1. Aggregates orders by customer_id\n# 2. Joins to labels\n# 3. Filters customers with < 3 orders\nresult = duckdb.query(\"\"\"\n    -- your SQL here\n\"\"\").df()\n\nprint(result)\nprint(result['high_value'].value_counts())"
+              }
+            }
+          ]
+        },
+        {
+          "id": "git-version-control",
+          "title": "Git & Version Control for AI Projects",
+          "desc": "Master Git workflows essential for AI/ML projects: branching experiment runs, tagging model checkpoints, using .gitignore for datasets, and collaborating on notebooks without merge conflicts.",
+          "duration": "20 min",
+          "badge": "Beginner",
+          "prev": "sql-for-ai",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Version Control Matters in ML",
+              "body": "AI projects have three things that must be versioned independently: code, data, and model weights. Git handles code. Tools like DVC extend Git for data and models. A disciplined Git workflow lets you reproduce any experiment from any point in history.",
+              "tip": "Commit your training config alongside your code. A model without its hyperparameters is almost useless to reproduce.",
+              "code": {
+                "label": "Shell - initialise an AI project repo",
+                "src": "# Create repo and initial structure\ngit init my-ai-project\ncd my-ai-project\n\nmkdir -p src data/raw data/processed models notebooks\ntouch src/__init__.py src/train.py src/evaluate.py\ntouch config.yaml requirements.txt\n\n# Ignore heavy files from Git\ncat > .gitignore << 'IGNORE'\n# Python\n__pycache__/\n*.pyc\n.venv/\n\n# Data and models (tracked by DVC, not Git)\ndata/\nmodels/\n*.pkl\n*.pt\n*.safetensors\n\n# Notebooks (use nbstripout or commit clean copies)\n.ipynb_checkpoints/\n\n# Secrets\n.env\nIGNORE\n\ngit add .gitignore config.yaml requirements.txt src/\ngit commit -m \"chore: initial project scaffold\""
+              }
+            },
+            {
+              "h2": "Branching for Experiments",
+              "body": "Never run experiments on `main`. Create a short-lived branch per experiment, merge only winners. This keeps main always stable and lets you compare branches easily with `git diff`.",
+              "code": {
+                "label": "Shell - experiment branching workflow",
+                "src": "# Start a new experiment\ngit checkout -b exp/lr-sweep-001\n\n# Edit config and code for this experiment\nsed -i 's/lr: 1e-3/lr: 5e-4/' config.yaml\n\ngit add config.yaml\ngit commit -m \"exp: reduce learning rate to 5e-4\"\n\n# Run training (results saved to runs/ \u2014 tracked by DVC)\npython src/train.py --config config.yaml\n\n# Experiment was better \u2014 merge back to main\ngit checkout main\ngit merge --no-ff exp/lr-sweep-001 -m \"feat: adopt lr=5e-4 (val_loss 0.42 -> 0.38)\"\n\n# Clean up merged branch\ngit branch -d exp/lr-sweep-001\n\n# Tag the checkpoint\ngit tag -a v1.1 -m \"model checkpoint: val_loss=0.38\"\ngit push origin main --tags"
+              }
+            },
+            {
+              "h2": "Keeping Notebooks Clean",
+              "body": "Jupyter notebooks embed output cells \u2014 figures, tensor shapes, model summaries \u2014 which bloat diffs and cause constant merge conflicts. The fix: strip outputs before committing, or use `nbstripout` to do it automatically.",
+              "code": {
+                "label": "Shell + Python - strip notebook outputs on commit",
+                "src": "# Install nbstripout\npip install nbstripout\n\n# Enable globally for this repo (adds a Git filter)\nnbstripout --install\n\n# Now every git add on .ipynb files strips outputs automatically\ngit add notebooks/experiment.ipynb  # outputs removed transparently\ngit commit -m \"nb: add feature importance analysis notebook\"\n\n# To strip manually (one-off)\nnbstripout notebooks/experiment.ipynb\n\n# --- Alternative: commit a .py mirror using jupytext ---\npip install jupytext\njupytext --to py:percent notebooks/experiment.ipynb\n# Produces notebooks/experiment.py \u2014 clean, diffable, no output bloat\ngit add notebooks/experiment.py\ngit commit -m \"nb: sync experiment notebook as percent script\""
+              }
+            },
+            {
+              "h2": "Useful Git Commands for ML Workflows",
+              "body": "A handful of Git commands cover 95% of day-to-day ML work. Memorise these \u2014 they will save hours when bisecting a regression or recovering a deleted experiment branch.",
+              "code": {
+                "label": "Shell - ML-specific Git recipes",
+                "src": "# --- Audit what changed between two experiment tags ---\ngit diff v1.0 v1.1 -- config.yaml src/train.py\n\n# --- Find the commit that broke validation accuracy ---\ngit bisect start\ngit bisect bad                  # current HEAD is broken\ngit bisect good v1.0            # last known good tag\n# Git checks out midpoints; run your eval and mark each:\npython src/evaluate.py && git bisect good || git bisect bad\ngit bisect reset                # return to HEAD when done\n\n# --- Recover a deleted experiment branch ---\ngit reflog | grep 'exp/dropout-test'\n# -> abc1234 HEAD@{7}: commit: exp: add dropout 0.3\ngit checkout -b exp/dropout-test abc1234\n\n# --- Stash dirty working tree before pulling ---\ngit stash push -m \"wip: mid-experiment changes\"\ngit pull origin main\ngit stash pop"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Practice the full ML Git workflow:",
+              "exercise": {
+                "title": "Git Experiment Workflow",
+                "steps": [
+                  "Initialise a new Git repo with a proper .gitignore (exclude data/, models/, .env, __pycache__).",
+                  "Create a branch called exp/baseline and add a config.yaml with lr: 1e-3 and epochs: 10.",
+                  "Commit the config, then create a second branch exp/higher-lr and change lr to 3e-3.",
+                  "Merge exp/baseline into main with --no-ff, then tag it as v0.1 with a descriptive message.",
+                  "Use git log --oneline --graph to visualise the branch history.",
+                  "Bonus: install nbstripout and verify that a notebook commit no longer includes output cells."
+                ]
               }
             }
           ]

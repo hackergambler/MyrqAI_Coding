@@ -1,1 +1,1 @@
-Add object detection lesson and update MasterLibrary content
+Add Git version control lesson to MasterLibrary
