@@ -108,7 +108,7 @@
           "duration": "20 min",
           "badge": "Beginner",
           "prev": "environment-setup",
-          "next": "structured-outputs",
+          "next": "structured-outputs-basics",
           "sections": [
             {
               "h2": "HTTP Under the Hood",
@@ -121,7 +121,7 @@
           ]
         },
         {
-          "id": "structured-outputs",
+          "id": "structured-outputs-basics",
           "title": "Structured Outputs: JSON Mode and Pydantic",
           "desc": "Extract structured data reliably from LLMs using JSON mode, tool calling schemas, and OpenAI's response_format with Pydantic validation.",
           "duration": "25 min",
@@ -145,7 +145,7 @@
           "desc": "System prompts, user messages, temperature and top_p, few-shot examples, and the chain-of-thought technique. Build prompts that work reliably in production.",
           "duration": "30 min",
           "badge": "Beginner",
-          "prev": "structured-outputs",
+          "prev": "structured-outputs-basics",
           "next": "embeddings-intro",
           "sections": [
             {

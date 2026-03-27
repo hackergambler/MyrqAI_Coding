@@ -1,1 +1,1 @@
-Add structured outputs lesson with Pydantic schema extraction
+Fix structured-outputs lesson ID and navigation links
