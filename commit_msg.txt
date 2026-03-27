@@ -1,1 +1,1 @@
-Fix incorrect RAG evaluation lesson link in courses page.
+Fix placeholder hrefs in intermediate tutorial cards
