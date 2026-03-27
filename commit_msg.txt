@@ -1,1 +1,1 @@
-Add multimodal vision-language models lesson to MasterLibrary
+Add self-supervised learning lesson and refactor MasterLibrary content
