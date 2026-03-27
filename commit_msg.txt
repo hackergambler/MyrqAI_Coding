@@ -1,3 +1,1 @@
-The diff adds an Isolation Forest lesson and normalizes Unicode characters (em dashes, special symbols) throughout the file.
-
-Add isolation forest lesson and normalize unicode characters
+Add LightGBM/CatBoost lesson and normalize Unicode in MasterLibrary
