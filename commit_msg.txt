@@ -1,1 +1,1 @@
-Add exercise styles, new lessons, and content updates
+Add Python logging and error handling lesson to MasterLibrary

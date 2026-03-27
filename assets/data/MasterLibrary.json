@@ -996,7 +996,7 @@
           "duration": "22 min",
           "badge": "Beginner",
           "prev": "git-version-control",
-          "next": null,
+          "next": "logging-error-handling",
           "sections": [
             {
               "h2": "Why Web Scraping Matters for AI",
@@ -1043,6 +1043,54 @@
                   "Save the cleaned paragraphs to a JSONL file (one JSON object per line with a text key) — a common format for LLM fine-tuning datasets.",
                   "Bonus: Add a polite 1-second delay and scrape 3 different Wikipedia pages, combining their cleaned paragraphs into one dataset file."
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "logging-error-handling",
+          "title": "Python Logging & Error Handling for AI",
+          "desc": "Set up structured logging, handle API errors gracefully, and implement exponential backoff for reliable AI applications.",
+          "duration": "20 min",
+          "badge": "Beginner",
+          "prev": "web-scraping-for-ai",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Logging Matters in AI Apps",
+              "body": "AI applications fail silently: the LLM returns a malformed JSON, the embedding API rate-limits you, or a tool call throws an exception that swallows your user's request. Structured logging lets you trace exactly what happened, when, and why — without cluttering stdout with print() calls.",
+              "tip": "Use the `logging` module instead of `print()` from day one. It gives you log levels, timestamps, and file output with zero extra cost.",
+              "code": {
+                "label": "Python - structured logging setup",
+                "src": "import logging\nimport sys\n\n# Configure once at module level\nlogging.basicConfig(\n    level=logging.INFO,\n    format=\"%(asctime)s | %(levelname)-8s | %(name)s | %(message)s\",\n    handlers=[\n        logging.StreamHandler(sys.stdout),   # console\n        logging.FileHandler(\"app.log\"),       # file\n    ],\n)\n\nlogger = logging.getLogger(__name__)\n\n# Use levels to filter noise in production\nlogger.debug(\"Token count: 1842\")        # dev only\nlogger.info(\"Calling GPT-4o-mini\")       # always shown\nlogger.warning(\"Rate limit approaching\")  # something is off\nlogger.error(\"API call failed: timeout\") # needs attention\n\n# Structured extra fields — grep-friendly logs\nlogger.info(\"LLM call complete\", extra={\"model\": \"gpt-4o-mini\", \"tokens\": 342, \"latency_ms\": 780})"
+              }
+            },
+            {
+              "h2": "Handling API Errors Gracefully",
+              "body": "LLM APIs throw several classes of errors: rate limits (429), transient server errors (500/503), context length exceeded, and invalid request errors. Each needs a different response: retry with backoff on 429/503, raise immediately on 400, log and surface on 500.",
+              "code": {
+                "label": "Python - catching and classifying API errors",
+                "src": "import openai\nimport logging\n\nlogger = logging.getLogger(__name__)\nclient = openai.OpenAI()\n\ndef safe_chat(messages: list[dict], model: str = \"gpt-4o-mini\") -> str | None:\n    \"\"\"Call the chat API and handle common errors without crashing.\"\"\"\n    try:\n        resp = client.chat.completions.create(model=model, messages=messages)\n        return resp.choices[0].message.content\n\n    except openai.RateLimitError as e:\n        logger.warning(\"Rate limited — back off and retry\", extra={\"error\": str(e)})\n        return None\n\n    except openai.BadRequestError as e:\n        # 400: bad input — don't retry, fix the prompt\n        logger.error(\"Bad request (check prompt/tokens)\", extra={\"error\": str(e)})\n        raise  # re-raise so callers know it's a logic error\n\n    except openai.APIStatusError as e:\n        logger.error(\"API error\", extra={\"status\": e.status_code, \"error\": str(e)})\n        return None\n\nresult = safe_chat([{\"role\": \"user\", \"content\": \"Hello!\"}])\nprint(result)"
+              }
+            },
+            {
+              "h2": "Exponential Backoff for Retries",
+              "body": "Rate limits and transient failures are expected in production. The right response is to wait and retry — but naively retrying instantly hammers the server. Exponential backoff doubles the wait time each attempt, with jitter to avoid thundering-herd when many clients retry simultaneously.",
+              "code": {
+                "label": "Python - retry with exponential backoff",
+                "src": "import time\nimport random\nimport logging\nimport openai\n\nlogger = logging.getLogger(__name__)\nclient = openai.OpenAI()\n\ndef chat_with_retry(\n    messages: list[dict],\n    model: str = \"gpt-4o-mini\",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    \"\"\"Call chat API with exponential backoff on rate limits and server errors.\"\"\"\n    for attempt in range(1, max_retries + 1):\n        try:\n            resp = client.chat.completions.create(model=model, messages=messages)\n            return resp.choices[0].message.content\n\n        except (openai.RateLimitError, openai.APIStatusError) as e:\n            if attempt == max_retries:\n                logger.error(\"Max retries reached\", extra={\"attempts\": attempt})\n                raise\n\n            # Exponential backoff + jitter: 1s, 2s, 4s, 8s (±25%)\n            delay = base_delay * (2 ** (attempt - 1)) * (0.75 + random.random() * 0.5)\n            logger.warning(\n                \"Retrying after error\",\n                extra={\"attempt\": attempt, \"delay_s\": round(delay, 2), \"error\": str(e)},\n            )\n            time.sleep(delay)\n\nmsg = [{\"role\": \"user\", \"content\": \"Explain backoff in one sentence.\"}]\nprint(chat_with_retry(msg))",
+                "exercise": {
+                  "title": "Build a Robust LLM Wrapper",
+                  "description": "Create a production-ready LLM caller that logs every request and retries intelligently on failure.",
+                  "steps": [
+                    "Set up a logger with both console and file handlers using <code>logging.basicConfig()</code>",
+                    "Write a function <code>call_llm(prompt: str) -> str</code> that logs the prompt length and model name before calling the API",
+                    "Add a <code>try/except</code> block that catches <code>openai.RateLimitError</code> separately from other errors",
+                    "Implement a retry loop with <code>max_retries=3</code> that waits <code>2 ** attempt</code> seconds between tries",
+                    "Log the result token count and latency on success"
+                  ],
+                  "hint": "Use <code>time.time()</code> before and after the API call to measure latency. Access token count via <code>resp.usage.total_tokens</code>."
+                }
               }
             }
           ]
