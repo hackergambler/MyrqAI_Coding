@@ -1,1 +1,1 @@
-Clear commit_msg.txt contents
+Fix tutorial card links to point to specific lesson pages
