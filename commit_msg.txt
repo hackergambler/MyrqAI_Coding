@@ -1,1 +1,1 @@
-Fix Claude tutorial lesson navigation order
+Fix LangChain getting-started prev lesson link to Claude Vision
