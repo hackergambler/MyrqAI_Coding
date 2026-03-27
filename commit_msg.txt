@@ -1,1 +1,3 @@
-Add hierarchical clustering lesson to MasterLibrary
+The diff adds an Isolation Forest lesson and normalizes Unicode characters (em dashes, special symbols) throughout the file.
+
+Add isolation forest lesson and normalize unicode characters
