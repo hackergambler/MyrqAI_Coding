@@ -635,7 +635,7 @@
           "duration": "30 min",
           "badge": "Intermediate",
           "prev": "xgboost-gradient-boosting",
-          "next": "transformer-architecture",
+          "next": "svm-support-vector-machines",
           "sections": [
             {
               "h2": "How Random Forests Work",
@@ -652,6 +652,42 @@
               "code": {
                 "label": "Python - visualizing bias-variance tradeoff across tree depths",
                 "src": "from sklearn.tree import DecisionTreeClassifier\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import cross_val_score\nimport numpy as np\n\n# Compare single trees vs forest at different depths\ndepths = [2, 4, 8, 16, None]\nresults = []\n\nfor depth in depths:\n    tree = DecisionTreeClassifier(max_depth=depth, random_state=42)\n    forest = RandomForestClassifier(n_estimators=100, max_depth=depth,\n                                     n_jobs=-1, random_state=42)\n\n    tree_scores = cross_val_score(tree, X_train, y_train, cv=5, scoring='roc_auc')\n    forest_scores = cross_val_score(forest, X_train, y_train, cv=5, scoring='roc_auc')\n\n    depth_label = str(depth) if depth else 'None'\n    results.append({\n        'depth': depth_label,\n        'tree_mean': tree_scores.mean(),\n        'tree_std': tree_scores.std(),\n        'forest_mean': forest_scores.mean(),\n        'forest_std': forest_scores.std(),\n    })\n\nprint(f'{'Depth':<8} {'Tree AUC':<20} {'Forest AUC':<20}')\nprint('-' * 50)\nfor r in results:\n    print(f\"{r['depth']:<8} {r['tree_mean']:.4f} ± {r['tree_std']:.4f}   \"\n          f\"{r['forest_mean']:.4f} ± {r['forest_std']:.4f}\")\n# Forest variance (std) stays low even at max_depth=None"
+              }
+            }
+          ]
+        },
+        {
+          "id": "svm-support-vector-machines",
+          "title": "SVMs: Maximum Margin Classifiers Explained",
+          "desc": "Support Vector Machines find the hyperplane with the largest margin between classes. Master the kernel trick, soft-margin SVM, and when SVMs beat tree ensembles.",
+          "duration": "30 min",
+          "badge": "Intermediate",
+          "prev": "random-forests",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "The Maximum Margin Hyperplane",
+              "body": "An SVM finds the decision boundary that maximizes the margin — the gap between the boundary and the nearest training points (support vectors). Maximizing margin improves generalization: a wider street between classes means new points are less likely to land on the wrong side. The optimization problem is convex, so there's always a unique global optimum.",
+              "tip": "SVMs shine on high-dimensional data (text, genomics) where n_features >> n_samples. On large tabular datasets (>100k rows), gradient boosting usually wins on both accuracy and speed.",
+              "code": {
+                "label": "Python - linear SVM with margin visualization",
+                "src": "from sklearn.svm import SVC\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import classification_report\n\n# SVMs require feature scaling — distances are sensitive to scale\nX, y = make_classification(\n    n_samples=1_000, n_features=10, n_informative=5, random_state=42\n)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nscaler = StandardScaler()\nX_train_s = scaler.fit_transform(X_train)\nX_test_s  = scaler.transform(X_test)\n\n# Linear SVM — best for linearly separable or high-dimensional data\nsvm = SVC(kernel='linear', C=1.0, probability=True)\nsvm.fit(X_train_s, y_train)\n\nprint(classification_report(y_test, svm.predict(X_test_s)))\nprint(f'Support vectors per class: {svm.n_support_}')  # e.g. [23, 19]\nprint(f'Total support vectors: {svm.support_vectors_.shape[0]}')"
+              }
+            },
+            {
+              "h2": "The Kernel Trick: Non-Linear Boundaries",
+              "body": "Real data is rarely linearly separable. The kernel trick implicitly maps data to a higher-dimensional space where a linear boundary works — without ever computing the mapping explicitly. The RBF (Gaussian) kernel is the default: K(x,z) = exp(-γ||x-z||²). It maps each point to infinite dimensions, turning any dataset into a linearly separable one given the right γ and C.",
+              "code": {
+                "label": "Python - RBF kernel SVM with hyperparameter search",
+                "src": "from sklearn.svm import SVC\nfrom sklearn.model_selection import GridSearchCV\nfrom sklearn.datasets import make_moons\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.pipeline import Pipeline\nimport numpy as np\n\n# Moons dataset: not linearly separable, RBF kernel handles it easily\nX, y = make_moons(n_samples=1_000, noise=0.2, random_state=42)\n\n# Pipeline: scale then SVM (scaling is mandatory for RBF kernel)\npipe = Pipeline([\n    ('scaler', StandardScaler()),\n    ('svm', SVC(kernel='rbf', probability=True)),\n])\n\n# C: slack penalty (higher = less slack, tighter fit)\n# gamma: kernel bandwidth (higher = local influence, more complex boundary)\nparam_grid = {\n    'svm__C':     [0.1, 1, 10, 100],\n    'svm__gamma': ['scale', 0.01, 0.1, 1],\n}\n\nsearch = GridSearchCV(pipe, param_grid, cv=5, scoring='roc_auc', n_jobs=-1)\nsearch.fit(X, y)\n\nprint(f'Best params: {search.best_params_}')\nprint(f'Best CV AUC: {search.best_score_:.4f}')\n\n# Inspect the decision function (distance to hyperplane)\nbest_svm = search.best_estimator_\nX_scaled = best_svm['scaler'].transform(X)\ndecision_scores = best_svm['svm'].decision_function(X_scaled)\nprint(f'Decision score range: [{decision_scores.min():.2f}, {decision_scores.max():.2f}]')"
+              }
+            },
+            {
+              "h2": "SVM vs Random Forests: When to Use Which",
+              "body": "SVMs and tree ensembles have complementary strengths. SVMs have a unique global optimum and work well with few samples; Random Forests scale better and handle mixed feature types natively. Rule of thumb: text or genomics → SVM; structured tabular data > 10k rows → gradient boosting.",
+              "code": {
+                "label": "Python - head-to-head benchmark on text features",
+                "src": "from sklearn.svm import LinearSVC\nfrom sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.datasets import fetch_20newsgroups\nimport numpy as np\n\n# 20 Newsgroups: high-dimensional sparse text — SVM's home turf\ndata = fetch_20newsgroups(subset='train', categories=['sci.space', 'rec.sport.hockey'])\nvec = TfidfVectorizer(max_features=5_000, sublinear_tf=True)\nX = vec.fit_transform(data.data)\ny = data.target\n\nmodels = {\n    'LinearSVC':      LinearSVC(C=1.0, max_iter=2000),\n    'RandomForest':   RandomForestClassifier(n_estimators=200, n_jobs=-1, random_state=42),\n}\n\nfor name, model in models.items():\n    scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')\n    print(f'{name:<20} acc={scores.mean():.4f} ± {scores.std():.4f}')\n# LinearSVC typically wins on sparse text: ~99% vs ~93% for RF"
               }
             }
           ]
@@ -673,7 +709,7 @@
           "desc": "Q, K, V matrices, scaled dot-product attention, multi-head attention, positional encoding, and the complete encoder block \u2014 all implemented from scratch in NumPy and PyTorch.",
           "duration": "45 min",
           "badge": "Advanced",
-          "prev": "data-validation",
+          "prev": "svm-support-vector-machines",
           "next": "rlhf-deep-dive",
           "sections": [
             {

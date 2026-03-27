@@ -1,1 +1,1 @@
-Add CNNs for Computer Vision lesson to MasterLibrary
+Add SVM lesson to MasterLibrary
