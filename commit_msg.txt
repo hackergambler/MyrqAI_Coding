@@ -1,1 +1,1 @@
-Add Mixture of Experts (MoE) lesson to MasterLibrary
+Add U-Net image segmentation lesson to MasterLibrary
