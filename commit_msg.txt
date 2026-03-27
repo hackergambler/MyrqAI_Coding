@@ -1,1 +1,1 @@
-Add Agent Tool Design and Multi-Agent Systems lesson links
+Fix advanced tutorial links to point to correct agent pages
