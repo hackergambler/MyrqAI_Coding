@@ -1,1 +1,1 @@
-Fix syntax error in LangChain prompts tutorial code
+Fix vision tutorial previous lesson navigation link
