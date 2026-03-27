@@ -601,7 +601,7 @@
           "duration": "25 min",
           "badge": "Beginner",
           "prev": "data-cleaning-normalization",
-          "next": null,
+          "next": "regex-for-nlp",
           "sections": [
             {
               "h2": "Why Visualization Matters in AI",
@@ -643,6 +643,59 @@
               "code": {
                 "label": "Python - Iris visualization exercise",
                 "src": "import seaborn as sns\nimport matplotlib.pyplot as plt\nfrom sklearn.datasets import load_iris\nimport pandas as pd\n\n# Load Iris as a DataFrame\niris = load_iris(as_frame=True)\ndf = iris.frame.copy()\ndf['species'] = df['target'].map({0: 'setosa', 1: 'versicolor', 2: 'virginica'})\nfeature_cols = iris.feature_names\n\n# --- Plot 1: Histograms ---\nfig, axes = plt.subplots(1, 4, figsize=(16, 3))\nfor ax, col in zip(axes, feature_cols):\n    sns.histplot(df[col], kde=True, ax=ax)\n    ax.set_title(col, fontsize=9)\nplt.suptitle('Feature Distributions', y=1.02)\nplt.tight_layout()\nplt.show()\n\n# --- Plot 2: Correlation heatmap ---\nplt.figure(figsize=(6, 5))\nsns.heatmap(df[feature_cols].corr(), annot=True, fmt='.2f', cmap='coolwarm', center=0)\nplt.title('Iris Correlations')\nplt.tight_layout()\nplt.show()\n\n# --- Plot 3: Scatter petal_length vs petal_width ---\nplt.figure(figsize=(6, 5))\nsns.scatterplot(\n    data=df,\n    x='petal length (cm)',\n    y='petal width (cm)',\n    hue='species',\n    palette='deep',\n)\nplt.title('Petal Features by Species')\nplt.tight_layout()\nplt.show()\n\nprint('Most correlated pair in Iris dataset:')\ncorr = df[feature_cols].corr().abs()\nnp.fill_diagonal(corr.values, 0)\npair = corr.stack().idxmax()\nprint(pair, '->', df[feature_cols].corr().loc[pair[0], pair[1]].round(3))\n\nimport numpy as np"
+              }
+            }
+          ]
+        },
+        {
+          "id": "regex-for-nlp",
+          "title": "Regular Expressions for NLP: Pattern Matching in Text",
+          "desc": "Master regex for text preprocessing: extract emails, URLs, dates, clean HTML, tokenize text, and build reusable NLP pipelines with Python's re module.",
+          "duration": "20 min",
+          "badge": "Beginner",
+          "prev": "data-visualization",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Regex Matters in NLP",
+              "body": "Before feeding text to an LLM or ML model, you almost always need to clean it: strip HTML tags, normalize whitespace, extract structured fields like emails or phone numbers. Regex does this in microseconds — no API call needed. Every NLP pipeline relies on regex at some stage.",
+              "tip": "Use raw strings (r'...') for all regex patterns. Without them, backslashes like \\d get consumed by Python before re ever sees them.",
+              "code": {
+                "label": "Python - re module basics",
+                "src": "import re\n\ntext = \"Contact us at support@example.com or sales@company.org for help.\"\n\n# Find all email addresses\nemail_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}'\nemails = re.findall(email_pattern, text)\nprint(\"Emails:\", emails)\n# Output: ['support@example.com', 'sales@company.org']\n\n# Check if a string matches a pattern\nphone = \"Call 555-867-5309\"\nif re.search(r'\\d{3}-\\d{3}-\\d{4}', phone):\n    print(\"Phone number found\")\n\n# Replace patterns\nclean = re.sub(r'\\s+', ' ', \"too   many    spaces\").strip()\nprint(clean)  # 'too many spaces'"
+              }
+            },
+            {
+              "h2": "Text Cleaning for ML Pipelines",
+              "body": "Raw text from the web is full of noise: HTML tags, URLs, special characters, and inconsistent spacing. A cleaning pipeline strips this noise before tokenization or embedding. Order matters — remove HTML before URLs, normalize whitespace last.",
+              "code": {
+                "label": "Python - full text cleaning pipeline",
+                "src": "import re\n\ndef clean_text(text: str) -> str:\n    \"\"\"Clean raw web text for NLP processing.\"\"\"\n    # 1. Remove HTML tags\n    text = re.sub(r'<[^>]+>', '', text)\n    \n    # 2. Remove URLs\n    text = re.sub(r'https?://\\S+|www\\.\\S+', '', text)\n    \n    # 3. Remove email addresses\n    text = re.sub(r'\\S+@\\S+\\.\\S+', '', text)\n    \n    # 4. Keep only letters, numbers, punctuation\n    text = re.sub(r'[^\\w\\s.,!?\\'-]', '', text)\n    \n    # 5. Normalize whitespace\n    text = re.sub(r'\\s+', ' ', text).strip()\n    \n    return text\n\nraw = \"\"\"<p>Check out https://example.com!\nEmail us at info@site.com.   \nGreat product!!! #amazing @user\"\"\"\n\nprint(clean_text(raw))\n# Output: Check out Email us at Great product amazing user"
+              }
+            },
+            {
+              "h2": "Extracting Structured Data with Groups",
+              "body": "Named groups ((?P<name>...)) make extraction readable. Instead of referencing match.group(1), you use match.group('date') — self-documenting and refactor-safe. This pattern is essential when parsing logs, receipts, or structured documents for RAG pipelines.",
+              "code": {
+                "label": "Python - named capture groups for extraction",
+                "src": "import re\n\n# Extract dates in multiple formats\ndate_pattern = r'(?P<month>\\d{1,2})[/-](?P<day>\\d{1,2})[/-](?P<year>\\d{2,4})'\n\ndates = [\n    \"Invoice date: 03/27/2026\",\n    \"Shipped on 1-15-2026\",\n    \"Meeting 12/31/25\"\n]\n\nfor text in dates:\n    m = re.search(date_pattern, text)\n    if m:\n        print(f\"Month={m.group('month')}, Day={m.group('day')}, Year={m.group('year')}\")\n\n# Extract key-value pairs from logs\nlog = \"ERROR level=critical service=auth latency_ms=342 user_id=8821\"\nkv_pattern = r'(\\w+)=(\\S+)'\npairs = dict(re.findall(kv_pattern, log))\nprint(pairs)\n# {'level': 'critical', 'service': 'auth', 'latency_ms': '342', 'user_id': '8821'}"
+              }
+            },
+            {
+              "h2": "Compiled Patterns for Performance",
+              "body": "When applying a regex to thousands of strings, compile it once with re.compile(). This parses the pattern into a finite automaton once — repeated calls skip that parsing step. For batch NLP on large datasets, this can reduce runtime by 30-50%.",
+              "code": {
+                "label": "Python - compiled regex for batch processing",
+                "src": "import re\nimport time\n\n# Compile once, reuse many times\nURL_RE = re.compile(r'https?://[^\\s<>\"]+|www\\.[^\\s<>\"]+', re.IGNORECASE)\nMENTION_RE = re.compile(r'@(\\w+)')\nHASHTAG_RE = re.compile(r'#(\\w+)')\n\ndef extract_social_metadata(posts: list[str]) -> list[dict]:\n    results = []\n    for post in posts:\n        results.append({\n            \"urls\": URL_RE.findall(post),\n            \"mentions\": MENTION_RE.findall(post),\n            \"hashtags\": HASHTAG_RE.findall(post),\n            \"clean\": URL_RE.sub('', MENTION_RE.sub('', post)).strip()\n        })\n    return results\n\nposts = [\n    \"Check out https://openai.com #AI @elonmusk loves this\",\n    \"New blog at www.example.com #python #ml\",\n]\nfor meta in extract_social_metadata(posts):\n    print(meta)"
+              }
+            },
+            {
+              "h2": "Exercise: Build an NLP Preprocessing Function",
+              "body": "Write a function preprocess_for_embedding(text: str) -> str that:\n1. Lowercases the text\n2. Removes URLs and HTML tags\n3. Expands common contractions (don't → do not, it's → it is)\n4. Removes punctuation except periods and commas\n5. Normalizes whitespace\n\nTest it on: \"<b>It's amazing!</b> Don't miss https://example.com — the best AI tool ever!!!\"",
+              "tip": "For contractions, build a dict and use re.sub() with a replacement function: re.sub(pattern, lambda m: contractions[m.group(0)], text)",
+              "code": {
+                "label": "Python - exercise starter code",
+                "src": "import re\n\nCONTRACTIONS = {\n    \"don't\": \"do not\",\n    \"it's\": \"it is\",\n    \"i'm\": \"i am\",\n    \"you're\": \"you are\",\n    \"can't\": \"cannot\",\n    \"won't\": \"will not\",\n    \"isn't\": \"is not\",\n}\n\ndef preprocess_for_embedding(text: str) -> str:\n    # Step 1: lowercase\n    text = text.lower()\n    \n    # Step 2: strip HTML\n    text = re.sub(r'<[^>]+>', '', text)\n    \n    # Step 3: remove URLs\n    text = re.sub(r'https?://\\S+|www\\.\\S+', '', text)\n    \n    # Step 4: expand contractions\n    pattern = re.compile(r\"|\".join(map(re.escape, CONTRACTIONS.keys())))\n    text = pattern.sub(lambda m: CONTRACTIONS[m.group(0)], text)\n    \n    # Step 5: remove punctuation except . and ,\n    text = re.sub(r\"[^\\w\\s.,]\", '', text)\n    \n    # Step 6: normalize whitespace\n    return re.sub(r'\\s+', ' ', text).strip()\n\n# Test it\nraw = \"<b>It's amazing!</b> Don't miss https://example.com — the best AI tool ever!!!\"\nprint(preprocess_for_embedding(raw))\n# Expected: 'it is amazing do not miss the best ai tool ever'"
               }
             }
           ]

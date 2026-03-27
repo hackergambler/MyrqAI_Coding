@@ -1,1 +1,1 @@
-Add LangChain fundamentals lesson with LCEL chains and tools
+Add regex for NLP text preprocessing lesson
