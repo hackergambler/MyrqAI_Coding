@@ -1,1 +1,1 @@
-Expand and restructure MasterLibrary lessons and content
+Add structured outputs lesson with Pydantic schema extraction

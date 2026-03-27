@@ -1941,7 +1941,7 @@
           "duration": "35 min",
           "badge": "Advanced",
           "prev": "llm-serving-optimization",
-          "next": null,
+          "next": "structured-outputs",
           "sections": [
             {
               "h2": "Why Streaming Matters",
@@ -1973,6 +1973,50 @@
               "code": {
                 "label": "Python - streaming CLI skeleton",
                 "src": "import sys, time\nfrom openai import OpenAI\n\nclient = OpenAI()\nhistory = []\n\nwhile True:\n    user_input = input('You: ').strip()\n    if user_input.lower() in ('exit', 'quit'):\n        break\n    history.append({'role': 'user', 'content': user_input})\n\n    print('Assistant: ', end='', flush=True)\n    t0 = time.time()\n    token_count = 0\n    reply = ''\n\n    stream = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=history,\n        stream=True,\n    )\n    for chunk in stream:\n        token = chunk.choices[0].delta.content or ''\n        print(token, end='', flush=True)\n        reply += token\n        token_count += bool(token)\n\n    elapsed = time.time() - t0\n    print(f'\\n[{token_count} tokens | {elapsed:.1f}s]\\n')\n    history.append({'role': 'assistant', 'content': reply})"
+              }
+            }
+          ]
+        },
+        {
+          "id": "structured-outputs",
+          "title": "Structured Outputs: JSON Mode, Pydantic and Tool Schemas",
+          "desc": "Force LLMs to return valid, typed JSON using OpenAI's structured outputs, Pydantic model schemas, and Anthropic's tool-use workaround. Parse, validate, and retry malformed responses reliably.",
+          "duration": "40 min",
+          "badge": "Advanced",
+          "prev": "streaming-llm-responses",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Structured Outputs Matter",
+              "body": "Free-form LLM text is hard to parse reliably — the model might say 'sure, here is the JSON:' before the actual object, wrap it in markdown fences, or omit required fields. Structured outputs constrain the model's token sampling so every response is guaranteed valid JSON that matches your schema. This eliminates brittle regex extraction and retry loops caused by formatting errors.",
+              "tip": "Use structured outputs whenever downstream code reads specific fields from the model response. Free-form text is fine for end users; typed objects are required for pipelines.",
+              "code": {
+                "label": "Python - OpenAI structured outputs with Pydantic",
+                "src": "from pydantic import BaseModel, Field\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# Define the exact shape you want back\nclass MovieReview(BaseModel):\n    title: str\n    rating: float = Field(ge=0, le=10, description='Score out of 10')\n    sentiment: str = Field(pattern='^(positive|negative|mixed)$')\n    summary: str = Field(max_length=200)\n    pros: list[str]\n    cons: list[str]\n\n# parse() enforces the schema — raises if the model violates it\ncompletion = client.beta.chat.completions.parse(\n    model='gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'You are a film critic.'},\n        {'role': 'user',   'content': 'Review the movie Inception (2010).'}\n    ],\n    response_format=MovieReview,   # Pydantic model as the schema\n)\n\nreview: MovieReview = completion.choices[0].message.parsed\nprint(f'Title:     {review.title}')\nprint(f'Rating:    {review.rating}/10')\nprint(f'Sentiment: {review.sentiment}')\nprint(f'Summary:   {review.summary}')\nprint(f'Pros: {review.pros}')\nprint(f'Cons: {review.cons}')"
+              }
+            },
+            {
+              "h2": "JSON Mode vs Structured Outputs",
+              "body": "OpenAI offers two levels of JSON enforcement. **JSON mode** (`response_format={\"type\": \"json_object\"}`) guarantees syntactically valid JSON but does NOT enforce field names or types — the model can return any keys it wants. **Structured outputs** (`response_format=YourModel`) guarantee the response matches your exact Pydantic schema, including required fields, types, and constraints. Always prefer structured outputs for typed extraction tasks.",
+              "code": {
+                "label": "Python - JSON mode vs structured outputs comparison",
+                "src": "from openai import OpenAI\nfrom pydantic import BaseModel\n\nclient = OpenAI()\n\nprompt = 'Extract: name, age, and city from: John is 32 and lives in Austin.'\n\n# --- JSON mode: valid JSON, but schema not enforced ---\nresp_json_mode = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'Return JSON only.'},\n        {'role': 'user',   'content': prompt}\n    ],\n    response_format={'type': 'json_object'},\n)\nimport json\ndata = json.loads(resp_json_mode.choices[0].message.content)\nprint('JSON mode result:', data)  # might be {'name':... } or {'person': {...}}\n\n# --- Structured outputs: exact schema enforced ---\nclass Person(BaseModel):\n    name: str\n    age: int\n    city: str\n\nresp_structured = client.beta.chat.completions.parse(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content': prompt}],\n    response_format=Person,\n)\nperson: Person = resp_structured.choices[0].message.parsed\nprint(f'Name: {person.name}, Age: {person.age}, City: {person.city}')\n# Always exactly the three fields we declared — no surprises"
+              }
+            },
+            {
+              "h2": "Nested Schemas and Recursive Extraction",
+              "body": "Pydantic models nest naturally. Define a `LineItem` model, embed a list of them inside an `Invoice` model, and pass `Invoice` as the `response_format`. The model must return a fully valid nested structure — no optional surprise keys, no missing nested objects.",
+              "code": {
+                "label": "Python - nested Pydantic schema for invoice extraction",
+                "src": "from pydantic import BaseModel\nfrom openai import OpenAI\nfrom enum import Enum\n\nclient = OpenAI()\n\nclass Category(str, Enum):\n    software = 'software'\n    hardware = 'hardware'\n    service  = 'service'\n    other    = 'other'\n\nclass LineItem(BaseModel):\n    description: str\n    quantity: int\n    unit_price: float\n    category: Category\n\nclass Invoice(BaseModel):\n    vendor: str\n    invoice_date: str          # ISO 8601\n    due_date: str\n    line_items: list[LineItem]\n    subtotal: float\n    tax_rate: float\n    total: float\n\nraw_invoice = \"\"\"\nInvoice from Acme Corp, dated 2025-03-01, due 2025-03-31.\nItems:\n- 3x Cloud Server (monthly) @ $299.00 each (software)\n- 1x On-site Setup Fee @ $450.00 (service)\nSubtotal $1347.00, Tax 8%, Total $1454.76\n\"\"\"\n\ncompletion = client.beta.chat.completions.parse(\n    model='gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'Extract invoice data into the requested schema.'},\n        {'role': 'user',   'content': raw_invoice}\n    ],\n    response_format=Invoice,\n)\n\ninvoice: Invoice = completion.choices[0].message.parsed\nprint(f'Vendor: {invoice.vendor}, Total: ${invoice.total}')\nfor item in invoice.line_items:\n    print(f'  {item.quantity}x {item.description} @ ${item.unit_price} [{item.category}]')"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build a **resume parser** using structured outputs:\n\n1. Define a `Resume` Pydantic model with fields: `name`, `email`, `years_experience` (int), `skills` (list of str), `education` (list of dicts with `degree` and `institution`), and `summary` (str, max 150 chars).\n2. Feed raw resume text to `gpt-4o-mini` using `client.beta.chat.completions.parse()`.\n3. Print each field in a formatted table.\n4. Bonus: add a `seniority_level` enum field (`junior`, `mid`, `senior`, `staff`) and let the model infer it from years of experience.\n\nSample raw resume text to test with:\n```\nJane Doe | jane@example.com\n8 years in ML engineering. Led teams at Google Brain and Stripe.\nSkills: Python, PyTorch, Kubernetes, MLflow, SQL\nMS Computer Science, Stanford (2016)\n```",
+              "code": {
+                "label": "Python - resume parser skeleton",
+                "src": "from pydantic import BaseModel, Field\nfrom openai import OpenAI\nfrom enum import Enum\n\nclient = OpenAI()\n\nclass SeniorityLevel(str, Enum):\n    junior = 'junior'\n    mid    = 'mid'\n    senior = 'senior'\n    staff  = 'staff'\n\nclass Education(BaseModel):\n    degree: str\n    institution: str\n\nclass Resume(BaseModel):\n    name: str\n    email: str\n    years_experience: int\n    skills: list[str]\n    education: list[Education]\n    summary: str = Field(max_length=150)\n    seniority_level: SeniorityLevel\n\nRAW_RESUME = \"\"\"\nJane Doe | jane@example.com\n8 years in ML engineering. Led teams at Google Brain and Stripe.\nSkills: Python, PyTorch, Kubernetes, MLflow, SQL\nMS Computer Science, Stanford (2016)\n\"\"\"\n\ncompletion = client.beta.chat.completions.parse(\n    model='gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'Extract resume data accurately.'},\n        {'role': 'user',   'content': RAW_RESUME}\n    ],\n    response_format=Resume,\n)\n\nr: Resume = completion.choices[0].message.parsed\nprint(f'Name:        {r.name}')\nprint(f'Email:       {r.email}')\nprint(f'Experience:  {r.years_experience} years  [{r.seniority_level}]')\nprint(f'Skills:      {', '.join(r.skills)}')\nprint(f'Education:   {[(e.degree, e.institution) for e in r.education]}')\nprint(f'Summary:     {r.summary}')"
               }
             }
           ]
