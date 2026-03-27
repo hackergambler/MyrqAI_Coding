@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Evaluation — RAGAS, Faithfulness & Answer Relevancy | AI Coding Academy</title>
+    <meta name="description" content="Evaluate your RAG pipeline with RAGAS metrics: faithfulness, answer relevancy, context precision, and context recall. Learn automated and human evaluation strategies.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .lesson-container { max-width: 900px; margin: 0 auto; padding: calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl); }
+        .lesson-header { margin-bottom: var(--space-3xl); }
+        .lesson-meta { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+        .lesson-meta-item { display: flex; align-items: center; gap: var(--space-xs); font-size: 0.9rem; color: var(--text-muted); }
+        .lesson-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); margin-bottom: var(--space-lg); line-height: 1.2; }
+        .lesson-description { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.7; }
+        .lesson-content { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-2xl); margin-bottom: var(--space-2xl); }
+        .lesson-content h2 { font-family: var(--font-heading); font-size: 1.5rem; margin: var(--space-2xl) 0 var(--space-lg); color: var(--accent-primary); }
+        .lesson-content h2:first-child { margin-top: 0; }
+        .lesson-content h3 { font-family: var(--font-heading); font-size: 1.2rem; margin: var(--space-xl) 0 var(--space-md); color: var(--accent-secondary); }
+        .lesson-content h4 { font-family: var(--font-heading); font-size: 1rem; margin: var(--space-lg) 0 var(--space-sm); color: var(--text-primary); }
+        .lesson-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); }
+        .lesson-content ul, .lesson-content ol { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); padding-left: var(--space-xl); }
+        .lesson-content li { margin-bottom: var(--space-sm); }
+        .lesson-content code { background: rgba(0,255,170,0.1); color: var(--accent-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; overflow-x: auto; position: relative; }
+        .code-block-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center; }
+        .code-block-label .copy-btn { cursor: pointer; color: var(--accent-primary); border: 1px solid var(--accent-primary); background: transparent; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.65; color: #e6edf3; white-space: pre; }
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .tip-box { background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .tip-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-primary); margin-bottom: var(--space-sm); }
+        .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .warn-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-warning); margin-bottom: var(--space-sm); }
+        .info-box { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .info-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .tip-box p, .warn-box p, .info-box p { margin: 0; color: var(--text-secondary); line-height: 1.7; }
+        .toc { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-2xl); }
+        .toc h3 { font-family: var(--font-heading); color: var(--accent-primary); margin-bottom: var(--space-md); }
+        .toc ol { padding-left: var(--space-xl); color: var(--text-secondary); }
+        .toc li { margin-bottom: var(--space-xs); }
+        .toc a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+        .lesson-nav { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); }
+        .lesson-nav a { flex: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; transition: var(--transition-base); }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); }
+        .lesson-nav .next { text-align: right; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin: var(--space-lg) 0; }
+        .metric-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-md); padding: var(--space-lg); }
+        .metric-card h4 { margin-bottom: var(--space-sm); }
+        .metric-card p { margin: 0; font-size: 0.9rem; }
+        .metric-card.faithfulness h4 { color: var(--accent-primary); }
+        .metric-card.relevancy h4 { color: var(--accent-secondary); }
+        .metric-card.precision h4 { color: #a855f7; }
+        .metric-card.recall h4 { color: #fbbf24; }
+        @media (max-width: 768px) { .lesson-nav { flex-direction: column; } .lesson-nav .next { text-align: left; } .metrics-grid { grid-template-columns: 1fr; } }
+    </style>
+</head><body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+                <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+            <ul class="nav-menu">
+                <li><a href="../../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search..."><kbd>⌘K</kbd></div>
+                <a href="../../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+    <div class="lesson-container">
+        <div class="breadcrumb">
+            <a href="../../index.html">Home</a><span class="separator">/</span>
+            <a href="../index.html">Tutorials</a><span class="separator">/</span>
+            <a href="../../courses/rag.html">RAG</a><span class="separator">/</span>
+            <span>RAG Evaluation</span>
+        </div>
+        <header class="lesson-header">
+            <div class="lesson-meta">
+                <span class="badge badge-intermediate">Intermediate</span>
+                <span class="lesson-meta-item">⏱️ 35 min</span>
+            </div>
+            <h1 class="lesson-title">RAG Evaluation: RAGAS, Faithfulness & Answer Relevancy</h1>
+            <p class="lesson-description">Building a RAG pipeline is only half the work. Measuring whether it actually answers correctly — without hallucinating — is equally critical. Learn the key metrics and how to automate evaluation with RAGAS.</p>
+        </header>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="toc">
+            <h3>In This Lesson</h3>
+            <ol>
+                <li><a href="#why-eval">Why RAG Evaluation Matters</a></li>
+                <li><a href="#metrics">The Four Core RAGAS Metrics</a></li>
+                <li><a href="#ragas-setup">Running RAGAS Evaluation</a></li>
+                <li><a href="#without-ground-truth">Evaluating Without Ground Truth</a></li>
+                <li><a href="#tracing">Tracing with LangSmith</a></li>
+                <li><a href="#exercise">Hands-on Exercise</a></li>
+            </ol>
+        </nav>
+
+        <div class="lesson-content">
+            <h2 id="why-eval">Why RAG Evaluation Matters</h2>
+            <p>A RAG system that retrieves the wrong context or generates an answer not supported by documents is worse than returning "I don't know." Evaluation catches these failures before they reach users. There are two axes to measure:</p>
+            <ul>
+                <li><strong>Retrieval quality</strong> — did the retriever fetch the right chunks?</li>
+                <li><strong>Generation quality</strong> — did the LLM answer faithfully from those chunks?</li>
+            </ul>
+            <p>Without metrics, you are flying blind. A 10% drop in retrieval precision can cut answer quality in half, and you won't notice without measurement.</p>
+            <div class="warn-box"><div class="warn-box-title">⚠️ Common mistake</div><p>Developers often rely on manual spot-checking ("it looks good"). This misses systematic failures — cases where the model confidently answers incorrectly from irrelevant context. Always run automated evaluation on a representative test set.</p></div>
+
+            <h2 id="metrics">The Four Core RAGAS Metrics</h2>
+            <p>RAGAS (Retrieval-Augmented Generation Assessment) defines four complementary metrics that together give a full picture of your pipeline's health.</p>
+            <div class="metrics-grid">
+                <div class="metric-card faithfulness">
+                    <h4>Faithfulness</h4>
+                    <p>Are all claims in the answer supported by the retrieved context? Ranges 0–1. A hallucinated fact that isn't in any retrieved chunk drops this score.</p>
+                </div>
+                <div class="metric-card relevancy">
+                    <h4>Answer Relevancy</h4>
+                    <p>Does the answer actually address the question? Measures whether the response is on-topic, not just factually grounded. Verbose, off-topic answers score lower.</p>
+                </div>
+                <div class="metric-card precision">
+                    <h4>Context Precision</h4>
+                    <p>What proportion of retrieved chunks were actually useful? High precision means you're not flooding the LLM with noise.</p>
+                </div>
+                <div class="metric-card recall">
+                    <h4>Context Recall</h4>
+                    <p>Were all the chunks needed to answer the question retrieved? Requires a ground-truth answer. Low recall means the retriever missed critical information.</p>
+                </div>
+            </div>
+            <div class="tip-box"><div class="tip-box-title">💡 Which metric to optimize first?</div><p>Start with <strong>Faithfulness</strong>. If your LLM is hallucinating, all other metrics are unreliable. Once faithfulness is above 0.85, focus on context precision (reduce chunk noise), then answer relevancy.</p></div>
+
+            <h2 id="ragas-setup">Running RAGAS Evaluation</h2>
+            <p>RAGAS evaluates a dataset of (question, answer, contexts, ground_truth) tuples using an LLM judge under the hood. Install it and run your first evaluation in minutes.</p>
+<div class="code-block">
+<div class="code-block-label"><span>bash — install dependencies</span><button class="copy-btn">Copy</button></div>
+<pre>pip install ragas langchain-openai datasets</pre>
+</div>
+
+<div class="code-block">
+<div class="code-block-label"><span>Python — basic RAGAS evaluation</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> ragas <span class="kw">import</span> evaluate
+<span class="kw">from</span> ragas.metrics <span class="kw">import</span> (
+    faithfulness,
+    answer_relevancy,
+    context_precision,
+    context_recall,
+)
+<span class="kw">from</span> datasets <span class="kw">import</span> Dataset
+<span class="kw">import</span> os
+
+<span class="cm"># Your evaluation dataset: list of dicts</span>
+<span class="cm"># Each entry needs: question, answer, contexts, ground_truth</span>
+data = {
+    <span class="st">"question"</span>: [
+        <span class="st">"What is retrieval-augmented generation?"</span>,
+        <span class="st">"How does BM25 rank documents?"</span>,
+    ],
+    <span class="st">"answer"</span>: [
+        <span class="st">"RAG combines a retriever with an LLM to ground answers in documents."</span>,
+        <span class="st">"BM25 uses term frequency and inverse document frequency to score relevance."</span>,
+    ],
+    <span class="st">"contexts"</span>: [
+        [<span class="st">"Retrieval-Augmented Generation (RAG) fetches relevant documents and passes them to an LLM."</span>],
+        [<span class="st">"BM25 is a ranking function based on TF-IDF used in information retrieval."</span>],
+    ],
+    <span class="st">"ground_truth"</span>: [
+        <span class="st">"RAG is a technique that retrieves documents and uses them to ground LLM generation."</span>,
+        <span class="st">"BM25 ranks documents using term frequency weighted by inverse document frequency."</span>,
+    ],
+}
+
+dataset = Dataset.from_dict(data)
+
+<span class="cm"># Run evaluation (uses GPT-4o as judge by default)</span>
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+result = evaluate(
+    dataset=dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+)
+
+<span class="kw">print</span>(result)
+<span class="cm"># {'faithfulness': 0.96, 'answer_relevancy': 0.91,</span>
+<span class="cm">#  'context_precision': 1.0, 'context_recall': 0.88}</span></pre>
+</div>
+
+            <h3>Interpreting the scores</h3>
+            <p>RAGAS scores range from 0 to 1. A production-grade RAG pipeline typically targets:</p>
+            <ul>
+                <li><strong>Faithfulness ≥ 0.85</strong> — less than 15% of claims are hallucinated</li>
+                <li><strong>Answer Relevancy ≥ 0.80</strong> — answers are on-topic</li>
+                <li><strong>Context Precision ≥ 0.75</strong> — retriever avoids noise</li>
+                <li><strong>Context Recall ≥ 0.80</strong> — retriever finds what's needed</li>
+            </ul>
+
+            <h2 id="without-ground-truth">Evaluating Without Ground Truth</h2>
+            <p>Ground-truth answers are expensive to create. For production systems, RAGAS supports <strong>reference-free evaluation</strong> — it can score faithfulness and answer relevancy without a ground truth answer, using the LLM itself as judge.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — reference-free evaluation</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> ragas <span class="kw">import</span> evaluate
+<span class="kw">from</span> ragas.metrics <span class="kw">import</span> faithfulness, answer_relevancy
+<span class="kw">from</span> datasets <span class="kw">import</span> Dataset
+
+<span class="cm"># No ground_truth field needed for these two metrics</span>
+data_no_gt = {
+    <span class="st">"question"</span>: [<span class="st">"What is vector search?"</span>, <span class="st">"What is chunking in RAG?"</span>],
+    <span class="st">"answer"</span>: [
+        <span class="st">"Vector search finds semantically similar documents using embeddings."</span>,
+        <span class="st">"Chunking splits documents into smaller pieces for retrieval."</span>,
+    ],
+    <span class="st">"contexts"</span>: [
+        [<span class="st">"Dense vector search encodes text as embeddings and retrieves nearest neighbours."</span>],
+        [<span class="st">"Text splitting (chunking) divides long documents into manageable segments."</span>],
+    ],
+}
+
+dataset = Dataset.from_dict(data_no_gt)
+result = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
+<span class="kw">print</span>(result)</pre>
+</div>
+            <div class="info-box"><div class="info-box-title">ℹ️ LLM-as-judge cost</div><p>RAGAS calls an LLM for each metric per sample. For 100 samples × 4 metrics, expect ~400 LLM calls. Use <code>gpt-4o-mini</code> as the judge to reduce cost by ~10× vs GPT-4o, with only small accuracy loss on standard benchmarks.</p></div>
+
+            <h2 id="tracing">Tracing with LangSmith</h2>
+            <p>For ongoing production monitoring, LangSmith traces every RAG call so you can inspect retrievals and answers individually. Combine it with RAGAS for systematic regression testing.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — enable LangSmith tracing</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">import</span> os
+
+<span class="cm"># Set these before importing LangChain</span>
+os.environ[<span class="st">"LANGCHAIN_TRACING_V2"</span>] = <span class="st">"true"</span>
+os.environ[<span class="st">"LANGCHAIN_API_KEY"</span>] = <span class="st">"your-langsmith-key"</span>
+os.environ[<span class="st">"LANGCHAIN_PROJECT"</span>] = <span class="st">"rag-evaluation"</span>
+
+<span class="cm"># Now all LangChain calls are automatically traced</span>
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain.chains <span class="kw">import</span> RetrievalQA
+
+<span class="cm"># This chain's calls will appear in LangSmith dashboard</span>
+vectorstore = FAISS.from_texts(
+    [<span class="st">"RAG combines retrieval with generation"</span>],
+    OpenAIEmbeddings()
+)
+qa = RetrievalQA.from_chain_type(
+    llm=ChatOpenAI(model=<span class="st">"gpt-4o-mini"</span>),
+    retriever=vectorstore.as_retriever()
+)
+answer = qa.invoke(<span class="st">"What does RAG do?"</span>)
+<span class="kw">print</span>(answer[<span class="st">"result"</span>])</pre>
+</div>
+
+            <h2 id="exercise">Hands-on Exercise</h2>
+            <p>Build a small evaluation harness that measures faithfulness before and after switching retrieval strategies:</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — exercise: compare retrieval strategies with RAGAS</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> ragas <span class="kw">import</span> evaluate
+<span class="kw">from</span> ragas.metrics <span class="kw">import</span> faithfulness, answer_relevancy, context_precision
+<span class="kw">from</span> datasets <span class="kw">import</span> Dataset
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">from</span> langchain_community.retrievers <span class="kw">import</span> BM25Retriever
+<span class="kw">from</span> langchain.retrievers <span class="kw">import</span> EnsembleRetriever
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings, ChatOpenAI
+<span class="kw">from</span> langchain.chains <span class="kw">import</span> RetrievalQA
+<span class="kw">from</span> langchain_core.documents <span class="kw">import</span> Document
+<span class="kw">import</span> os
+
+os.environ[<span class="st">"OPENAI_API_KEY"</span>] = <span class="st">"your-key"</span>
+
+corpus = [
+    Document(page_content=<span class="st">"Python's GIL prevents true multi-threading for CPU-bound tasks"</span>),
+    Document(page_content=<span class="st">"Use multiprocessing instead of threading for CPU-bound Python work"</span>),
+    Document(page_content=<span class="st">"asyncio enables concurrent I/O-bound tasks with a single thread"</span>),
+    Document(page_content=<span class="st">"ThreadPoolExecutor is suitable for I/O-bound workloads in Python"</span>),
+]
+
+questions = [
+    <span class="st">"Why can't Python threads speed up CPU-bound tasks?"</span>,
+    <span class="st">"What should I use for concurrent network requests?"</span>,
+]
+
+<span class="kw">def</span> <span class="fn">build_qa_chain</span>(retriever):
+    <span class="kw">return</span> RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model=<span class="st">"gpt-4o-mini"</span>),
+        retriever=retriever,
+        return_source_documents=<span class="kw">True</span>
+    )
+
+<span class="kw">def</span> <span class="fn">run_eval</span>(chain, questions, label):
+    rows = {<span class="st">"question"</span>: [], <span class="st">"answer"</span>: [], <span class="st">"contexts"</span>: []}
+    <span class="kw">for</span> q <span class="kw">in</span> questions:
+        out = chain.invoke(q)
+        rows[<span class="st">"question"</span>].append(q)
+        rows[<span class="st">"answer"</span>].append(out[<span class="st">"result"</span>])
+        rows[<span class="st">"contexts"</span>].append([d.page_content <span class="kw">for</span> d <span class="kw">in</span> out[<span class="st">"source_documents"</span>]])
+    result = evaluate(Dataset.from_dict(rows), metrics=[faithfulness, answer_relevancy, context_precision])
+    <span class="kw">print</span>(<span class="st">f"\n{label}: {dict(result)}"</span>)
+
+embeddings = OpenAIEmbeddings()
+
+<span class="cm"># Strategy 1: vector-only</span>
+vs = FAISS.from_documents(corpus, embeddings)
+run_eval(build_qa_chain(vs.as_retriever(search_kwargs={<span class="st">"k"</span>: <span class="nu">2</span>})), questions, <span class="st">"Vector-only"</span>)
+
+<span class="cm"># Strategy 2: hybrid (BM25 + vector)</span>
+bm25 = BM25Retriever.from_documents(corpus); bm25.k = <span class="nu">2</span>
+vec_r = vs.as_retriever(search_kwargs={<span class="st">"k"</span>: <span class="nu">2</span>})
+hybrid = EnsembleRetriever(retrievers=[bm25, vec_r], weights=[<span class="nu">0.4</span>, <span class="nu">0.6</span>])
+run_eval(build_qa_chain(hybrid), questions, <span class="st">"Hybrid"</span>)</pre>
+</div>
+            <p><strong>Expected outcome:</strong> Hybrid retrieval should score higher on context_precision because it surfaces the most relevant chunks via BM25 for the GIL question, while vector search handles the semantic paraphrase for the second query.</p>
+
+            <h3>Real-world use case</h3>
+            <p>A legal document Q&amp;A startup evaluated their RAG pipeline with RAGAS and discovered faithfulness was only 0.61 — the LLM was inferring claims not present in retrieved clauses. By switching to a stricter prompt ("Answer ONLY from the provided context. Say 'Not found' if the answer isn't there.") and increasing chunk overlap, faithfulness rose to 0.89 within a week, reducing customer complaints about incorrect legal summaries by 70%.</p>
+        </div>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="lesson-nav">
+            <a href="hybrid-search.html" class="prev">
+                <div class="lesson-nav-label">← Previous</div>
+                <div class="lesson-nav-title">Hybrid Search</div>
+            </a>
+        </nav>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul><li><a href="../../tutorials/index.html">All Tutorials</a></li><li><a href="../../courses/index.html">Courses</a></li><li><a href="../../projects/index.html">Projects</a></li><li><a href="../../debugging/index.html">Debugging</a></li></ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://ailadder.myrqai.com" target="_blank">AI Ladder</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li><li><a href="https://myrqai.com/admin/contact" target="_blank">Contact Us</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/donation-widget.js" defer></script>
+    <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pre = this.closest('.code-block').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                this.textContent = '✓ Copied';
+                setTimeout(() => this.textContent = 'Copy', 1500);
+            });
+        });
+    });
+    </script>
+</body>
+</html>

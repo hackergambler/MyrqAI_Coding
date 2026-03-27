@@ -1,1 +1,1 @@
-Fix "View All" links to point to correct difficulty pages
+Clear commit_msg.txt contents
