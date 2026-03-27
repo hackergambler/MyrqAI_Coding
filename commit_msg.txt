@@ -1,1 +1,1 @@
-Fix Gemini embeddings next lesson navigation link
+Fix LangChain Ollama next lesson navigation link
