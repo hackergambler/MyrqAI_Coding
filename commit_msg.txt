@@ -1,1 +1,1 @@
-Fix project card tutorial links by difficulty level
+Fix beginner tutorial card links to correct pages
