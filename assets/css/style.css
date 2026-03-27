@@ -900,7 +900,21 @@ footer {
 }
 
 @media (max-width: 900px) {
-    .nav-menu { display: none; }
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--bg-secondary);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: var(--space-lg) var(--space-xl);
+        gap: var(--space-lg);
+        z-index: 100;
+    }
+    .nav-menu.active { display: flex; }
     .mobile-menu-btn { display: block; }
     .footer-grid { grid-template-columns: repeat(2, 1fr); }
 }
