@@ -1,1 +1,1 @@
-Add advanced CNN architectures lesson to MasterLibrary
+Add feature-engineering lesson and fix navigation links
