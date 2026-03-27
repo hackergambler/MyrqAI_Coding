@@ -1,1 +1,1 @@
-Fix placeholder hrefs in intermediate tutorial cards
+Remove trailing slashes from external nav links
