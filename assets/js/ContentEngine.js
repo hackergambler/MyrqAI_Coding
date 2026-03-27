@@ -161,6 +161,16 @@ const Renderer={
 
   _tip(t){return t?`<div class="tip-box"><div class="tip-box-title">💡 Pro Tip</div><p>${t}</p></div>`:'';},
 
+  _exercise(e){
+    if(!e)return'';
+    const steps=(e.steps||[]).map(s=>`<li>${s}</li>`).join('');
+    return`<div class="exercise-box">
+      <div class="exercise-box-title">🏋️ Exercise: ${e.title||'Practice'}</div>
+      <p>${e.description||''}</p>
+      ${steps?`<ol>${steps}</ol>`:''}
+      ${e.hint?`<details class="exercise-hint"><summary>Hint</summary><p>${e.hint}</p></details>`:''}
+    </div>`;},
+
   _sections(sections){
     return(sections||[]).map(s=>`
       <div class="lesson-content">
@@ -169,6 +179,7 @@ const Renderer={
         ${this._tip(s.tip||'')}
         ${this._cb(s.code||null)}
         ${this._cb(s.code2||null)}
+        ${this._exercise(s.exercise||null)}
       </div>`).join('');},
 
   renderLesson(data){
