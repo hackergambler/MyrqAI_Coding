@@ -558,7 +558,65 @@
             </div>
 
 
-    <footer>
+    
+    <!-- ═══════════════════════════════════════════════════════
+         4-TIER CURRICULUM — powered by ContentEngine.js
+         All content is dynamic — rendered from CURRICULUM data
+    ═══════════════════════════════════════════════════════ -->
+    <section class="section" style="padding:var(--space-4xl) var(--space-xl)">
+        <div class="container">
+            <div class="section-header" style="text-align:center;margin-bottom:var(--space-3xl)">
+                <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.35rem 1rem;background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.2);border-radius:9999px;font-size:.78rem;font-family:var(--font-mono);color:var(--accent-primary);margin-bottom:1.5rem">
+                    🗺️ Structured Learning Path
+                </div>
+                <h2 class="section-title" style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem)">
+                    4-Tier Curriculum
+                </h2>
+                <p style="color:var(--text-secondary);font-size:1.1rem;max-width:600px;margin:.75rem auto 0;line-height:1.7">
+                    A structured path from Python basics to production AI systems. Every lesson tracks your progress automatically.
+                </p>
+            </div>
+
+            <!-- CE renders track cards here -->
+            <div id="ce-track-index" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem">
+                <!-- Loading skeleton -->
+                <div class="ce-track-skeleton" style="background:var(--bg-card);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:2rem;height:280px;animation:skel 1.5s ease infinite;background-size:200% 100%;background-image:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%)"></div>
+                <div class="ce-track-skeleton" style="background:var(--bg-card);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:2rem;height:280px;animation:skel 1.5s ease .2s infinite;background-size:200% 100%;background-image:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%)"></div>
+                <div class="ce-track-skeleton" style="background:var(--bg-card);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:2rem;height:280px;animation:skel 1.5s ease .4s infinite;background-size:200% 100%;background-image:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%)"></div>
+            </div>
+
+            <style>
+            @keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+            /* CE track card styles */
+            .ce-track-card {
+                background: var(--bg-card);
+                border: 1px solid rgba(255,255,255,.06);
+                border-radius: 16px;
+                padding: 2rem;
+                transition: border-color .2s, transform .2s;
+            }
+            .ce-track-card:hover { border-color: rgba(0,255,170,.25); transform: translateY(-3px); }
+            .ce-track-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+            .ce-track-icon { font-size: 2.5rem; line-height: 1; }
+            .ce-track-tier { font-size: .65rem; font-family: var(--font-mono); color: var(--accent-primary); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .25rem; }
+            .ce-track-title { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+            .ce-track-subtitle { font-size: .82rem; color: var(--text-muted); }
+            .ce-track-desc { font-size: .875rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.25rem; }
+            .ce-track-lessons { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 2px; }
+            .ce-track-lessons li a {
+                display: flex; align-items: center; gap: .5rem;
+                padding: .4rem .6rem; border-radius: 8px; text-decoration: none;
+                color: var(--text-secondary); font-size: .82rem;
+                transition: background .15s, color .15s;
+            }
+            .ce-track-lessons li a:hover { background: rgba(0,255,170,.06); color: var(--text-primary); }
+            .ce-track-lessons li.done a { color: var(--text-muted); }
+            .ce-lesson-dur { margin-left: auto; font-size: .7rem; font-family: var(--font-mono); color: var(--text-muted); }
+            </style>
+        </div>
+    </section>
+
+<footer>
         <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-brand">

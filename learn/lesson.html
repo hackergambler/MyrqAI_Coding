@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading… | AI Coding Academy</title>
+    <meta name="description" content="AI Coding Academy — comprehensive tutorials from foundations to advanced AI systems.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        /* ── Lesson layout ── */
+        .lesson-page {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 0;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding-top: calc(42px + 68px + var(--space-2xl)); /* topbar + nav */
+            min-height: 100vh;
+        }
+
+        /* ── Sticky sidebar ── */
+        .lesson-sidebar {
+            position: sticky;
+            top: calc(42px + 68px + var(--space-lg));
+            height: calc(100vh - 42px - 68px - var(--space-lg) * 2);
+            overflow-y: auto;
+            padding: var(--space-xl) var(--space-lg);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 255, 170, 0.2) transparent;
+        }
+        .lesson-sidebar::-webkit-scrollbar { width: 4px; }
+        .lesson-sidebar::-webkit-scrollbar-thumb { background: rgba(0, 255, 170, 0.2); border-radius: 2px; }
+
+        .sidebar-track-title {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--space-md);
+        }
+        .sidebar-progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            margin-bottom: var(--space-xs);
+            overflow: hidden;
+        }
+        .sidebar-progress-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .sidebar-progress-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-bottom: var(--space-lg);
+        }
+        .sidebar-lessons {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-lesson a {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .sidebar-lesson a:hover { background: rgba(0,255,170,0.06); color: var(--text-primary); }
+        .sidebar-lesson.active a { background: rgba(0,255,170,0.1); color: var(--accent-primary); font-weight: 600; }
+        .sidebar-lesson.done a { color: var(--text-muted); }
+        .sidebar-check { font-size: 0.85rem; flex-shrink: 0; }
+        .sidebar-lesson-title { flex: 1; line-height: 1.4; }
+        .sidebar-lesson-dur { font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono); flex-shrink: 0; }
+
+        /* ── Main lesson content ── */
+        .lesson-main {
+            padding: var(--space-2xl) var(--space-3xl) var(--space-4xl);
+            max-width: 820px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: var(--accent-primary); }
+        .separator { opacity: 0.4; }
+
+        .lesson-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+            flex-wrap: wrap;
+        }
+        .lesson-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .lesson-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+            line-height: 1.2;
+            margin-bottom: var(--space-lg);
+            color: var(--text-primary);
+        }
+        .lesson-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            line-height: 1.75;
+            margin-bottom: var(--space-3xl);
+        }
+
+        /* ── Lesson content blocks ── */
+        .lesson-content {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: var(--radius-lg);
+            padding: var(--space-2xl);
+            margin-bottom: var(--space-xl);
+        }
+        .lesson-content h2 {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            color: var(--accent-primary);
+            margin-bottom: var(--space-lg);
+        }
+        .lesson-content h3 {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            color: var(--accent-secondary);
+            margin: var(--space-xl) 0 var(--space-md);
+        }
+        .lesson-content p {
+            color: var(--text-secondary);
+            line-height: 1.85;
+            margin-bottom: var(--space-lg);
+        }
+        .lesson-content p:last-child { margin-bottom: 0; }
+        .lesson-content ul, .lesson-content ol {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            padding-left: var(--space-xl);
+            margin-bottom: var(--space-lg);
+        }
+        .lesson-content li { margin-bottom: var(--space-xs); }
+        .lesson-content code {
+            background: rgba(0,255,170,0.1);
+            color: var(--accent-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+        }
+
+        /* ── Code blocks ── */
+        .code-block {
+            background: #0d1117;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-md);
+            margin: var(--space-lg) 0;
+            overflow: hidden;
+        }
+        .code-block-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm) var(--space-lg);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .copy-btn {
+            background: transparent;
+            border: 1px solid rgba(0,255,170,0.3);
+            color: var(--accent-primary);
+            padding: 2px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(0,255,170,0.1); }
+        .code-block pre {
+            margin: 0;
+            padding: var(--space-lg);
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.7;
+            color: #e6edf3;
+            white-space: pre;
+        }
+        /* Syntax highlight classes */
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+
+        /* ── Tip / info boxes ── */
+        .tip-box {
+            background: rgba(0,255,170,0.06);
+            border: 1px solid rgba(0,255,170,0.2);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-lg);
+            margin: var(--space-lg) 0;
+        }
+        .tip-box-title { font-weight: 700; color: var(--accent-primary); margin-bottom: var(--space-xs); font-family: var(--font-heading); }
+        .tip-box p { margin: 0; color: var(--text-secondary); }
+        .warn-box {
+            background: rgba(251,191,36,0.06);
+            border: 1px solid rgba(251,191,36,0.2);
+            border-left: 3px solid var(--accent-warning);
+            border-radius: var(--radius-md);
+            padding: var(--space-lg);
+            margin: var(--space-lg) 0;
+        }
+        .warn-box-title { font-weight: 700; color: var(--accent-warning); margin-bottom: var(--space-xs); font-family: var(--font-heading); }
+        .warn-box p { margin: 0; color: var(--text-secondary); }
+
+        /* ── Lesson nav (prev/next) ── */
+        .lesson-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-lg);
+            margin-top: var(--space-3xl);
+            padding-top: var(--space-2xl);
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .lesson-nav a {
+            flex: 1;
+            padding: var(--space-lg);
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav .next { text-align: right; }
+        .lesson-nav-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); font-size: 0.95rem; }
+
+        /* ── Loading skeleton ── */
+        .ce-skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: ceSkeleton 1.5s infinite;
+            border-radius: var(--radius-md);
+            height: 1.2rem;
+            margin-bottom: var(--space-md);
+        }
+        @keyframes ceSkeleton { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        /* ── Mobile ── */
+        @media (max-width: 900px) {
+            .lesson-page { grid-template-columns: 1fr; }
+            .lesson-sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .lesson-main { padding: var(--space-xl) var(--space-lg) var(--space-3xl); max-width: 100%; }
+            .lesson-nav { flex-direction: column; }
+            .lesson-nav .next { text-align: left; }
+        }
+        @media (max-width: 600px) {
+            .lesson-main { padding: var(--space-lg) var(--space-md); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://www.library.myrqai.com" target="_blank" rel="noopener">
+                    <span class="link-icon">📚</span><span class="link-text">AI Library</span>
+                </a>
+                <a href="https://www.ailadder.myrqai.com" target="_blank" rel="noopener">
+                    <span class="link-icon">🪜</span><span class="link-text">AI Ladder</span>
+                </a>
+                <a href="https://www.myrqai.com" target="_blank" rel="noopener">
+                    <span class="link-icon">🏠</span><span class="link-text">MYRQAI</span>
+                </a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+
+    <!-- Background -->
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <div class="logo-mark">&lt;/&gt;</div>
+                <div class="logo-text">AI <span>Coding</span></div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="nav-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search tutorials…" readonly>
+                    <kbd>⌘K</kbd>
+                </div>
+                <a href="../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Page layout: sidebar + main -->
+    <div class="lesson-page">
+
+        <!-- Sticky Sidebar — populated by ContentEngine -->
+        <aside class="lesson-sidebar" id="ce-sidebar">
+            <!-- Skeleton while loading -->
+            <div class="ce-skeleton" style="width:60%;height:1rem"></div>
+            <div class="ce-skeleton" style="width:100%;height:4px;margin-bottom:1.5rem"></div>
+            <div class="ce-skeleton" style="width:90%;height:.9rem"></div>
+            <div class="ce-skeleton" style="width:80%;height:.9rem"></div>
+            <div class="ce-skeleton" style="width:95%;height:.9rem"></div>
+            <div class="ce-skeleton" style="width:75%;height:.9rem"></div>
+            <div class="ce-skeleton" style="width:88%;height:.9rem"></div>
+        </aside>
+
+        <!-- Main lesson area -->
+        <main class="lesson-main">
+
+            <!-- Breadcrumb -->
+            <div class="breadcrumb" id="ce-breadcrumb">
+                <a href="../index.html">Home</a>
+                <span class="separator">/</span>
+                <a href="../tutorials/index.html">Tutorials</a>
+                <span class="separator">/</span>
+                <span>Loading…</span>
+            </div>
+
+            <!-- Dynamic header (title, badge, duration) -->
+            <header id="ce-header">
+                <div class="lesson-meta">
+                    <div class="ce-skeleton" style="width:80px;height:22px;border-radius:20px"></div>
+                    <div class="ce-skeleton" style="width:60px;height:16px"></div>
+                </div>
+                <div class="ce-skeleton" style="width:80%;height:2.5rem;margin-bottom:1rem"></div>
+                <div class="ce-skeleton" style="width:100%;height:1rem"></div>
+                <div class="ce-skeleton" style="width:70%;height:1rem"></div>
+            </header>
+
+            <!-- Dynamic body sections (h2 + code blocks) -->
+            <div id="ce-body">
+                <div class="lesson-content">
+                    <div class="ce-skeleton" style="width:50%;height:1.4rem;margin-bottom:1rem"></div>
+                    <div class="ce-skeleton"></div>
+                    <div class="ce-skeleton" style="width:90%"></div>
+                    <div class="ce-skeleton" style="width:75%"></div>
+                    <div class="ce-skeleton" style="width:100%;height:200px;margin-top:1rem"></div>
+                </div>
+            </div>
+
+            <!-- Lesson navigation (prev / mark complete / next) -->
+            <div id="ce-lesson-nav" class="lesson-nav">
+                <div class="ce-skeleton" style="flex:1;height:70px"></div>
+                <div class="ce-skeleton" style="width:140px;height:44px"></div>
+                <div class="ce-skeleton" style="flex:1;height:70px"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../index.html" class="nav-logo">
+                        <div class="logo-mark">&lt;/&gt;</div>
+                        <div class="logo-text">AI <span>Coding</span></div>
+                    </a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul>
+                    <li><a href="../tutorials/index.html">All Tutorials</a></li>
+                    <li><a href="../courses/index.html">Courses</a></li>
+                    <li><a href="../debugging/index.html">Debugging Lab</a></li>
+                    <li><a href="../projects/index.html">Projects</a></li>
+                </ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul>
+                    <li><a href="https://www.library.myrqai.com" target="_blank">AI Library</a></li>
+                    <li><a href="https://www.ailadder.myrqai.com" target="_blank">AI Ladder</a></li>
+                    <li><a href="https://www.myrqai.com" target="_blank">MYRQAI Home</a></li>
+                </ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul>
+                    <li><a href="https://www.myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li>
+                    <li><a href="https://www.myrqai.com/admin/terms" target="_blank">Terms of Service</a></li>
+                    <li><a href="https://www.myrqai.com/admin/contact" target="_blank">Contact</a></li>
+                </ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://www.myrqai.com" target="_blank" style="color:var(--accent-primary)">MYRQAI</a>. All rights reserved.</p>
+                <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted)" data-progress-count>0</span>
+                <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted)"> lessons completed</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/ContentEngine.js"></script>
+
+</body>
+</html>

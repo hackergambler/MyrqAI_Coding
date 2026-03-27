@@ -1,0 +1,1423 @@
+[
+  {
+    "id": "p-env-setup",
+    "tier": 1,
+    "title": "Production-Ready Python AI Project Template",
+    "difficulty": "Beginner",
+    "duration": "45 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "dotenv",
+      "pytest",
+      "Docker"
+    ],
+    "desc": "Bootstrap a production-ready AI project with .env management, logging, retry wrappers, and Dockerfile from scratch.",
+    "sections": [
+      {
+        "h2": "Project Structure",
+        "body": "A well-structured AI project has distinct layers: config, clients, tools, and tests.",
+        "code": {
+          "label": "bash - create project skeleton",
+          "src": "mkdir ai_project && cd ai_project\nmkdir -p src/{clients,tools,prompts} tests\ntouch src/__init__.py src/config.py src/clients/openai_client.py\ntouch tests/test_clients.py .env .gitignore Dockerfile requirements.txt\necho '.env\n*.pyc\n__pycache__/\n.venv/' > .gitignore"
+        }
+      },
+      {
+        "h2": "Centralised Config",
+        "body": "All env vars loaded and validated at startup.",
+        "code": {
+          "label": "Python - config.py",
+          "src": "import os\nfrom dotenv import load_dotenv\nfrom dataclasses import dataclass\n\nload_dotenv()\n\n@dataclass\nclass Config:\n    openai_key: str\n    model: str = 'gpt-4o-mini'\n    max_tokens: int = 1024\n    temperature: float = 0.7\n\n    @classmethod\n    def from_env(cls) -> 'Config':\n        key = os.environ.get('OPENAI_API_KEY')\n        if not key:\n            raise EnvironmentError('OPENAI_API_KEY not set')\n        return cls(openai_key=key)\n\nconfig = Config.from_env()"
+        }
+      },
+      {
+        "h2": "Retry-Wrapped OpenAI Client",
+        "body": "A reusable client with exponential backoff.",
+        "code": {
+          "label": "Python - openai_client.py",
+          "src": "import time, random\nfrom openai import OpenAI, RateLimitError\nfrom src.config import config\n\nclient = OpenAI(api_key=config.openai_key)\n\ndef call(messages: list, **kwargs) -> str:\n    for attempt in range(5):\n        try:\n            resp = client.chat.completions.create(\n                model=config.model,\n                messages=messages,\n                max_tokens=config.max_tokens,\n                **kwargs\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            wait = 2**attempt + random.random()\n            time.sleep(min(wait, 60))\n    raise Exception('Max retries exceeded')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-chatbot",
+    "tier": 1,
+    "title": "Multi-Turn Chatbot with Memory",
+    "difficulty": "Beginner",
+    "duration": "40 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "FastAPI",
+      "WebSockets"
+    ],
+    "desc": "Build a stateful chatbot that maintains conversation history, trims context automatically, and streams responses to a browser via WebSockets.",
+    "sections": [
+      {
+        "h2": "Conversation Manager",
+        "body": "Maintain history and auto-trim to avoid context overflow.",
+        "code": {
+          "label": "Python - conversation.py",
+          "src": "import tiktoken\n\nenc = tiktoken.encoding_for_model('gpt-4o-mini')\n\nclass Conversation:\n    def __init__(self, system: str, max_tokens: int = 50_000):\n        self.max_tokens = max_tokens\n        self.history = [{'role':'system','content':system}]\n\n    def add(self, role: str, content: str):\n        self.history.append({'role':role,'content':content})\n        self._trim()\n\n    def _count(self) -> int:\n        return sum(len(enc.encode(m['content']))+4 for m in self.history)\n\n    def _trim(self):\n        while self._count() > self.max_tokens and len(self.history) > 2:\n            self.history = [self.history[0]] + self.history[3:]  # keep system, drop oldest turn\n\n    def messages(self) -> list:\n        return self.history"
+        }
+      },
+      {
+        "h2": "FastAPI Streaming Endpoint",
+        "body": "Stream tokens to the browser in real time.",
+        "code": {
+          "label": "Python - app.py",
+          "src": "from fastapi import FastAPI, WebSocket\nfrom openai import AsyncOpenAI\nfrom src.conversation import Conversation\n\napp = FastAPI()\nasync_client = AsyncOpenAI()\n\n@app.websocket('/ws')\nasync def ws_chat(ws: WebSocket):\n    await ws.accept()\n    conv = Conversation(system='You are a helpful AI assistant.')\n    while True:\n        user_msg = await ws.receive_text()\n        conv.add('user', user_msg)\n        buffer = ''\n        async with async_client.chat.completions.stream(\n            model='gpt-4o-mini', messages=conv.messages()\n        ) as stream:\n            async for event in stream:\n                token = event.choices[0].delta.content or ''\n                if token:\n                    buffer += token\n                    await ws.send_text(token)\n        conv.add('assistant', buffer)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-doc-qa",
+    "tier": 1,
+    "title": "PDF Q&A System",
+    "difficulty": "Beginner",
+    "duration": "50 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "pypdf",
+      "OpenAI",
+      "FAISS"
+    ],
+    "desc": "Upload a PDF, extract text, embed it, and answer questions about it using GPT-4o. No LangChain \u2014 built from primitives.",
+    "sections": [
+      {
+        "h2": "Extract and Chunk PDF",
+        "body": "Extract text and split into overlapping chunks.",
+        "code": {
+          "label": "Python - extract.py",
+          "src": "import pypdf, re\nfrom typing import Generator\n\ndef extract_pdf(path: str) -> str:\n    reader = pypdf.PdfReader(path)\n    return '\\n\\n'.join(\n        page.extract_text() or '' for page in reader.pages\n    )\n\ndef chunk(text: str, size: int=800, overlap: int=100) -> Generator[str,None,None]:\n    words = text.split()\n    step  = size - overlap\n    for i in range(0, len(words), step):\n        chunk_text = ' '.join(words[i:i+size])\n        if chunk_text.strip():\n            yield chunk_text"
+        }
+      },
+      {
+        "h2": "Embed and Search",
+        "body": "Embed chunks with OpenAI and find the most relevant ones for a query.",
+        "code": {
+          "label": "Python - qa.py",
+          "src": "import numpy as np\nfrom openai import OpenAI\nclient = OpenAI()\n\ndef embed(texts: list[str]) -> np.ndarray:\n    resp = client.embeddings.create(\n        model='text-embedding-3-small', input=texts\n    )\n    return np.array([e.embedding for e in resp.data])\n\ndef top_k(query: str, chunks: list, embeddings: np.ndarray, k=3) -> list:\n    q_emb = embed([query])[0]\n    scores = embeddings @ q_emb / (\n        np.linalg.norm(embeddings, axis=1) * np.linalg.norm(q_emb) + 1e-9\n    )\n    idx = scores.argsort()[::-1][:k]\n    return [chunks[i] for i in idx]\n\ndef answer(query: str, chunks: list, embeddings: np.ndarray) -> str:\n    docs = top_k(query, chunks, embeddings)\n    ctx  = '\\n\\n'.join(docs)\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[\n            {'role':'system','content':'Answer based only on the context provided.'},\n            {'role':'user','content':f'Context:\\n{ctx}\\n\\nQuestion: {query}'}\n        ]\n    )\n    return resp.choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-structured-extract",
+    "tier": 1,
+    "title": "Structured Data Extraction Pipeline",
+    "difficulty": "Beginner",
+    "duration": "35 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pydantic",
+      "JSON"
+    ],
+    "desc": "Extract structured entities (names, dates, amounts) from unstructured text with guaranteed Pydantic-validated output.",
+    "sections": [
+      {
+        "h2": "Pydantic Schema + JSON Mode",
+        "body": "Define your schema and extract reliably.",
+        "code": {
+          "label": "Python - extract.py",
+          "src": "from pydantic import BaseModel\nfrom typing import Optional\nfrom openai import OpenAI\nimport json\n\nclass Invoice(BaseModel):\n    vendor: str\n    invoice_number: str\n    date: str\n    total_amount: float\n    currency: str = 'USD'\n    line_items: list[dict] = []\n    due_date: Optional[str] = None\n\ndef extract_invoice(text: str) -> Invoice:\n    client = OpenAI()\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content': 'Extract invoice data as JSON. Fields: vendor(str), invoice_number(str), date(YYYY-MM-DD), total_amount(float), currency(str), line_items(list of {desc,qty,price}), due_date(YYYY-MM-DD or null).'\n        },{\n            'role':'user','content':text\n        }]\n    )\n    return Invoice(**json.loads(resp.choices[0].message.content))"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-sentiment",
+    "tier": 1,
+    "title": "Real-Time Sentiment Analysis API",
+    "difficulty": "Beginner",
+    "duration": "30 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "FastAPI",
+      "OpenAI",
+      "Redis"
+    ],
+    "desc": "REST API that classifies text sentiment with caching in Redis to avoid re-calling the LLM for duplicate inputs.",
+    "sections": [
+      {
+        "h2": "Sentiment Classifier with Cache",
+        "body": "Cache results to save API costs on repeated inputs.",
+        "code": {
+          "label": "Python - sentiment_api.py",
+          "src": "from fastapi import FastAPI\nfrom openai import OpenAI\nimport redis, hashlib, json\n\napp    = FastAPI()\nclient = OpenAI()\ncache  = redis.Redis(host='localhost', decode_responses=True)\n\ndef classify(text: str) -> dict:\n    key = 'sent:' + hashlib.sha256(text.encode()).hexdigest()[:16]\n    cached = cache.get(key)\n    if cached:\n        return json.loads(cached)\n\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{\n            'role':'system',\n            'content':'Reply ONLY with JSON: {\"label\":\"positive|negative|neutral\",\"score\":0.0-1.0,\"reason\":\"...\"}'\n        },{'role':'user','content':text}],\n        response_format={'type':'json_object'}\n    )\n    result = json.loads(resp.choices[0].message.content)\n    cache.setex(key, 3600, json.dumps(result))  # cache 1hr\n    return result\n\n@app.post('/sentiment')\ndef sentiment(text: str) -> dict:\n    return classify(text)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-email-draft",
+    "tier": 1,
+    "title": "Email Draft Assistant",
+    "difficulty": "Beginner",
+    "duration": "25 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Streamlit"
+    ],
+    "desc": "Streamlit app that rewrites emails in different tones (professional, casual, concise) with one-click copy.",
+    "sections": [
+      {
+        "h2": "Tone Rewriter",
+        "body": "Rewrite any email in the requested tone.",
+        "code": {
+          "label": "Python - app.py",
+          "src": "import streamlit as st\nfrom openai import OpenAI\n\nclient = OpenAI()\nTONES = ['professional','concise','friendly','firm','apologetic']\n\nst.title('\u2709\ufe0f Email Tone Rewriter')\noriginal = st.text_area('Paste your email', height=200)\ntone = st.selectbox('Target tone', TONES)\n\nif st.button('Rewrite') and original:\n    with st.spinner('Rewriting...'):\n        resp = client.chat.completions.create(\n            model='gpt-4o-mini',\n            messages=[{\n                'role':'system',\n                'content':f'Rewrite the email in a {tone} tone. Preserve the core message. Output only the rewritten email.'\n            },{'role':'user','content':original}]\n        )\n        result = resp.choices[0].message.content\n    st.text_area('Rewritten', value=result, height=200)\n    st.code(result, language=None)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-code-review",
+    "tier": 1,
+    "title": "Automated Code Review Bot",
+    "difficulty": "Intermediate",
+    "duration": "50 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "GitHub API",
+      "FastAPI"
+    ],
+    "desc": "GitHub webhook handler that automatically reviews pull request diffs and posts inline comments using the GitHub API.",
+    "sections": [
+      {
+        "h2": "Parse GitHub PR Diff",
+        "body": "Extract file diffs from GitHub webhook payload.",
+        "code": {
+          "label": "Python - github_review.py",
+          "src": "import httpx, os\nfrom openai import OpenAI\n\nGH_TOKEN = os.environ['GITHUB_TOKEN']\nclient   = OpenAI()\n\ndef get_pr_diff(owner: str, repo: str, pr_number: int) -> str:\n    resp = httpx.get(\n        f'https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}',\n        headers={'Authorization':f'token {GH_TOKEN}','Accept':'application/vnd.github.v3.diff'}\n    )\n    return resp.text\n\ndef review_diff(diff: str) -> str:\n    return client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'system',\n            'content':'You are a senior engineer doing code review. For each issue found, respond with: FILE, LINE, SEVERITY (low/medium/high), COMMENT. Be specific and constructive.'\n        },{'role':'user','content':f'Review this diff:\\n{diff[:8000]}'}]\n    ).choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-sql-gen",
+    "tier": 1,
+    "title": "Natural Language to SQL Query Generator",
+    "difficulty": "Intermediate",
+    "duration": "45 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "SQLite",
+      "FastAPI"
+    ],
+    "desc": "Convert plain English questions to SQL queries. Includes schema introspection, query validation, and safe execution.",
+    "sections": [
+      {
+        "h2": "Schema-Aware SQL Generation",
+        "body": "Include the database schema in the prompt for accurate SQL.",
+        "code": {
+          "label": "Python - nl2sql.py",
+          "src": "import sqlite3\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef get_schema(db_path: str) -> str:\n    conn = sqlite3.connect(db_path)\n    tables = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()\n    schema_parts = []\n    for (table,) in tables:\n        cols = conn.execute(f'PRAGMA table_info({table})').fetchall()\n        col_defs = ', '.join(f\"{c[1]} {c[2]}\" for c in cols)\n        schema_parts.append(f'CREATE TABLE {table} ({col_defs})')\n    conn.close()\n    return '\\n'.join(schema_parts)\n\ndef nl_to_sql(question: str, db_path: str) -> str:\n    schema = get_schema(db_path)\n    return client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'system',\n            'content':f'Convert questions to SQL. Schema:\\n{schema}\\nRespond with ONLY the SQL query, no explanation.'\n        },{'role':'user','content':question}]\n    ).choices[0].message.content.strip()"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-img-caption",
+    "tier": 1,
+    "title": "Image Captioning and Alt-Text Generator",
+    "difficulty": "Beginner",
+    "duration": "30 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI Vision",
+      "FastAPI",
+      "Pillow"
+    ],
+    "desc": "Upload images and get AI-generated captions, alt text for accessibility, and content moderation flags.",
+    "sections": [
+      {
+        "h2": "Vision API Caption Generation",
+        "body": "Encode image as base64 and generate detailed captions.",
+        "code": {
+          "label": "Python - caption.py",
+          "src": "import base64, httpx\nfrom openai import OpenAI\nclient = OpenAI()\n\ndef caption_url(url: str) -> dict:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'user',\n            'content':[\n                {'type':'text','text':'Provide: 1) A 1-sentence caption, 2) SEO alt text under 125 chars, 3) Content flags (none/adult/violence/sensitive). JSON: {caption, alt_text, flags}'},\n                {'type':'image_url','image_url':{'url':url,'detail':'low'}}\n            ]\n        }],\n        response_format={'type':'json_object'},\n        max_tokens=300\n    )\n    return resp.choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-translation",
+    "tier": 1,
+    "title": "Multi-Language Document Translator",
+    "difficulty": "Beginner",
+    "duration": "35 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "FastAPI",
+      "docx"
+    ],
+    "desc": "Translate Word documents and PDFs to any language while preserving formatting structure.",
+    "sections": [
+      {
+        "h2": "Chunked Document Translation",
+        "body": "Split large documents into chunks that fit in one LLM call.",
+        "code": {
+          "label": "Python - translate.py",
+          "src": "from openai import OpenAI\nclient = OpenAI()\n\ndef translate_chunk(text: str, target_lang: str) -> str:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'system',\n            'content':f'Translate to {target_lang}. Preserve all formatting, bullet points, and structure. Output ONLY the translation.'\n        },{'role':'user','content':text}]\n    )\n    return resp.choices[0].message.content\n\ndef translate_doc(paragraphs: list[str], target_lang: str) -> list[str]:\n    # Batch into chunks of 3000 chars\n    BATCH = 3000\n    batch, results = '', []\n    for p in paragraphs:\n        if len(batch) + len(p) > BATCH and batch:\n            results.extend(translate_chunk(batch, target_lang).split('\\n\\n'))\n            batch = p\n        else:\n            batch += '\\n\\n' + p\n    if batch:\n        results.extend(translate_chunk(batch, target_lang).split('\\n\\n'))\n    return results"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-meeting-notes",
+    "tier": 1,
+    "title": "Meeting Transcript Summarizer",
+    "difficulty": "Beginner",
+    "duration": "25 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Whisper",
+      "FastAPI"
+    ],
+    "desc": "Transcribe audio meeting recordings with Whisper, then extract action items, decisions, and attendee summaries.",
+    "sections": [
+      {
+        "h2": "Transcribe + Summarise",
+        "body": "Full pipeline from audio file to structured meeting notes.",
+        "code": {
+          "label": "Python - meeting.py",
+          "src": "from openai import OpenAI\nimport json\nclient = OpenAI()\n\ndef transcribe(audio_path: str) -> str:\n    with open(audio_path, 'rb') as f:\n        return client.audio.transcriptions.create(\n            model='whisper-1', file=f, response_format='text'\n        )\n\ndef extract_notes(transcript: str) -> dict:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':'Extract meeting notes as JSON: {summary: str, action_items: [{owner,task,due}], decisions: [str], attendees: [str]}'\n        },{'role':'user','content':transcript}]\n    )\n    return json.loads(resp.choices[0].message.content)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-price-monitor",
+    "tier": 1,
+    "title": "AI-Powered Price Monitoring Agent",
+    "difficulty": "Intermediate",
+    "duration": "55 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Playwright",
+      "SQLite",
+      "FastAPI"
+    ],
+    "desc": "Web agent that monitors competitor prices, detects changes, and generates natural-language price intelligence reports.",
+    "sections": [
+      {
+        "h2": "Price Scraper + Intelligence Report",
+        "body": "Scrape prices and use GPT-4o to write competitive intelligence.",
+        "code": {
+          "label": "Python - price_monitor.py",
+          "src": "from playwright.async_api import async_playwright\nfrom openai import OpenAI\nimport sqlite3, json, asyncio\n\nclient = OpenAI()\n\nasync def scrape_price(url: str) -> str:\n    async with async_playwright() as p:\n        browser = await p.chromium.launch(headless=True)\n        page = await browser.new_page()\n        await page.goto(url, timeout=15000)\n        content = await page.inner_text('body')\n        await browser.close()\n    return content[:5000]\n\ndef analyze_prices(scraped: dict) -> str:\n    context = json.dumps(scraped, indent=2)\n    return client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'system',\n            'content':'Analyze these product prices and write a 3-bullet competitive intelligence summary with price comparisons and recommendations.'\n        },{'role':'user','content':context}]\n    ).choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-resume-screen",
+    "tier": 1,
+    "title": "AI Resume Screening System",
+    "difficulty": "Intermediate",
+    "duration": "45 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "pypdf",
+      "FastAPI",
+      "Pydantic"
+    ],
+    "desc": "Parse resumes, extract structured candidate data, score fit against a job description, and rank applicants.",
+    "sections": [
+      {
+        "h2": "Resume Parser + Scorer",
+        "body": "Extract and score candidate profiles against a job description.",
+        "code": {
+          "label": "Python - resume.py",
+          "src": "from pydantic import BaseModel\nfrom typing import Optional\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\nclass Candidate(BaseModel):\n    name: str\n    email: Optional[str] = None\n    years_experience: float\n    skills: list[str]\n    education: str\n    fit_score: float  # 0-10\n    fit_reasons: list[str]\n    concerns: list[str]\n\ndef screen_resume(resume_text: str, job_description: str) -> Candidate:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':'Extract candidate info and score their fit for the job. JSON: {name,email,years_experience,skills,education,fit_score,fit_reasons,concerns}'\n        },{'role':'user','content':f'JOB:\\n{job_description}\\n\\nRESUME:\\n{resume_text}'}]\n    )\n    return Candidate(**json.loads(resp.choices[0].message.content))"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-ab-test",
+    "tier": 1,
+    "title": "LLM Prompt A/B Testing Framework",
+    "difficulty": "Intermediate",
+    "duration": "45 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pandas",
+      "Matplotlib"
+    ],
+    "desc": "Systematically compare two prompts across 100+ test cases and identify which performs better with statistical significance.",
+    "sections": [
+      {
+        "h2": "Automated Prompt Evaluator",
+        "body": "Run both prompts on the same inputs and score with an LLM judge.",
+        "code": {
+          "label": "Python - ab_test.py",
+          "src": "from openai import OpenAI\nimport json, asyncio\n\nclient = OpenAI()\n\nasync def eval_pair(input_text: str, response_a: str, response_b: str, criteria: str) -> dict:\n    \"\"\"LLM-as-judge: which response is better?\"\"\"\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':f'Evaluate two AI responses by: {criteria}. JSON: {{winner:\"A\"|\"B\"|\"tie\",score_a:1-10,score_b:1-10,reasoning:str}}'\n        },{'role':'user','content':f'INPUT: {input_text}\\n\\nRESPONSE A:\\n{response_a}\\n\\nRESPONSE B:\\n{response_b}'}]\n    )\n    return json.loads(resp.choices[0].message.content)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-changelog",
+    "tier": 1,
+    "title": "Automated Changelog Generator",
+    "difficulty": "Beginner",
+    "duration": "25 min",
+    "category": "Foundations",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "GitPython"
+    ],
+    "desc": "Parse git commit history and generate human-readable changelogs grouped by feature, bugfix, and breaking change.",
+    "sections": [
+      {
+        "h2": "Git Log to Changelog",
+        "body": "Fetch git commits and generate structured changelogs.",
+        "code": {
+          "label": "Python - changelog.py",
+          "src": "import git\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef get_commits(repo_path: str, since_tag: str = None) -> list[str]:\n    repo = git.Repo(repo_path)\n    if since_tag:\n        commits = list(repo.iter_commits(f'{since_tag}..HEAD'))\n    else:\n        commits = list(repo.iter_commits('HEAD', max_count=50))\n    return [f\"{c.hexsha[:8]} {c.summary}\" for c in commits]\n\ndef generate_changelog(commits: list[str], version: str) -> str:\n    return client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{\n            'role':'system',\n            'content':f'Generate a changelog for version {version}. Group by: \u2728 New Features, \ud83d\udc1b Bug Fixes, \ud83d\udea8 Breaking Changes, \ud83d\udcda Documentation. Use markdown.'\n        },{'role':'user','content':'\\n'.join(commits)}]\n    ).choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-research-agent",
+    "tier": 4,
+    "title": "Autonomous Research Agent",
+    "difficulty": "Advanced",
+    "duration": "90 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Tavily",
+      "LangGraph",
+      "ChromaDB"
+    ],
+    "desc": "An agent that researches any topic by searching the web, reading pages, taking notes in a vector store, and writing a structured report.",
+    "sections": [
+      {
+        "h2": "Research Agent with Persistent Notes",
+        "body": "Agent accumulates notes in ChromaDB across multiple search rounds.",
+        "code": {
+          "label": "Python - research_agent.py",
+          "src": "from langchain_openai import ChatOpenAI\nfrom langchain_community.tools.tavily_search import TavilySearchResults\nfrom langchain_community.vectorstores import Chroma\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain.agents import AgentExecutor, create_openai_tools_agent\nfrom langchain_core.prompts import ChatPromptTemplate\n\nllm   = ChatOpenAI(model='gpt-4o', temperature=0)\ntools = [TavilySearchResults(max_results=5)]\n\nprompt = ChatPromptTemplate.from_messages([\n    ('system', 'You are a research agent. Search for information, synthesize findings, and write comprehensive reports. Always cite your sources.'),\n    ('user', '{input}'),\n    ('placeholder', '{agent_scratchpad}')\n])\n\nagent = create_openai_tools_agent(llm, tools, prompt)\nexecutor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=10)\n\nresult = executor.invoke({'input': 'Research the latest developments in reasoning LLMs (2025-2026) and write a 500-word report.'})\nprint(result['output'])"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-coding-agent",
+    "tier": 4,
+    "title": "Coding Agent with Code Execution",
+    "difficulty": "Advanced",
+    "duration": "80 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Docker",
+      "Subprocess"
+    ],
+    "desc": "Agent that writes Python code, executes it in a sandboxed Docker container, reads the output, and iterates until the task is complete.",
+    "sections": [
+      {
+        "h2": "Sandboxed Code Execution Agent",
+        "body": "Execute LLM-generated code safely in Docker.",
+        "code": {
+          "label": "Python - coding_agent.py",
+          "src": "import subprocess, tempfile, os\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\ndef run_code_in_sandbox(code: str, timeout: int = 30) -> dict:\n    \"\"\"Execute Python code in an isolated Docker container.\"\"\"\n    with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:\n        f.write(code)\n        code_file = f.name\n    try:\n        result = subprocess.run(\n            ['docker','run','--rm','--network=none',\n             '--memory=256m','--cpus=0.5',\n             '-v',f'{code_file}:/code.py',\n             'python:3.12-slim','python','/code.py'],\n            capture_output=True, text=True, timeout=timeout\n        )\n        return {'stdout':result.stdout,'stderr':result.stderr,'exit_code':result.returncode}\n    except subprocess.TimeoutExpired:\n        return {'stdout':'','stderr':'Timeout exceeded','exit_code':1}\n    finally:\n        os.unlink(code_file)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-customer-support",
+    "tier": 4,
+    "title": "Multi-Agent Customer Support System",
+    "difficulty": "Advanced",
+    "duration": "90 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "LangGraph",
+      "ChromaDB",
+      "PostgreSQL"
+    ],
+    "desc": "A multi-agent system with a router, knowledge-base agent, billing agent, and escalation agent. Routes tickets intelligently.",
+    "sections": [
+      {
+        "h2": "LangGraph Multi-Agent Router",
+        "body": "Route tickets to specialised agents using LangGraph conditional edges.",
+        "code": {
+          "label": "Python - support_graph.py",
+          "src": "from langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Literal\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\nclass TicketState(TypedDict):\n    ticket: str\n    category: str\n    response: str\n    escalated: bool\n\ndef classify(state: TicketState) -> TicketState:\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role':'user','content':f'Classify ticket as billing|technical|general: {state[\"ticket\"]}'}],\n        response_format={'type':'json_object'}\n    )\n    cat = json.loads(resp.choices[0].message.content).get('category','general')\n    return {**state, 'category': cat}\n\ndef route(state: TicketState) -> Literal['billing','technical','general']:\n    return state['category']\n\ngraph = StateGraph(TicketState)\ngraph.add_node('classify', classify)\ngraph.set_entry_point('classify')\ngraph.add_conditional_edges('classify', route)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-data-analyst",
+    "tier": 4,
+    "title": "AI Data Analyst Agent",
+    "difficulty": "Advanced",
+    "duration": "75 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pandas",
+      "Matplotlib",
+      "FastAPI"
+    ],
+    "desc": "Upload CSV data, ask questions in natural language, and get back charts, statistics, and insights generated by a tool-calling agent.",
+    "sections": [
+      {
+        "h2": "Pandas Tool Agent",
+        "body": "Agent with tools to run pandas queries and generate matplotlib charts.",
+        "code": {
+          "label": "Python - analyst_agent.py",
+          "src": "import pandas as pd\nimport matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nfrom openai import OpenAI\nimport json, io, base64\n\nclient = OpenAI()\n\ndef run_pandas(df_json: str, code: str) -> str:\n    df = pd.read_json(df_json)\n    local = {'df': df, 'pd': pd}\n    exec(code, local)\n    return str(local.get('result', df.head().to_string()))\n\ndef make_chart(df_json: str, chart_code: str) -> str:\n    df = pd.read_json(df_json)\n    local = {'df': df, 'plt': plt, 'pd': pd}\n    exec(chart_code, local)\n    buf = io.BytesIO()\n    plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')\n    plt.close()\n    return base64.b64encode(buf.getvalue()).decode()"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-rag-pipeline",
+    "tier": 4,
+    "title": "Production RAG Pipeline with Evaluation",
+    "difficulty": "Advanced",
+    "duration": "90 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "LangChain",
+      "FAISS",
+      "OpenAI",
+      "RAGAS"
+    ],
+    "desc": "Full production RAG system with hybrid search, re-ranking, citation, and automated quality evaluation using RAGAS.",
+    "sections": [
+      {
+        "h2": "Hybrid RAG with Re-ranking",
+        "body": "Combine vector and keyword search, then re-rank for precision.",
+        "code": {
+          "label": "Python - rag_pipeline.py",
+          "src": "from langchain.retrievers import BM25Retriever, EnsembleRetriever\nfrom langchain_community.vectorstores import FAISS\nfrom langchain_openai import OpenAIEmbeddings\nfrom sentence_transformers import CrossEncoder\n\nembeds = OpenAIEmbeddings(model='text-embedding-3-small')\nreranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')\n\ndef build_retriever(docs):\n    vs   = FAISS.from_documents(docs, embeds)\n    bm25 = BM25Retriever.from_documents(docs)\n    bm25.k = 10\n    return EnsembleRetriever(\n        retrievers=[bm25, vs.as_retriever(search_kwargs={'k':10})],\n        weights=[0.3, 0.7]\n    )\n\ndef retrieve_and_rerank(query: str, retriever, k: int = 5) -> list:\n    candidates = retriever.invoke(query)\n    scores = reranker.predict([(query, d.page_content) for d in candidates])\n    ranked = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)\n    return [doc for _, doc in ranked[:k]]"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-fine-tuned",
+    "tier": 4,
+    "title": "Domain-Specific Fine-Tuned Model",
+    "difficulty": "Advanced",
+    "duration": "120 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "Unsloth",
+      "Llama 3.2",
+      "HuggingFace",
+      "Ollama"
+    ],
+    "desc": "Fine-tune Llama 3.2 on domain-specific Q&A data using LoRA/QLoRA, evaluate against the base model, and deploy via Ollama.",
+    "sections": [
+      {
+        "h2": "QLoRA Fine-tuning Pipeline",
+        "body": "Full fine-tuning run from dataset to exported GGUF model.",
+        "code": {
+          "label": "Python - finetune.py",
+          "src": "from unsloth import FastLanguageModel\nfrom datasets import Dataset\nfrom trl import SFTTrainer\nfrom transformers import TrainingArguments\n\nmodel, tokenizer = FastLanguageModel.from_pretrained(\n    model_name='unsloth/llama-3.2-8b-instruct',\n    max_seq_length=2048, load_in_4bit=True\n)\nmodel = FastLanguageModel.get_peft_model(\n    model, r=16, lora_alpha=16,\n    target_modules=['q_proj','k_proj','v_proj','o_proj'],\n    use_gradient_checkpointing='unsloth'\n)\n\ndef format_row(row):\n    return {'text': f'<|user|>\\n{row[\"question\"]}\\n<|assistant|>\\n{row[\"answer\"]}'}\n\ndata = Dataset.from_json('train.jsonl').map(format_row)\n\ntrainer = SFTTrainer(\n    model=model, tokenizer=tokenizer, train_dataset=data,\n    dataset_text_field='text', max_seq_length=2048,\n    args=TrainingArguments(\n        output_dir='./lora_out', num_train_epochs=3,\n        per_device_train_batch_size=2, learning_rate=2e-4,\n        fp16=True, logging_steps=10\n    )\n)\ntrainer.train()\nmodel.save_pretrained_gguf('./model_gguf', tokenizer)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-voice-agent",
+    "tier": 4,
+    "title": "Voice-Enabled AI Agent",
+    "difficulty": "Advanced",
+    "duration": "75 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI Realtime API",
+      "FastAPI",
+      "WebSockets"
+    ],
+    "desc": "Real-time voice conversation with an AI agent using OpenAI's Realtime API. Speaks, listens, and calls tools in real time.",
+    "sections": [
+      {
+        "h2": "Realtime Voice Agent",
+        "body": "WebSocket-based voice agent with tool calling.",
+        "code": {
+          "label": "Python - voice_agent.py",
+          "src": "import asyncio, json, websockets, base64\nfrom openai import AsyncOpenAI\n\nasync def voice_agent_session():\n    client = AsyncOpenAI()\n    # Connect to Realtime API\n    async with client.beta.realtime.connect(\n        model='gpt-4o-realtime-preview'\n    ) as conn:\n        # Configure session\n        await conn.session.update(session={\n            'modalities': ['audio','text'],\n            'instructions': 'You are a helpful voice assistant.',\n            'voice': 'alloy',\n            'turn_detection': {'type':'server_vad'},\n            'tools': [{\n                'type':'function',\n                'name':'get_weather',\n                'description':'Get current weather',\n                'parameters':{'type':'object','properties':{'city':{'type':'string'}},'required':['city']}\n            }]\n        })\n        print('Voice session active \u2014 speak now')\n        async for event in conn:\n            if event.type == 'response.audio.delta':\n                audio = base64.b64decode(event.delta)\n                # send to audio output device\n\nasyncio.run(voice_agent_session())"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-llm-eval",
+    "tier": 4,
+    "title": "LLM Evaluation Harness",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pandas",
+      "RAGAS",
+      "LangSmith"
+    ],
+    "desc": "Systematic LLM evaluation framework: measure hallucination rate, factual accuracy, instruction following, and latency across multiple models.",
+    "sections": [
+      {
+        "h2": "Automated Eval with LLM Judge",
+        "body": "Use GPT-4o as judge to score responses on multiple criteria.",
+        "code": {
+          "label": "Python - eval_harness.py",
+          "src": "from dataclasses import dataclass\nfrom openai import OpenAI\nimport json, statistics\n\nclient = OpenAI()\n\n@dataclass\nclass EvalResult:\n    prompt: str\n    response: str\n    factual_score: float\n    coherence_score: float\n    instruction_score: float\n    latency_ms: float\n\n    @property\n    def composite(self) -> float:\n        return (self.factual_score + self.coherence_score + self.instruction_score) / 3\n\ndef judge(prompt: str, response: str, reference: str = None) -> dict:\n    judge_prompt = f'Rate this AI response (1-10 each):\\nPROMPT: {prompt}\\nRESPONSE: {response}'\n    if reference:\n        judge_prompt += f'\\nREFERENCE: {reference}'\n    judge_prompt += '\\nJSON: {factual:int, coherence:int, follows_instructions:int, explanation:str}'\n    return json.loads(client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{'role':'system','content':'You are an AI evaluation expert.'},\n                  {'role':'user','content':judge_prompt}]\n    ).choices[0].message.content)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-knowledge-graph",
+    "tier": 4,
+    "title": "AI-Powered Knowledge Graph Builder",
+    "difficulty": "Advanced",
+    "duration": "80 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "NetworkX",
+      "Neo4j",
+      "FastAPI"
+    ],
+    "desc": "Extract entities and relationships from documents and build a queryable knowledge graph. Ask questions that traverse the graph.",
+    "sections": [
+      {
+        "h2": "Entity Extraction and Graph Building",
+        "body": "Extract entities and relationships, store in a graph database.",
+        "code": {
+          "label": "Python - kg_builder.py",
+          "src": "from openai import OpenAI\nfrom typing import NamedTuple\nimport json, networkx as nx\n\nclient = OpenAI()\n\nclass Relation(NamedTuple):\n    subject: str\n    predicate: str\n    obj: str\n\ndef extract_triplets(text: str) -> list[Relation]:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':'Extract subject-predicate-object triplets. JSON: {triplets: [{subject,predicate,object}]}'\n        },{'role':'user','content':text}]\n    )\n    data = json.loads(resp.choices[0].message.content)\n    return [Relation(**t) for t in data.get('triplets',[])]\n\ndef build_graph(docs: list[str]) -> nx.DiGraph:\n    G = nx.DiGraph()\n    for doc in docs:\n        for r in extract_triplets(doc):\n            G.add_edge(r.subject, r.obj, label=r.predicate)\n    return G"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-multimodal",
+    "tier": 4,
+    "title": "Multimodal Document Understanding System",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "GPT-4o Vision",
+      "pypdf",
+      "FastAPI",
+      "Pydantic"
+    ],
+    "desc": "Process documents with mixed content (text, charts, tables, images) using GPT-4o vision. Extracts structured data from visual elements.",
+    "sections": [
+      {
+        "h2": "Page-by-Page Vision Processing",
+        "body": "Render each PDF page as an image and extract all content types.",
+        "code": {
+          "label": "Python - multimodal_doc.py",
+          "src": "import pypdf, fitz  # PyMuPDF\nfrom PIL import Image\nfrom openai import OpenAI\nimport base64, io\n\nclient = OpenAI()\n\ndef pdf_page_to_base64(pdf_path: str, page_num: int) -> str:\n    doc = fitz.open(pdf_path)\n    page = doc.load_page(page_num)\n    img = page.get_pixmap(dpi=150)\n    img_bytes = img.tobytes('png')\n    return base64.b64encode(img_bytes).decode()\n\ndef analyze_page(img_b64: str) -> dict:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{'role':'user','content':[\n            {'type':'text','text':'Extract all content from this page. JSON: {text:str, tables:[{headers,rows}], charts:[{type,title,data_summary}], key_figures:[str]}'},\n            {'type':'image_url','image_url':{'url':f'data:image/png;base64,{img_b64}','detail':'high'}}\n        ]}],\n        response_format={'type':'json_object'},\n        max_tokens=2000\n    )\n    return resp.choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-workflow-automation",
+    "tier": 4,
+    "title": "AI Workflow Automation Engine",
+    "difficulty": "Advanced",
+    "duration": "85 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "LangGraph",
+      "OpenAI",
+      "Celery",
+      "Redis"
+    ],
+    "desc": "Drag-and-drop style workflow builder where each node is an AI operation. Execute complex multi-step pipelines with branching logic.",
+    "sections": [
+      {
+        "h2": "LangGraph Workflow Execution",
+        "body": "Define and execute complex workflows as LangGraph state machines.",
+        "code": {
+          "label": "Python - workflow_engine.py",
+          "src": "from langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Any\nfrom openai import OpenAI\n\nclient = OpenAI()\n\nclass WorkflowState(TypedDict):\n    input: str\n    extracted_data: dict\n    transformed: str\n    output: str\n    errors: list[str]\n\ndef extract_node(state: WorkflowState) -> WorkflowState:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{'role':'user','content':f'Extract key facts as JSON from: {state[\"input\"]}'}]\n    )\n    return {**state, 'extracted_data': resp.choices[0].message.content}\n\ndef transform_node(state: WorkflowState) -> WorkflowState:\n    return {**state, 'transformed': state['extracted_data']}\n\ngraph = StateGraph(WorkflowState)\ngraph.add_node('extract', extract_node)\ngraph.add_node('transform', transform_node)\ngraph.set_entry_point('extract')\ngraph.add_edge('extract', 'transform')\ngraph.add_edge('transform', END)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-personalization",
+    "tier": 4,
+    "title": "AI Personalization Engine",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Redis",
+      "FastAPI",
+      "Pydantic"
+    ],
+    "desc": "Learn user preferences from interactions and personalise AI responses. Maintains user preference profiles updated in real time.",
+    "sections": [
+      {
+        "h2": "User Preference Learning",
+        "body": "Extract and update user preferences from every interaction.",
+        "code": {
+          "label": "Python - personalization.py",
+          "src": "from openai import OpenAI\nfrom pydantic import BaseModel\nfrom typing import Optional\nimport json, redis\n\nclient = OpenAI()\ncache  = redis.Redis(host='localhost', decode_responses=True)\n\nclass UserProfile(BaseModel):\n    user_id: str\n    interests: list[str] = []\n    preferred_depth: str = 'intermediate'  # beginner|intermediate|expert\n    preferred_format: str = 'prose'        # prose|bullets|code\n    language: str = 'English'\n    context_notes: list[str] = []\n\ndef get_profile(user_id: str) -> UserProfile:\n    data = cache.get(f'profile:{user_id}')\n    if data:\n        return UserProfile(**json.loads(data))\n    return UserProfile(user_id=user_id)\n\ndef update_profile(profile: UserProfile, message: str) -> UserProfile:\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':'Extract any user preferences from this message. JSON: {interests:[],preferred_depth:str,preferred_format:str,notes:str}'\n        },{'role':'user','content':message}]\n    )\n    updates = json.loads(resp.choices[0].message.content)\n    profile.interests.extend(updates.get('interests',[]))\n    cache.setex(f'profile:{profile.user_id}', 86400, profile.json())\n    return profile"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-synthetic-data",
+    "tier": 4,
+    "title": "Synthetic Training Data Generator",
+    "difficulty": "Advanced",
+    "duration": "65 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pydantic",
+      "Pandas",
+      "HuggingFace"
+    ],
+    "desc": "Generate high-quality synthetic training datasets for fine-tuning LLMs. Includes diversity controls and quality filtering.",
+    "sections": [
+      {
+        "h2": "Diverse Synthetic Q&A Generator",
+        "body": "Generate Q&A pairs with controlled diversity and quality filtering.",
+        "code": {
+          "label": "Python - synthetic_data.py",
+          "src": "from openai import OpenAI\nfrom pydantic import BaseModel\nimport json, asyncio\n\nclient = OpenAI()\n\nclass QAPair(BaseModel):\n    question: str\n    answer: str\n    difficulty: str\n    topic: str\n    quality_score: float  # 0-1 from LLM judge\n\nasync def generate_batch(\n    topic: str,\n    difficulty: str,\n    count: int = 10\n) -> list[QAPair]:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':f'Generate {count} diverse Q&A pairs about {topic} at {difficulty} level. Each must be unique and specific. JSON: {{pairs: [{{question,answer,difficulty,topic}}]}}'\n        },{'role':'user','content':f'Topic: {topic}, Difficulty: {difficulty}'}]\n    )\n    pairs_data = json.loads(resp.choices[0].message.content).get('pairs',[])\n    return [QAPair(**p, quality_score=0.9) for p in pairs_data]"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-monitoring",
+    "tier": 4,
+    "title": "LLM Observability Dashboard",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "LangSmith",
+      "FastAPI",
+      "Prometheus",
+      "Grafana"
+    ],
+    "desc": "Production observability for LLM apps: trace every call, measure latency, cost, and quality, and alert on anomalies.",
+    "sections": [
+      {
+        "h2": "LangSmith Tracing + Prometheus Metrics",
+        "body": "Instrument every LLM call with tracing and metrics.",
+        "code": {
+          "label": "Python - observability.py",
+          "src": "from langsmith import traceable\nfrom openai import OpenAI\nfrom prometheus_client import Counter, Histogram, start_http_server\nimport time\n\nLLM_CALLS     = Counter('llm_calls_total', 'Total LLM API calls', ['model','status'])\nLLM_LATENCY   = Histogram('llm_latency_seconds', 'LLM call latency', ['model'])\nLLM_TOKENS    = Counter('llm_tokens_total', 'Tokens used', ['model','type'])\nLLM_COST_USD  = Counter('llm_cost_usd_total', 'Estimated cost in USD', ['model'])\n\nclient = OpenAI()\n\n@traceable(name='chat_completion')\ndef tracked_llm_call(messages: list, model='gpt-4o-mini') -> str:\n    start = time.time()\n    try:\n        resp = client.chat.completions.create(model=model, messages=messages)\n        latency = time.time() - start\n        LLM_CALLS.labels(model=model, status='success').inc()\n        LLM_LATENCY.labels(model=model).observe(latency)\n        LLM_TOKENS.labels(model=model,type='prompt').inc(resp.usage.prompt_tokens)\n        LLM_TOKENS.labels(model=model,type='completion').inc(resp.usage.completion_tokens)\n        return resp.choices[0].message.content\n    except Exception as e:\n        LLM_CALLS.labels(model=model, status='error').inc()\n        raise"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-debate-agent",
+    "tier": 4,
+    "title": "Multi-Agent Debate System",
+    "difficulty": "Advanced",
+    "duration": "60 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "LangGraph"
+    ],
+    "desc": "Two AI agents debate a topic from opposing viewpoints. A third judge agent evaluates arguments and declares a winner.",
+    "sections": [
+      {
+        "h2": "Debate Graph with Judge",
+        "body": "Three-agent debate with scoring.",
+        "code": {
+          "label": "Python - debate.py",
+          "src": "from openai import OpenAI\nfrom langgraph.graph import StateGraph, END\nfrom typing import TypedDict\n\nclient = OpenAI()\n\nclass DebateState(TypedDict):\n    topic: str\n    rounds: int\n    pro_args: list[str]\n    con_args: list[str]\n    verdict: str\n\ndef pro_agent(state: DebateState) -> DebateState:\n    r = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{'role':'system','content':f'Argue FOR: {state[\"topic\"]}. Counter: {state[\"con_args\"][-1] if state[\"con_args\"] else \"none\"}'},\n                  {'role':'user','content':'Make your argument in 2-3 sentences.'}]\n    ).choices[0].message.content\n    return {**state, 'pro_args': state['pro_args'] + [r], 'rounds': state['rounds']+1}\n\ndef judge_agent(state: DebateState) -> DebateState:\n    r = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{'role':'user','content':f'Judge this debate on \"{state[\"topic\"]}\"\\nPRO: {chr(10).join(state[\"pro_args\"])}\\nCON: {chr(10).join(state[\"con_args\"])}\\nGive a verdict with reasoning.'}]\n    ).choices[0].message.content\n    return {**state, 'verdict': r}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-task-planner",
+    "tier": 4,
+    "title": "LLM Task Decomposition Planner",
+    "difficulty": "Advanced",
+    "duration": "65 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "LangGraph",
+      "NetworkX"
+    ],
+    "desc": "Given a complex goal, the agent breaks it into a dependency graph of subtasks, executes them in topological order, and aggregates results.",
+    "sections": [
+      {
+        "h2": "Goal Decomposition + Dependency Graph",
+        "body": "Decompose a goal into subtasks with dependencies.",
+        "code": {
+          "label": "Python - task_planner.py",
+          "src": "from openai import OpenAI\nfrom pydantic import BaseModel\nimport json, networkx as nx\n\nclient = OpenAI()\n\nclass Task(BaseModel):\n    id: str\n    name: str\n    description: str\n    depends_on: list[str] = []\n    status: str = 'pending'\n    result: str = ''\n\ndef decompose(goal: str) -> list[Task]:\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type':'json_object'},\n        messages=[{\n            'role':'system',\n            'content':'Decompose this goal into 5-8 subtasks with dependencies. JSON: {tasks:[{id,name,description,depends_on:[]}]}'\n        },{'role':'user','content':goal}]\n    )\n    return [Task(**t) for t in json.loads(resp.choices[0].message.content)['tasks']]\n\ndef build_dag(tasks: list[Task]) -> nx.DiGraph:\n    G = nx.DiGraph()\n    for t in tasks:\n        G.add_node(t.id, task=t)\n        for dep in t.depends_on:\n            G.add_edge(dep, t.id)\n    return G"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-memory-agent",
+    "tier": 4,
+    "title": "Long-Term Memory Agent",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Mem0",
+      "SQLite",
+      "FastAPI"
+    ],
+    "desc": "Agent with three memory tiers: working (context window), episodic (vector store), and semantic (facts DB). Remembers everything across sessions.",
+    "sections": [
+      {
+        "h2": "Three-Tier Memory Architecture",
+        "body": "Implement working, episodic, and semantic memory for a persistent agent.",
+        "code": {
+          "label": "Python - memory_agent.py",
+          "src": "from openai import OpenAI\nfrom langchain_community.vectorstores import FAISS\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain_core.documents import Document\nimport sqlite3, json\n\nclient = OpenAI()\n\nclass TriTierMemory:\n    def __init__(self, db_path='./memory.db'):\n        self.embeds = OpenAIEmbeddings()\n        self.episodic = FAISS.from_documents(\n            [Document(page_content='init')], self.embeds\n        )\n        self.conn = sqlite3.connect(db_path)\n        self.conn.execute(\n            'CREATE TABLE IF NOT EXISTS facts (key TEXT PRIMARY KEY, value TEXT)'\n        )\n\n    def remember_episode(self, text: str):\n        self.episodic.add_documents([Document(page_content=text)])\n\n    def recall_similar(self, query: str, k=5) -> list[str]:\n        return [d.page_content for d in self.episodic.similarity_search(query, k=k)]\n\n    def store_fact(self, key: str, value: str):\n        self.conn.execute(\n            'INSERT OR REPLACE INTO facts VALUES (?,?)', (key, json.dumps(value))\n        )\n        self.conn.commit()\n\n    def get_fact(self, key: str):\n        row = self.conn.execute('SELECT value FROM facts WHERE key=?',(key,)).fetchone()\n        return json.loads(row[0]) if row else None"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-guardrails",
+    "tier": 4,
+    "title": "LLM Guardrails and Safety Layer",
+    "difficulty": "Advanced",
+    "duration": "55 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Anthropic",
+      "FastAPI",
+      "Presidio"
+    ],
+    "desc": "Production safety layer for LLM apps: PII detection, prompt injection blocking, toxicity filtering, and output validation.",
+    "sections": [
+      {
+        "h2": "Input/Output Safety Pipeline",
+        "body": "Detect and block unsafe inputs before they reach the LLM.",
+        "code": {
+          "label": "Python - guardrails.py",
+          "src": "from openai import OpenAI\nfrom presidio_analyzer import AnalyzerEngine\nfrom presidio_anonymizer import AnonymizerEngine\nimport re\n\nclient  = OpenAI()\nanalyze = AnalyzerEngine()\nanon    = AnonymizerEngine()\n\nINJECTION_PATTERNS = [\n    r'ignore (previous|all) instructions',\n    r'you are now',\n    r'DAN mode',\n    r'act as if',\n    r'disregard (your|all)',\n]\n\ndef is_injection(text: str) -> bool:\n    t = text.lower()\n    return any(re.search(p, t) for p in INJECTION_PATTERNS)\n\ndef remove_pii(text: str) -> str:\n    results = analyze.analyze(text=text, language='en')\n    return anon.anonymize(text=text, analyzer_results=results).text\n\ndef safe_call(user_input: str, system: str) -> dict:\n    if is_injection(user_input):\n        return {'blocked': True, 'reason': 'Prompt injection detected'}\n    clean = remove_pii(user_input)\n    resp  = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role':'system','content':system},{'role':'user','content':clean}]\n    )\n    return {'blocked': False, 'response': resp.choices[0].message.content}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-scraper-agent",
+    "tier": 4,
+    "title": "Autonomous Web Scraper Agent",
+    "difficulty": "Advanced",
+    "duration": "75 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Playwright",
+      "BeautifulSoup",
+      "FastAPI"
+    ],
+    "desc": "Agent that navigates websites autonomously, extracts structured data, handles pagination, and adapts to layout changes.",
+    "sections": [
+      {
+        "h2": "Vision-Guided Web Navigation Agent",
+        "body": "Use GPT-4o vision to identify UI elements and navigate.",
+        "code": {
+          "label": "Python - scraper_agent.py",
+          "src": "from playwright.async_api import async_playwright, Page\nfrom openai import OpenAI\nimport base64, json\n\nclient = OpenAI()\n\nasync def screenshot_b64(page: Page) -> str:\n    buf = await page.screenshot(full_page=False)\n    return base64.b64encode(buf).decode()\n\nasync def decide_next_action(page: Page, goal: str) -> dict:\n    img = await screenshot_b64(page)\n    resp = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{'role':'user','content':[\n            {'type':'text','text':f'Goal: {goal}. What to click/type next? JSON: {{action:click|type|scroll|done, selector:str, value:str}}'},\n            {'type':'image_url','image_url':{'url':f'data:image/png;base64,{img}'}}\n        ]}],\n        response_format={'type':'json_object'}\n    )\n    return json.loads(resp.choices[0].message.content)\n\nasync def scrape_agent(url: str, goal: str) -> list[dict]:\n    async with async_playwright() as p:\n        browser = await p.chromium.launch(headless=True)\n        page = await browser.new_page()\n        await page.goto(url)\n        for _ in range(20):  # max 20 actions\n            action = await decide_next_action(page, goal)\n            if action['action'] == 'done': break\n            elif action['action'] == 'click': await page.click(action['selector'])\n            elif action['action'] == 'type':  await page.fill(action['selector'], action['value'])\n        content = await page.content()\n        await browser.close()\n    return content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-anomaly",
+    "tier": 4,
+    "title": "AI Anomaly Detection System",
+    "difficulty": "Advanced",
+    "duration": "65 min",
+    "category": "Modern AI",
+    "stack": [
+      "Python",
+      "OpenAI",
+      "Pandas",
+      "scikit-learn",
+      "FastAPI"
+    ],
+    "desc": "Combine statistical anomaly detection with LLM-generated natural language explanations for every detected anomaly.",
+    "sections": [
+      {
+        "h2": "Statistical + LLM Anomaly Explainer",
+        "body": "Detect anomalies with IQR, explain each one with GPT-4o.",
+        "code": {
+          "label": "Python - anomaly.py",
+          "src": "import pandas as pd\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\ndef detect_anomalies(df: pd.DataFrame, col: str) -> pd.DataFrame:\n    Q1, Q3 = df[col].quantile(0.25), df[col].quantile(0.75)\n    IQR = Q3 - Q1\n    mask = (df[col] < Q1 - 1.5*IQR) | (df[col] > Q3 + 1.5*IQR)\n    return df[mask].copy()\n\ndef explain_anomaly(row: dict, col: str, stats: dict) -> str:\n    return client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{\n            'role':'user',\n            'content':f'Explain this anomaly in plain English.\\nColumn: {col}\\nValue: {row[col]}\\nNormal range: {stats[\"mean\"]:.2f} \u00b1 {stats[\"std\"]:.2f}\\nData context: {json.dumps({k:v for k,v in row.items() if k!=col})}'\n        }]\n    ).choices[0].message.content"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-sklearn-pipeline",
+    "tier": 2,
+    "title": "Scikit-learn ML Pipeline with Cross-Validation",
+    "difficulty": "Intermediate",
+    "duration": "50 min",
+    "category": "Machine Learning",
+    "stack": [
+      "Python",
+      "scikit-learn",
+      "pandas",
+      "matplotlib",
+      "Optuna",
+      "SHAP"
+    ],
+    "desc": "Build a production-ready sklearn pipeline with feature engineering, preprocessing, cross-validation, hyperparameter tuning with Optuna, and SHAP explainability.",
+    "sections": [
+      {
+        "h2": "Build the Pipeline",
+        "body": "Sklearn pipelines chain preprocessing and modelling into one serializable object \u2014 preventing data leakage and simplifying deployment.",
+        "code": {
+          "label": "Python - sklearn Pipeline with ColumnTransformer + Optuna",
+          "src": "import pandas as pd\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.model_selection import cross_val_score, StratifiedKFold\nimport optuna, joblib\n\nnumeric_features     = ['age', 'income', 'tenure_days']\ncategorical_features = ['plan_type', 'region', 'device']\n\nnumeric_transformer = Pipeline([\n    ('impute', SimpleImputer(strategy='median')),\n    ('scale',  StandardScaler()),\n])\ncategorical_transformer = Pipeline([\n    ('impute', SimpleImputer(strategy='most_frequent')),\n    ('ohe',    OneHotEncoder(handle_unknown='ignore', sparse_output=False)),\n])\npreprocessor = ColumnTransformer([\n    ('num', numeric_transformer,      numeric_features),\n    ('cat', categorical_transformer,  categorical_features),\n])\n\nclf = Pipeline([\n    ('preprocessor', preprocessor),\n    ('classifier', GradientBoostingClassifier(random_state=42))\n])\n\ndef objective(trial):\n    clf.set_params(\n        classifier__n_estimators  = trial.suggest_int('n_est', 50, 500),\n        classifier__max_depth     = trial.suggest_int('depth', 2, 8),\n        classifier__learning_rate = trial.suggest_float('lr', 0.01, 0.3, log=True),\n        classifier__subsample     = trial.suggest_float('sub', 0.5, 1.0),\n    )\n    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\n    return cross_val_score(clf, X_train, y_train, cv=cv, scoring='roc_auc', n_jobs=-1).mean()\n\nstudy = optuna.create_study(direction='maximize')\nstudy.optimize(objective, n_trials=50, show_progress_bar=True)\nprint(f'Best AUC: {study.best_value:.4f}')\nclf.set_params(**{f'classifier__{k}': v for k, v in study.best_params.items()})\nclf.fit(X_train, y_train)\njoblib.dump(clf, 'churn_pipeline.joblib')"
+        }
+      },
+      {
+        "h2": "SHAP Feature Importance",
+        "body": "SHAP gives per-prediction feature importance \u2014 essential for model explainability in production.",
+        "code": {
+          "label": "Python - SHAP explainability on GBM pipeline",
+          "src": "import shap, numpy as np\n\nexplainer = shap.TreeExplainer(clf.named_steps['classifier'])\nX_test_proc = clf.named_steps['preprocessor'].transform(X_test)\n\ncat_names = list(\n    clf.named_steps['preprocessor']\n       .named_transformers_['cat']\n       .named_steps['ohe']\n       .get_feature_names_out(categorical_features)\n)\nall_features = numeric_features + list(cat_names)\n\nshap_values = explainer.shap_values(X_test_proc)\nprint('Top 5 features:')\nmean_abs = np.abs(shap_values).mean(axis=0)\nfor idx in np.argsort(mean_abs)[::-1][:5]:\n    print(f'  {all_features[idx]:30s}  mean|SHAP| = {mean_abs[idx]:.4f}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-text-classifier",
+    "tier": 2,
+    "title": "Production Text Classifier: TF-IDF to DistilBERT",
+    "difficulty": "Intermediate",
+    "duration": "55 min",
+    "category": "NLP",
+    "stack": [
+      "Python",
+      "scikit-learn",
+      "transformers",
+      "torch",
+      "FastAPI"
+    ],
+    "desc": "Build a text classification system starting with a TF-IDF + Logistic Regression baseline, then upgrade to fine-tuned DistilBERT. Compare accuracy vs latency trade-offs.",
+    "sections": [
+      {
+        "h2": "TF-IDF Baseline",
+        "body": "Always build a fast baseline first. TF-IDF + Logistic Regression achieves surprisingly high accuracy and trains in seconds.",
+        "code": {
+          "label": "Python - TF-IDF + LR baseline classifier",
+          "src": "from sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import classification_report\nfrom sklearn.model_selection import train_test_split\nimport time\n\nX_train, X_test, y_train, y_test = train_test_split(\n    texts, labels, test_size=0.2, random_state=42, stratify=labels\n)\n\nbaseline = Pipeline([\n    ('tfidf', TfidfVectorizer(\n        max_features=50000, ngram_range=(1,2),\n        sublinear_tf=True, strip_accents='unicode', min_df=2\n    )),\n    ('clf', LogisticRegression(C=5.0, max_iter=1000, n_jobs=-1))\n])\n\nt0 = time.time()\nbaseline.fit(X_train, y_train)\ntrain_time = time.time() - t0\n\nt0 = time.time()\npreds = baseline.predict(X_test)\ninfer_ms = (time.time() - t0) / len(X_test) * 1000\n\nprint(classification_report(y_test, preds))\nprint(f'Train: {train_time:.1f}s | Infer: {infer_ms:.3f}ms/sample')"
+        }
+      },
+      {
+        "h2": "DistilBERT Fine-Tuning",
+        "body": "Fine-tune DistilBERT using HuggingFace Trainer. This typically adds 5-15 accuracy points over TF-IDF on domain text.",
+        "code": {
+          "label": "Python - DistilBERT fine-tuning with HuggingFace Trainer",
+          "src": "from transformers import (AutoTokenizer, AutoModelForSequenceClassification,\n                          TrainingArguments, Trainer)\nfrom datasets import Dataset\nimport numpy as np\nfrom sklearn.metrics import accuracy_score, f1_score\n\nMODEL = 'distilbert-base-uncased'\ntokenizer = AutoTokenizer.from_pretrained(MODEL)\nlabel2id = {l: i for i, l in enumerate(sorted(set(labels)))}\nid2label  = {v: k for k, v in label2id.items()}\n\ndef tokenize(batch):\n    return tokenizer(batch['text'], truncation=True, padding='max_length', max_length=128)\n\ntrain_ds = Dataset.from_dict({'text': X_train, 'label': [label2id[l] for l in y_train]})\ntest_ds  = Dataset.from_dict({'text': X_test,  'label': [label2id[l] for l in y_test]})\ntrain_ds = train_ds.map(tokenize, batched=True)\ntest_ds  = test_ds.map(tokenize, batched=True)\n\nmodel = AutoModelForSequenceClassification.from_pretrained(\n    MODEL, num_labels=len(label2id), id2label=id2label, label2id=label2id)\n\ndef compute_metrics(p):\n    preds = np.argmax(p.predictions, axis=-1)\n    return {'accuracy': accuracy_score(p.label_ids, preds),\n            'f1_macro': f1_score(p.label_ids, preds, average='macro')}\n\nTrainer(\n    model=model,\n    args=TrainingArguments(\n        output_dir='./distilbert-cls', num_train_epochs=3,\n        per_device_train_batch_size=32, learning_rate=2e-5,\n        evaluation_strategy='epoch', load_best_model_at_end=True,\n    ),\n    train_dataset=train_ds, eval_dataset=test_ds,\n    compute_metrics=compute_metrics,\n).train()"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-recommendation-engine",
+    "tier": 2,
+    "title": "Hybrid Recommendation Engine",
+    "difficulty": "Intermediate",
+    "duration": "60 min",
+    "category": "Machine Learning",
+    "stack": [
+      "Python",
+      "scikit-surprise",
+      "sentence-transformers",
+      "FastAPI",
+      "Redis"
+    ],
+    "desc": "Combine collaborative filtering (matrix factorization SVD) with content-based sentence embeddings for a hybrid recommender that handles cold start.",
+    "sections": [
+      {
+        "h2": "Collaborative Filtering with SVD",
+        "body": "Matrix factorization decomposes the user-item matrix into latent factor representations, capturing implicit preferences.",
+        "code": {
+          "label": "Python - SVD collaborative filtering with scikit-surprise",
+          "src": "from surprise import SVD, Dataset, Reader\nfrom surprise.model_selection import cross_validate, GridSearchCV\nimport pandas as pd\n\nratings_df = pd.read_csv('ratings.csv')  # user_id, item_id, rating\nreader = Reader(rating_scale=(1, 5))\ndata = Dataset.load_from_df(ratings_df[['user_id','item_id','rating']], reader)\n\nparam_grid = {\n    'n_factors': [50, 100, 200],\n    'n_epochs':  [20, 40],\n    'lr_all':    [0.002, 0.005],\n    'reg_all':   [0.02, 0.1]\n}\ngs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=5, n_jobs=-1)\ngs.fit(data)\nprint(f'Best RMSE: {gs.best_score[\"rmse\"]:.4f}')\n\nbest_svd = SVD(**gs.best_params['rmse'])\nbest_svd.fit(data.build_full_trainset())\n\ndef predict_rating(user_id, item_id) -> float:\n    return round(best_svd.predict(user_id, item_id).est, 2)"
+        }
+      },
+      {
+        "h2": "Content Embeddings for Cold Start",
+        "body": "New items with no ratings get zero collaborative signal. Content embeddings handle cold start by comparing item descriptions semantically.",
+        "code": {
+          "label": "Python - sentence-transformer content similarity",
+          "src": "from sentence_transformers import SentenceTransformer\nimport numpy as np\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport pandas as pd\n\nitems = pd.read_csv('items.csv')  # id, title, description\nmodel = SentenceTransformer('all-MiniLM-L6-v2')\n\nembeddings = model.encode(\n    items['description'].tolist(), batch_size=64,\n    show_progress_bar=True, normalize_embeddings=True\n)\nnp.save('item_embeddings.npy', embeddings)\n\ndef content_similar(item_id: str, k: int = 10) -> list:\n    idx  = items.index[items['id'] == item_id][0]\n    sims = cosine_similarity(embeddings[idx:idx+1], embeddings)[0]\n    top  = np.argsort(sims)[::-1][1:k+1]\n    return [{'id': items.iloc[i]['id'], 'score': float(sims[i])} for i in top]\n\nprint(content_similar('item_42', k=5))"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-time-series-forecaster",
+    "tier": 2,
+    "title": "Time Series Forecasting: SARIMA to NeuralProphet",
+    "difficulty": "Intermediate",
+    "duration": "55 min",
+    "category": "Machine Learning",
+    "stack": [
+      "Python",
+      "statsmodels",
+      "neuralprophet",
+      "pandas",
+      "plotly"
+    ],
+    "desc": "Forecast product demand with SARIMA statistical baseline and NeuralProphet neural model. Add external regressors (holidays, weekends) and compare MAPE.",
+    "sections": [
+      {
+        "h2": "SARIMA Baseline",
+        "body": "Always start with the statistical baseline. SARIMA handles trend and weekly seasonality with no GPU needed.",
+        "code": {
+          "label": "Python - SARIMA with weekly seasonality",
+          "src": "import pandas as pd\nfrom statsmodels.tsa.statespace.sarimax import SARIMAX\nfrom sklearn.metrics import mean_absolute_percentage_error\nimport warnings; warnings.filterwarnings('ignore')\n\ndf = pd.read_csv('sales.csv', parse_dates=['date'], index_col='date')\ndf = df.asfreq('D').fillna(method='ffill')\n\ntrain, test = df.iloc[:-30], df.iloc[-30:]\n\nmodel = SARIMAX(train['sales'], order=(1,1,1),\n                seasonal_order=(1,1,1,7),\n                enforce_stationarity=False).fit(disp=False)\nforecast = model.forecast(steps=30)\nprint(f'SARIMA MAPE: {mean_absolute_percentage_error(test[\"sales\"], forecast):.2%}')"
+        }
+      },
+      {
+        "h2": "NeuralProphet with External Regressors",
+        "body": "NeuralProphet extends Prophet with neural networks and lag features. It outperforms SARIMA on complex seasonal patterns.",
+        "code": {
+          "label": "Python - NeuralProphet with holiday regressors",
+          "src": "from neuralprophet import NeuralProphet\nimport pandas as pd\nfrom sklearn.metrics import mean_absolute_percentage_error\n\nnp_df = df.reset_index().rename(columns={'date':'ds','sales':'y'})\nnp_df['is_weekend'] = (np_df['ds'].dt.dayofweek >= 5).astype(int)\nnp_df['is_holiday'] = np_df['ds'].isin(holiday_dates).astype(int)\n\ntrain_np, test_np = np_df.iloc[:-30], np_df.iloc[-30:]\n\nmodel = NeuralProphet(\n    n_forecasts=30, n_lags=14,\n    seasonality_mode='multiplicative',\n    weekly_seasonality=True, yearly_seasonality=True,\n    learning_rate=0.01, epochs=100, batch_size=32,\n)\nmodel.add_lagged_regressor('is_weekend')\nmodel.add_lagged_regressor('is_holiday')\nmodel.fit(train_np, freq='D')\n\nforecast = model.predict(model.make_future_dataframe(train_np, periods=30))\nmape = mean_absolute_percentage_error(test_np['y'], forecast.tail(30)['yhat1'])\nprint(f'NeuralProphet MAPE: {mape:.2%}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-autoencoder-anomaly",
+    "tier": 2,
+    "title": "Anomaly Detection: Isolation Forest + Autoencoder",
+    "difficulty": "Intermediate",
+    "duration": "50 min",
+    "category": "Machine Learning",
+    "stack": [
+      "Python",
+      "scikit-learn",
+      "torch",
+      "pandas",
+      "FastAPI"
+    ],
+    "desc": "Detect anomalies in transaction data using Isolation Forest (statistical) and a PyTorch Autoencoder (neural). Compare ROC-AUC and serve via FastAPI.",
+    "sections": [
+      {
+        "h2": "Isolation Forest Baseline",
+        "body": "Isolation Forest isolates anomalies by random partitioning. Anomalies need fewer splits to isolate \u2014 they get lower anomaly scores.",
+        "code": {
+          "label": "Python - Isolation Forest unsupervised anomaly detection",
+          "src": "import pandas as pd\nfrom sklearn.ensemble import IsolationForest\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import roc_auc_score\n\nfeatures = ['amount','hour_of_day','days_since_last_txn',\n            'merchant_cat_encoded','velocity_24h','distance_km']\n\nX_train = pd.read_csv('txn_train.csv')[features]\ndf_test  = pd.read_csv('txn_test.csv')\nX_test, y_test = df_test[features], df_test['is_fraud']\n\npipeline = Pipeline([\n    ('scaler',    StandardScaler()),\n    ('isoforest', IsolationForest(n_estimators=200, contamination=0.02, n_jobs=-1))\n])\npipeline.fit(X_train)\nscores = -pipeline.decision_function(X_test)  # higher = more anomalous\nprint(f'Isolation Forest ROC-AUC: {roc_auc_score(y_test, scores):.4f}')"
+        }
+      },
+      {
+        "h2": "Autoencoder for Deep Anomaly Detection",
+        "body": "Train an autoencoder on normal transactions. Anomalies have high reconstruction error because the model never saw them during training.",
+        "code": {
+          "label": "Python (PyTorch) - autoencoder reconstruction error",
+          "src": "import torch, torch.nn as nn\nfrom torch.utils.data import DataLoader, TensorDataset\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import roc_auc_score\nimport numpy as np\n\nclass Autoencoder(nn.Module):\n    def __init__(self, d):\n        super().__init__()\n        self.enc = nn.Sequential(nn.Linear(d,32),nn.ReLU(),nn.Linear(32,8))\n        self.dec = nn.Sequential(nn.Linear(8,32),nn.ReLU(),nn.Linear(32,d))\n    def forward(self, x): return self.dec(self.enc(x))\n\nscaler = StandardScaler()\nX_s = torch.FloatTensor(scaler.fit_transform(X_train.values))\nloader = DataLoader(TensorDataset(X_s, X_s), batch_size=256, shuffle=True)\n\nmodel = Autoencoder(X_train.shape[1])\nopt   = torch.optim.Adam(model.parameters(), lr=1e-3)\nfor epoch in range(50):\n    for xb, _ in loader:\n        loss = nn.MSELoss()(model(xb), xb)\n        opt.zero_grad(); loss.backward(); opt.step()\n\nmodel.eval()\nwith torch.no_grad():\n    Xt = torch.FloatTensor(scaler.transform(X_test.values))\n    err = ((Xt - model(Xt))**2).mean(dim=1).numpy()\nprint(f'Autoencoder ROC-AUC: {roc_auc_score(y_test, err):.4f}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-feature-store",
+    "tier": 2,
+    "title": "Feature Store with Feast and Redis",
+    "difficulty": "Intermediate",
+    "duration": "45 min",
+    "category": "MLOps",
+    "stack": [
+      "Python",
+      "Feast",
+      "Redis",
+      "pandas",
+      "scikit-learn"
+    ],
+    "desc": "Eliminate training/serving skew by building a feature store with Feast. Define feature views, materialize to Redis online store, and serve features in real-time at sub-10ms latency.",
+    "sections": [
+      {
+        "h2": "Define Feature Views",
+        "body": "A feature store ensures the same feature logic runs at training and serving time \u2014 eliminating the most common source of ML production bugs.",
+        "code": {
+          "label": "Python - Feast feature view definition",
+          "src": "from feast import FeatureStore, Entity, FeatureView, Field, FileSource\nfrom feast.types import Float32, Int64\nfrom datetime import timedelta\n\nuser = Entity(name='user_id')\nuser_source = FileSource(\n    path='data/user_features.parquet',\n    timestamp_field='event_timestamp'\n)\nuser_features_view = FeatureView(\n    name='user_features', entities=[user],\n    ttl=timedelta(days=7),\n    schema=[\n        Field(name='total_purchases_30d', dtype=Float32),\n        Field(name='avg_order_value',     dtype=Float32),\n        Field(name='days_since_last_visit', dtype=Int64),\n        Field(name='churn_risk_score',    dtype=Float32),\n    ],\n    source=user_source, online=True,\n)\nstore = FeatureStore(repo_path='feature_repo/')\nstore.apply([user, user_features_view])\nprint('Feature store configured.')"
+        }
+      },
+      {
+        "h2": "Materialize and Serve Online",
+        "body": "Materialization copies features from the offline warehouse to Redis for real-time serving. Run this on a cron schedule.",
+        "code": {
+          "label": "Python - materialize + online feature serving",
+          "src": "from feast import FeatureStore\nfrom datetime import datetime\nimport pandas as pd\n\nstore = FeatureStore(repo_path='feature_repo/')\n\n# Materialize to Redis (run on schedule)\nstore.materialize_incremental(end_date=datetime.utcnow())\nprint('Materialized to Redis.')\n\n# Historical features for training (point-in-time correct)\nentity_df = pd.DataFrame({\n    'user_id': ['u001', 'u002'],\n    'event_timestamp': pd.to_datetime(['2024-01-15', '2024-01-16'])\n})\ntrain_features = store.get_historical_features(\n    entity_df=entity_df,\n    features=['user_features:total_purchases_30d',\n              'user_features:churn_risk_score']\n).to_df()\nprint(train_features)\n\n# Online features for serving (< 10ms from Redis)\nonline = store.get_online_features(\n    features=['user_features:total_purchases_30d','user_features:churn_risk_score'],\n    entity_rows=[{'user_id': 'u001'}]\n).to_dict()\nprint(f'Online features: {online}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-mlflow-tracking",
+    "tier": 2,
+    "title": "MLflow Experiment Tracking and Model Registry",
+    "difficulty": "Intermediate",
+    "duration": "40 min",
+    "category": "MLOps",
+    "stack": [
+      "Python",
+      "MLflow",
+      "scikit-learn",
+      "Docker"
+    ],
+    "desc": "Track experiments with MLflow autolog, compare runs in the UI, register the best model, and serve it as a REST endpoint \u2014 the foundation of reproducible ML.",
+    "sections": [
+      {
+        "h2": "Track Experiments",
+        "body": "MLflow autolog captures parameters, metrics, and model artifacts automatically. Manual logging adds custom metrics and plots.",
+        "code": {
+          "label": "Python - MLflow experiment tracking with autolog",
+          "src": "import mlflow, mlflow.sklearn\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.model_selection import train_test_split\n\nmlflow.set_tracking_uri('http://localhost:5000')\nmlflow.set_experiment('churn-prediction-v2')\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\n\nfor n_est in [100, 200, 500]:\n    with mlflow.start_run(run_name=f'rf_{n_est}_trees'):\n        mlflow.log_params({'n_estimators': n_est, 'max_depth': 8,\n                            'dataset_size': len(X_train)})\n        clf = RandomForestClassifier(n_estimators=n_est, max_depth=8,\n                                      n_jobs=-1, random_state=42)\n        clf.fit(X_train, y_train)\n        auc = roc_auc_score(y_test, clf.predict_proba(X_test)[:,1])\n        mlflow.log_metric('roc_auc', auc)\n        from mlflow.models import infer_signature\n        mlflow.sklearn.log_model(clf, 'model',\n            signature=infer_signature(X_train, clf.predict(X_train)),\n            registered_model_name='churn-rf')\n        print(f'n_est={n_est}: AUC={auc:.4f}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-pytorch-classifier",
+    "tier": 3,
+    "title": "PyTorch Image Classifier with Mixed Precision Training",
+    "difficulty": "Advanced",
+    "duration": "60 min",
+    "category": "Deep Learning",
+    "stack": [
+      "Python",
+      "PyTorch",
+      "torchvision",
+      "timm",
+      "wandb"
+    ],
+    "desc": "Build a complete PyTorch training loop for image classification: custom Dataset, DataLoader with augmentation, AMP mixed precision, gradient clipping, and W&B logging.",
+    "sections": [
+      {
+        "h2": "Custom Dataset with Augmentation",
+        "body": "A proper Dataset handles augmentation, normalization, and edge cases. The DataLoader handles batching and parallel loading.",
+        "code": {
+          "label": "Python (PyTorch) - custom Dataset + transforms",
+          "src": "import torch\nfrom torch.utils.data import Dataset, DataLoader\nfrom torchvision import transforms\nfrom pathlib import Path\nfrom PIL import Image\nimport pandas as pd\n\nclass ImageDataset(Dataset):\n    def __init__(self, df, img_dir, transform=None):\n        self.df, self.img_dir = df.reset_index(drop=True), Path(img_dir)\n        self.transform = transform\n    def __len__(self): return len(self.df)\n    def __getitem__(self, idx):\n        row = self.df.iloc[idx]\n        img = Image.open(self.img_dir / row['filename']).convert('RGB')\n        return self.transform(img) if self.transform else img, int(row['label'])\n\ntrain_tf = transforms.Compose([\n    transforms.RandomResizedCrop(224, scale=(0.7,1.0)),\n    transforms.RandomHorizontalFlip(),\n    transforms.ColorJitter(0.3, 0.3, 0.2),\n    transforms.ToTensor(),\n    transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225]),\n])\ntrain_loader = DataLoader(ImageDataset(df_train,'images/',train_tf),\n                           batch_size=64, shuffle=True, num_workers=4, pin_memory=True)"
+        }
+      },
+      {
+        "h2": "AMP Training Loop",
+        "body": "Mixed precision (float16 forward, float32 weights) halves VRAM and doubles throughput on modern GPUs.",
+        "code": {
+          "label": "Python (PyTorch) - AMP training loop with OneCycleLR",
+          "src": "import torch, torch.nn as nn\nfrom torch.cuda.amp import autocast, GradScaler\nimport timm, wandb\n\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel  = timm.create_model('efficientnet_b0', pretrained=True,\n                             num_classes=NUM_CLASSES).to(device)\nmodel  = torch.compile(model)  # PyTorch 2.0 compile for +15% speed\n\noptimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)\nscheduler = torch.optim.lr_scheduler.OneCycleLR(\n    optimizer, max_lr=3e-4, steps_per_epoch=len(train_loader), epochs=20)\nloss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)\nscaler  = GradScaler()\n\nwandb.init(project='image-clf')\nfor epoch in range(20):\n    model.train()\n    for imgs, labels in train_loader:\n        imgs, labels = imgs.to(device), labels.to(device)\n        optimizer.zero_grad()\n        with autocast():\n            loss = loss_fn(model(imgs), labels)\n        scaler.scale(loss).backward()\n        scaler.unscale_(optimizer)\n        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n        scaler.step(optimizer); scaler.update(); scheduler.step()\n    wandb.log({'epoch': epoch, 'lr': scheduler.get_last_lr()[0]})"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-bert-ner",
+    "tier": 3,
+    "title": "Named Entity Recognition with BERT Token Classification",
+    "difficulty": "Advanced",
+    "duration": "55 min",
+    "category": "Deep Learning / NLP",
+    "stack": [
+      "Python",
+      "transformers",
+      "datasets",
+      "seqeval",
+      "torch"
+    ],
+    "desc": "Fine-tune BERT for NER with correct BIO label alignment across subword tokens. Evaluate with seqeval span-level F1, then export to ONNX for production.",
+    "sections": [
+      {
+        "h2": "Subword Label Alignment",
+        "body": "BERT subword tokenization breaks words into pieces. NER labels are per-word, so continuation subwords must be masked to avoid training noise.",
+        "code": {
+          "label": "Python - BIO label alignment for BERT NER",
+          "src": "from transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained('bert-base-cased')\nlabel2id = {'O':0,'B-PER':1,'I-PER':2,'B-ORG':3,'I-ORG':4,'B-LOC':5,'I-LOC':6}\nid2label  = {v:k for k,v in label2id.items()}\n\ndef tokenize_and_align(examples):\n    enc = tokenizer(examples['tokens'], truncation=True,\n                    is_split_into_words=True, padding='max_length', max_length=128)\n    all_labels = []\n    for i, labels in enumerate(examples['ner_tags']):\n        word_ids, aligned, prev = enc.word_ids(batch_index=i), [], None\n        for wid in word_ids:\n            if wid is None:              aligned.append(-100)\n            elif wid != prev:            aligned.append(labels[wid])\n            else:\n                orig = id2label[labels[wid]]\n                aligned.append(label2id['I-'+orig[2:]] if orig.startswith('B-') else -100)\n            prev = wid\n        all_labels.append(aligned)\n    enc['labels'] = all_labels\n    return enc"
+        }
+      },
+      {
+        "h2": "Train and Evaluate with seqeval",
+        "body": "seqeval computes span-level F1 \u2014 the standard NER metric. Per-entity breakdown reveals where the model needs more data.",
+        "code": {
+          "label": "Python - NER training + seqeval F1",
+          "src": "from transformers import (AutoModelForTokenClassification,\n                          TrainingArguments, Trainer, DataCollatorForTokenClassification)\nfrom evaluate import load\nimport numpy as np\n\nmodel = AutoModelForTokenClassification.from_pretrained(\n    'bert-base-cased', num_labels=len(label2id),\n    id2label=id2label, label2id=label2id)\n\nseqeval = load('seqeval')\ndef compute_metrics(p):\n    preds  = np.argmax(p.predictions, axis=-1)\n    true_p = [[id2label[x] for x,l in zip(pr,la) if l != -100]\n               for pr,la in zip(preds, p.label_ids)]\n    true_l = [[id2label[l] for l in la if l != -100] for la in p.label_ids]\n    r = seqeval.compute(predictions=true_p, references=true_l)\n    return {'f1': r['overall_f1'], 'precision': r['overall_precision'],\n             'recall': r['overall_recall']}\n\nTrainer(\n    model=model,\n    args=TrainingArguments('./bert-ner', num_train_epochs=5,\n        per_device_train_batch_size=32, learning_rate=3e-5,\n        evaluation_strategy='epoch', load_best_model_at_end=True, metric_for_best_model='f1'),\n    train_dataset=train_ds, eval_dataset=val_ds,\n    tokenizer=tokenizer,\n    data_collator=DataCollatorForTokenClassification(tokenizer),\n    compute_metrics=compute_metrics,\n).train()"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-transformer-scratch",
+    "tier": 3,
+    "title": "GPT-Style Language Model from Scratch",
+    "difficulty": "Advanced",
+    "duration": "75 min",
+    "category": "Deep Learning",
+    "stack": [
+      "Python",
+      "PyTorch",
+      "tiktoken"
+    ],
+    "desc": "Build a complete autoregressive transformer LM from scratch: causal self-attention with mask, positional embeddings, weight tying, and a training loop on a small corpus.",
+    "sections": [
+      {
+        "h2": "Causal Self-Attention",
+        "body": "Autoregressive models mask future positions so each token can only attend to prior tokens. The causal mask is a lower-triangular matrix of ones.",
+        "code": {
+          "label": "Python (PyTorch) - GPT causal attention from scratch",
+          "src": "import torch, torch.nn as nn, torch.nn.functional as F\n\nclass CausalSelfAttention(nn.Module):\n    def __init__(self, d_model, n_heads, dropout=0.1, max_len=1024):\n        super().__init__()\n        self.n_heads = n_heads\n        self.d_head  = d_model // n_heads\n        self.scale   = self.d_head ** -0.5\n        self.qkv  = nn.Linear(d_model, 3*d_model, bias=False)\n        self.proj = nn.Linear(d_model, d_model, bias=False)\n        self.drop = nn.Dropout(dropout)\n        self.register_buffer('mask',\n            torch.tril(torch.ones(max_len,max_len)).view(1,1,max_len,max_len))\n\n    def forward(self, x):\n        B, T, C = x.shape\n        Q, K, V = self.qkv(x).split(C, dim=-1)\n        def mh(t): return t.view(B,T,self.n_heads,self.d_head).transpose(1,2)\n        Q, K, V = mh(Q), mh(K), mh(V)\n        attn = (Q @ K.transpose(-2,-1)) * self.scale\n        attn = attn.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))\n        attn = self.drop(F.softmax(attn, dim=-1))\n        out  = (attn @ V).transpose(1,2).contiguous().view(B,T,C)\n        return self.proj(out)"
+        }
+      },
+      {
+        "h2": "Full GPT Model and Training Step",
+        "body": "Stack transformer blocks, add token + positional embeddings, tie the LM head weight to the embedding matrix, and train with cross-entropy on shifted sequences.",
+        "code": {
+          "label": "Python (PyTorch) - MiniGPT full model",
+          "src": "class GPTBlock(nn.Module):\n    def __init__(self, d,h,ff,drop=0.1,ml=1024):\n        super().__init__()\n        self.ln1  = nn.LayerNorm(d)\n        self.attn = CausalSelfAttention(d,h,drop,ml)\n        self.ln2  = nn.LayerNorm(d)\n        self.ff   = nn.Sequential(nn.Linear(d,ff),nn.GELU(),nn.Dropout(drop),\n                                   nn.Linear(ff,d),nn.Dropout(drop))\n    def forward(self,x):\n        x = x + self.attn(self.ln1(x))\n        x = x + self.ff(self.ln2(x))\n        return x\n\nclass MiniGPT(nn.Module):\n    def __init__(self, vocab_size, d=256, n=6, h=8, ff=1024, ml=512, drop=0.1):\n        super().__init__()\n        self.te = nn.Embedding(vocab_size, d)\n        self.pe = nn.Embedding(ml, d)\n        self.drop = nn.Dropout(drop)\n        self.blocks = nn.ModuleList([GPTBlock(d,h,ff,drop,ml) for _ in range(n)])\n        self.ln  = nn.LayerNorm(d)\n        self.lmh = nn.Linear(d, vocab_size, bias=False)\n        self.lmh.weight = self.te.weight  # weight tying\n\n    def forward(self, idx, targets=None):\n        B,T = idx.shape\n        x = self.drop(self.te(idx) + self.pe(torch.arange(T,device=idx.device)))\n        for block in self.blocks: x = block(x)\n        logits = self.lmh(self.ln(x))\n        loss = F.cross_entropy(logits.view(-1,logits.size(-1)),\n                                targets.view(-1), ignore_index=-1) if targets is not None else None\n        return logits, loss\n\nmodel = MiniGPT(vocab_size=50257)\nopt   = torch.optim.AdamW(model.parameters(), lr=6e-4, betas=(0.9,0.95), weight_decay=0.1)\nx, y  = next(iter(loader))\n_, loss = model(x, y)\nprint(f'Initial loss: {loss.item():.4f}')  # ~ln(50257) \u2248 10.8"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-knowledge-distillation",
+    "tier": 3,
+    "title": "Knowledge Distillation: Teacher-Student Model Compression",
+    "difficulty": "Advanced",
+    "duration": "55 min",
+    "category": "Deep Learning / MLOps",
+    "stack": [
+      "Python",
+      "PyTorch",
+      "transformers",
+      "onnxruntime"
+    ],
+    "desc": "Compress a large BERT teacher into a small student using KL divergence distillation loss. Achieve 60% size reduction with < 5% accuracy loss, then export to ONNX for deployment.",
+    "sections": [
+      {
+        "h2": "Distillation Loss",
+        "body": "The student learns from teacher soft probabilities (KL divergence) and hard ground-truth labels. Temperature scaling softens the teacher distribution to transfer inter-class knowledge.",
+        "code": {
+          "label": "Python (PyTorch) - KL-divergence distillation loss",
+          "src": "import torch, torch.nn.functional as F\n\ndef distillation_loss(student_logits, teacher_logits, labels,\n                       temperature=4.0, alpha=0.7):\n    \"\"\"\n    L = alpha * KL(student_soft || teacher_soft) * T^2\n      + (1-alpha) * CrossEntropy(student, hard_labels)\n    temperature > 1 produces softer distributions revealing more structure.\n    \"\"\"\n    s_soft = F.log_softmax(student_logits / temperature, dim=-1)\n    t_soft = F.softmax(teacher_logits    / temperature, dim=-1)\n    distill = F.kl_div(s_soft, t_soft, reduction='batchmean') * temperature**2\n    hard    = F.cross_entropy(student_logits, labels)\n    return alpha * distill + (1 - alpha) * hard\n\n# Training step\nteacher.eval()   # frozen\nstudent.train()\n\nfor batch in dataloader:\n    ids    = batch['input_ids'].to(device)\n    labels = batch['labels'].to(device)\n    with torch.no_grad():\n        t_logits = teacher(ids).logits\n    s_logits = student(ids).logits\n    loss = distillation_loss(s_logits, t_logits, labels, temperature=4.0, alpha=0.7)\n    loss.backward(); optimizer.step(); optimizer.zero_grad()"
+        }
+      },
+      {
+        "h2": "ONNX Export and Benchmark",
+        "body": "Export the student to ONNX for production. ONNX Runtime with GPU typically provides 1.5-3x speedup over PyTorch eager mode.",
+        "code": {
+          "label": "Python - ONNX export + runtime benchmark",
+          "src": "import torch, onnx, onnxruntime as ort, time, numpy as np\n\nstudent.eval()\ndummy = (torch.randint(0,30522,(1,128)), torch.ones(1,128,dtype=torch.long))\n\ntorch.onnx.export(student, dummy, 'student.onnx',\n    input_names=['input_ids','attention_mask'],\n    output_names=['logits'],\n    dynamic_axes={'input_ids':{0:'batch',1:'seq'},'attention_mask':{0:'batch',1:'seq'}},\n    opset_version=17)\nonnx.checker.check_model('student.onnx')\nprint('ONNX model valid.')\n\nsess  = ort.InferenceSession('student.onnx',\n    providers=['CUDAExecutionProvider','CPUExecutionProvider'])\nbatch = {'input_ids': dummy[0].numpy(), 'attention_mask': dummy[1].numpy()}\n\nN = 200\nt0 = time.perf_counter()\nfor _ in range(N): sess.run(None, batch)\norm_ms = (time.perf_counter()-t0)/N*1000\n\nwith torch.no_grad():\n    t0 = time.perf_counter()\n    for _ in range(N): student(*dummy)\n    pt_ms = (time.perf_counter()-t0)/N*1000\n\nprint(f'PyTorch: {pt_ms:.2f}ms | ONNX: {orm_ms:.2f}ms | Speedup: {pt_ms/orm_ms:.2f}x')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-vllm-server",
+    "tier": 3,
+    "title": "High-Throughput LLM Inference Server with vLLM",
+    "difficulty": "Advanced",
+    "duration": "50 min",
+    "category": "Deep Learning / MLOps",
+    "stack": [
+      "Python",
+      "vLLM",
+      "FastAPI",
+      "Docker",
+      "Prometheus"
+    ],
+    "desc": "Deploy a production LLM server using vLLM's PagedAttention. Run up to 24x more concurrent requests than naive serving. Add OpenAI-compatible API and Prometheus metrics.",
+    "sections": [
+      {
+        "h2": "vLLM Batch Inference",
+        "body": "PagedAttention manages KV cache like virtual memory \u2014 eliminating the need to pre-allocate maximum sequence length memory. This dramatically increases throughput and concurrency.",
+        "code": {
+          "label": "Python - vLLM offline batch inference with PagedAttention",
+          "src": "from vllm import LLM, SamplingParams\nimport time\n\nllm = LLM(\n    model='meta-llama/Llama-3.2-8B-Instruct',\n    gpu_memory_utilization=0.90,\n    max_num_seqs=256,      # concurrent sequences\n    max_model_len=4096,\n    quantization='awq',    # 4x memory reduction\n)\nparams = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)\n\nprompts = [f'<|user|>\\nExplain {t} in one paragraph.\\n<|assistant|>\\n'\n            for t in ['attention', 'RAG', 'LoRA', 'RLHF', 'quantization',\n                       'PagedAttention', 'DPO', 'chain-of-thought']]\n\nt0 = time.time()\nouts = llm.generate(prompts, params)\nelapsed = time.time()-t0\ntokens = sum(len(o.outputs[0].token_ids) for o in outs)\nprint(f'{len(prompts)} req | {tokens} tokens | {elapsed:.2f}s | {tokens/elapsed:.0f} tok/s')"
+        }
+      },
+      {
+        "h2": "OpenAI-Compatible API Server",
+        "body": "vLLM's built-in server exposes the OpenAI API spec \u2014 drop in any model behind the standard interface with no client changes.",
+        "code": {
+          "label": "bash + Python - vLLM OpenAI server + streaming client",
+          "src": "# Start server\npython -m vllm.entrypoints.openai.api_server \\\n  --model meta-llama/Llama-3.2-8B-Instruct \\\n  --host 0.0.0.0 --port 8000 \\\n  --gpu-memory-utilization 0.90 \\\n  --max-model-len 4096 \\\n  --api-key my-secret-key\n\n# \u2500\u2500 Python client (identical to OpenAI SDK) \u2500\u2500\nfrom openai import OpenAI\nclient = OpenAI(base_url='http://localhost:8000/v1', api_key='my-secret-key')\n\nresponse = client.chat.completions.create(\n    model='meta-llama/Llama-3.2-8B-Instruct',\n    messages=[{'role':'user','content':'What is PagedAttention?'}],\n    temperature=0.7, max_tokens=256, stream=True\n)\nfor chunk in response:\n    if chunk.choices[0].delta.content:\n        print(chunk.choices[0].delta.content, end='', flush=True)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-llm-eval",
+    "tier": 3,
+    "title": "LLM Evaluation Harness: MMLU, HumanEval & Custom Benchmarks",
+    "difficulty": "Advanced",
+    "duration": "55 min",
+    "category": "Deep Learning / MLOps",
+    "stack": [
+      "Python",
+      "lm-evaluation-harness",
+      "OpenAI",
+      "pandas",
+      "plotly"
+    ],
+    "desc": "Evaluate LLMs systematically with EleutherAI's harness for MMLU and HumanEval, then build a custom LLM-as-judge benchmark for domain-specific tasks with structured output scoring.",
+    "sections": [
+      {
+        "h2": "Standard Benchmarks",
+        "body": "EleutherAI's evaluation harness is the standard for open-source LLM benchmarking. Run MMLU (57 subjects), HumanEval (164 coding tasks), and hundreds of others with one command.",
+        "code": {
+          "label": "bash + Python - MMLU and HumanEval with lm-eval",
+          "src": "# Run MMLU (5-shot) and HumanEval (0-shot)\nlm_eval --model hf \\\n  --model_args pretrained=meta-llama/Llama-3.2-8B-Instruct \\\n  --tasks mmlu,humaneval \\\n  --num_fewshot 5 \\\n  --batch_size 8 \\\n  --output_path results/llama3-benchmarks.json\n\n# \u2500\u2500 Parse results \u2500\u2500\nimport json, pandas as pd\n\nwith open('results/llama3-benchmarks.json') as f:\n    data = json.load(f)\n\nmmlu_subjects = {\n    k.replace('mmlu_',''):v['acc,none']\n    for k,v in data['results'].items()\n    if k.startswith('mmlu_') and k != 'mmlu'\n}\ndf = pd.DataFrame.from_dict(mmlu_subjects, orient='index', columns=['accuracy'])\nprint(df.sort_values('accuracy', ascending=False).head(10).to_string())\nprint(f'\\nOverall MMLU:    {data[\"results\"][\"mmlu\"][\"acc,none\"]:.1%}')\nprint(f'HumanEval pass@1: {data[\"results\"][\"humaneval\"][\"pass@1,none\"]:.1%}')"
+        }
+      },
+      {
+        "h2": "Custom LLM-as-Judge Evaluation",
+        "body": "Standard benchmarks test general ability. A custom benchmark tests what your users actually need. Use GPT-4o as judge with structured output for reproducible scoring.",
+        "code": {
+          "label": "Python - custom LLM-as-judge with Pydantic structured output",
+          "src": "from openai import OpenAI\nfrom pydantic import BaseModel\nfrom typing import Literal\nimport json, pandas as pd\n\nclient = OpenAI()\n\nclass Score(BaseModel):\n    score: int         # 1-5\n    reasoning: str\n    dimension: Literal['accuracy','completeness','clarity','safety']\n\nJUDGE_SYS = ('Score the model response 1-5 on the given dimension. '\n               'Return JSON only. 5=excellent, 1=incorrect/harmful.')\n\ndef evaluate(question, reference, response, dimension='accuracy') -> Score:\n    result = client.beta.chat.completions.parse(\n        model='gpt-4o', temperature=0.1,\n        response_format=Score,\n        messages=[\n            {'role':'system','content': JUDGE_SYS},\n            {'role':'user','content':\n              f'Q: {question}\\nREF: {reference}\\nRESP: {response}\\nDIM: {dimension}'}\n        ]\n    )\n    return result.choices[0].message.parsed\n\ntest_cases = json.load(open('domain_eval.json'))\nresults = []\nfor tc in test_cases:\n    resp = call_your_model(tc['question'])\n    for dim in ['accuracy','completeness','clarity']:\n        r = evaluate(tc['question'], tc['reference'], resp, dim)\n        results.append({'id':tc['id'],'dim':dim,'score':r.score})\n\ndf = pd.DataFrame(results)\nprint(df.groupby('dim')['score'].mean().round(2))"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-stable-diffusion",
+    "tier": 3,
+    "title": "Fine-tune Stable Diffusion with DreamBooth",
+    "difficulty": "Advanced",
+    "duration": "70 min",
+    "category": "Generative AI",
+    "stack": [
+      "Python",
+      "diffusers",
+      "transformers",
+      "torch",
+      "accelerate"
+    ],
+    "desc": "Fine-tune Stable Diffusion to generate custom subject images using DreamBooth. Learn about text conditioning, U-Net fine-tuning, and prior preservation loss to prevent forgetting.",
+    "sections": [
+      {
+        "h2": "DreamBooth Dataset and Training",
+        "body": "DreamBooth binds a rare token ('sks') to a subject using 5-10 images. Prior preservation loss prevents the model from forgetting the general class.",
+        "code": {
+          "label": "Python - DreamBooth training dataset + prior preservation",
+          "src": "from diffusers import StableDiffusionPipeline\nfrom torch.utils.data import Dataset\nfrom torchvision import transforms\nfrom pathlib import Path\nfrom PIL import Image\nimport torch\n\nINSTANCE_PROMPT = 'a photo of sks dog'\nCLASS_PROMPT    = 'a photo of a dog'\n\nclass DreamBoothDataset(Dataset):\n    def __init__(self, instance_dir, class_dir, tokenizer, size=512):\n        self.inst = sorted(Path(instance_dir).glob('*.jpg'))\n        self.cls  = sorted(Path(class_dir).glob('*.jpg'))\n        self.tok  = tokenizer\n        self.tf   = transforms.Compose([\n            transforms.Resize(size), transforms.CenterCrop(size),\n            transforms.ToTensor(), transforms.Normalize([0.5],[0.5])\n        ])\n    def __len__(self): return len(self.inst)\n    def __getitem__(self, i):\n        inst_img = self.tf(Image.open(self.inst[i]).convert('RGB'))\n        cls_img  = self.tf(Image.open(self.cls[i%len(self.cls)]).convert('RGB'))\n        inst_ids = self.tok(INSTANCE_PROMPT,truncation=True,return_tensors='pt').input_ids[0]\n        cls_ids  = self.tok(CLASS_PROMPT,   truncation=True,return_tensors='pt').input_ids[0]\n        return {'instance_pixel':inst_img,'class_pixel':cls_img,\n                'instance_ids':inst_ids,'class_ids':cls_ids}"
+        }
+      },
+      {
+        "h2": "Inference with Fine-tuned Model",
+        "body": "After training, use the instance token in any prompt to generate the subject in new contexts \u2014 paintings, scenes, styles.",
+        "code": {
+          "label": "Python - DreamBooth inference across styles",
+          "src": "from diffusers import StableDiffusionPipeline\nimport torch\n\npipe = StableDiffusionPipeline.from_pretrained(\n    './dreambooth-output', torch_dtype=torch.float16, safety_checker=None\n).to('cuda')\n\nprompts = [\n    'a photo of sks dog in a Renaissance painting style',\n    'a photo of sks dog wearing astronaut suit on the moon, 4K',\n    'oil painting of sks dog by Van Gogh, thick impasto brushstrokes',\n]\nfor prompt in prompts:\n    img = pipe(prompt, num_inference_steps=50, guidance_scale=7.5,\n                generator=torch.Generator('cuda').manual_seed(42)).images[0]\n    img.save(prompt[:40].replace(' ','_') + '.png')\n    print(f'Saved: {prompt[:50]}')"
+        }
+      }
+    ]
+  },
+  {
+    "id": "p-whisper-transcription",
+    "tier": 3,
+    "title": "Production Speech Transcription with Whisper",
+    "difficulty": "Advanced",
+    "duration": "45 min",
+    "category": "Audio / Deep Learning",
+    "stack": [
+      "Python",
+      "faster-whisper",
+      "pyaudio",
+      "FastAPI",
+      "Redis"
+    ],
+    "desc": "Build a production speech transcription service using faster-whisper (4x faster than OpenAI Whisper). Real-time streaming, word-level timestamps, VAD filtering, and FastAPI endpoint.",
+    "sections": [
+      {
+        "h2": "Batch Transcription with faster-whisper",
+        "body": "faster-whisper uses CTranslate2 for 4x faster inference than the original Whisper, with word-level timestamps and confidence scores.",
+        "code": {
+          "label": "Python - batch transcription with word timestamps",
+          "src": "from faster_whisper import WhisperModel\nimport time\n\nmodel = WhisperModel(\n    'large-v3', device='cuda', compute_type='float16', num_workers=4\n)\n\ndef transcribe(audio_path: str, language: str = None) -> dict:\n    t0 = time.time()\n    segments, info = model.transcribe(\n        audio_path,\n        language=language,         # None = auto-detect\n        beam_size=5,\n        word_timestamps=True,\n        vad_filter=True,           # skip silence\n        vad_parameters={'min_silence_duration_ms': 500},\n    )\n    result = [{'start': round(s.start,3), 'end': round(s.end,3),\n                'text': s.text.strip(),\n                'words': [{'w':w.word,'start':w.start,'end':w.end,'prob':round(w.probability,3)}\n                           for w in (s.words or [])]}\n               for s in segments]\n    elapsed = time.time()-t0\n    print(f'RTF: {elapsed/info.duration:.2f}x | Lang: {info.language}')\n    return {'segments': result, 'language': info.language}\n\nresult = transcribe('interview.mp3')\nfor seg in result['segments'][:3]:\n    print(f'[{seg[\"start\"]:.1f}s] {seg[\"text\"]}')"
+        }
+      },
+      {
+        "h2": "FastAPI Transcription Endpoint",
+        "body": "Wrap the transcription model in a FastAPI endpoint with file upload, request validation, and async processing for concurrent requests.",
+        "code": {
+          "label": "Python - FastAPI transcription API",
+          "src": "from fastapi import FastAPI, UploadFile, HTTPException\nfrom fastapi.responses import JSONResponse\nimport tempfile, os\n\napp = FastAPI(title='Whisper Transcription API')\n\nALLOWED_TYPES = {'audio/mpeg','audio/wav','audio/mp4','audio/webm','audio/ogg'}\n\n@app.post('/transcribe')\nasync def transcribe_endpoint(file: UploadFile, language: str = None):\n    if file.content_type not in ALLOWED_TYPES:\n        raise HTTPException(400, f'Unsupported type: {file.content_type}')\n    if file.size and file.size > 100 * 1024 * 1024:  # 100MB\n        raise HTTPException(413, 'File too large (max 100MB)')\n\n    with tempfile.NamedTemporaryFile(suffix='.audio', delete=False) as tmp:\n        tmp.write(await file.read())\n        tmp_path = tmp.name\n\n    try:\n        result = transcribe(tmp_path, language=language)\n        full_text = ' '.join(s['text'] for s in result['segments'])\n        return JSONResponse({\n            'text':     full_text,\n            'language': result['language'],\n            'segments': result['segments'],\n            'word_count': len(full_text.split())\n        })\n    finally:\n        os.unlink(tmp_path)\n\n# uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2"
+        }
+      }
+    ]
+  }
+]

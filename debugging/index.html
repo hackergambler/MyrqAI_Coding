@@ -1,465 +1,1200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423"
-     crossorigin="anonymous"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>50,000+ AI Debugging Solutions | AI Coding Academy</title>
-    <meta name="description" content="Search 50,000+ debugging solutions for AI coding errors. API errors, memory issues, configuration problems - all solved.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .page-hero {
-            padding: calc(140px + var(--space-3xl)) var(--space-xl) var(--space-3xl);
-            text-align: center;
-            background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%);
-        }
-        .page-hero h1 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: var(--space-md); }
-        .page-hero h1 span { background: linear-gradient(135deg, #ef4444 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .page-hero p { color: var(--text-secondary); font-size: 1.2rem; max-width: 700px; margin: 0 auto var(--space-xl); }
-        .search-hero {
-            max-width: 700px;
-            margin: 0 auto;
-            background: var(--bg-card);
-            border: 2px solid rgba(239, 68, 68, 0.3);
-            border-radius: var(--radius-lg);
-            padding: var(--space-lg);
-        }
-        .search-hero input {
-            width: 100%;
-            padding: var(--space-md);
-            background: var(--bg-primary);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 1rem;
-            margin-bottom: var(--space-md);
-        }
-        .search-hero input::placeholder { color: var(--text-muted); }
-        .search-hero input:focus { outline: none; border-color: var(--accent-error); }
-        .search-examples { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
-        .search-examples span { font-size: 0.8rem; color: var(--text-muted); }
-        .search-example {
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            padding: var(--space-xs) var(--space-sm);
-            background: var(--bg-tertiary);
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-        .search-example:hover { background: var(--accent-error); color: var(--bg-primary); }
-        .debug-section { padding: var(--space-4xl) var(--space-xl); }
-        .debug-container { max-width: 1440px; margin: 0 auto; }
-        .category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); margin-bottom: var(--space-4xl); }
-        .category-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: var(--radius-lg);
-            padding: var(--space-xl);
-            text-align: center;
-            transition: var(--transition-base);
-            text-decoration: none;
-            position: relative;
-        }
-        .category-card:hover { transform: translateY(-5px); border-color: rgba(239, 68, 68, 0.3); }
-        .category-card .icon { font-size: 2.5rem; margin-bottom: var(--space-md); }
-        .category-card h3 { font-family: var(--font-heading); font-size: 1.1rem; color: var(--text-primary); margin-bottom: var(--space-sm); }
-        .category-card .count { font-family: var(--font-mono); color: var(--accent-error); font-size: 1.2rem; margin-bottom: var(--space-xs); }
-        .category-card p { font-size: 0.85rem; color: var(--text-muted); }
-        .popular-section { margin-bottom: var(--space-4xl); }
-        .section-title { font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: var(--space-xl); display: flex; align-items: center; gap: var(--space-md); }
-        .error-list { display: flex; flex-direction: column; gap: var(--space-md); }
-        .error-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: var(--radius-lg);
-            padding: var(--space-lg);
-            transition: var(--transition-base);
-            text-decoration: none;
-            display: block;
-        }
-        .error-card:hover { border-color: rgba(239, 68, 68, 0.3); background: var(--bg-card-hover); }
-        .error-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-md); }
-        .error-code {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            padding: var(--space-sm) var(--space-md);
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: var(--radius-md);
-            color: var(--accent-error);
-        }
-        .error-card h3 { font-family: var(--font-heading); font-size: 1.1rem; color: var(--text-primary); margin-bottom: var(--space-sm); }
-        .error-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: var(--space-md); }
-        .error-tags { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
-        .error-tag { font-size: 0.75rem; padding: var(--space-xs) var(--space-sm); background: var(--bg-tertiary); border-radius: var(--radius-sm); color: var(--text-muted); }
-        .api-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-xl); margin-bottom: var(--space-4xl); }
-        .api-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: var(--radius-lg);
-            padding: var(--space-xl);
-            transition: var(--transition-base);
-        }
-        .api-card:hover { border-color: rgba(0, 255, 170, 0.3); }
-        .api-card-header { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-lg); }
-        .api-card-header .icon { font-size: 2rem; }
-        .api-card h3 { font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-primary); }
-        .api-errors { list-style: none; }
-        .api-errors li { padding: var(--space-sm) 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .api-errors li:last-child { border-bottom: none; }
-        .api-errors a { color: var(--text-secondary); font-size: 0.9rem; display: flex; justify-content: space-between; transition: var(--transition-fast); }
-        .api-errors a:hover { color: var(--accent-primary); }
-        .api-errors .count { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
-        @media (max-width: 1200px) { .category-grid { grid-template-columns: repeat(2, 1fr); } .api-section { grid-template-columns: 1fr; } }
-        @media (max-width: 600px) { .category-grid { grid-template-columns: 1fr; } }
-    </style>
+<meta charset="UTF-8">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Debugging Lab | AI Coding Academy</title>
+<meta name="description" content="50 real AI code bugs with split-pane IDE view, red/green diff, and animated terminal output.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+/* ── Reset + shell ── */
+*, *::before, *::after { box-sizing: border-box; }
+.debug-shell {
+  padding-top: calc(42px + 68px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
+/* ── Hero ── */
+.dbg-hero {
+  padding: var(--space-3xl) var(--space-xl) var(--space-2xl);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(239,68,68,.06) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.dbg-hero-badge {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .35rem 1rem;
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+  border-radius: 9999px; font-size: .75rem; font-family: var(--font-mono);
+  color: #ef4444; margin-bottom: 1.5rem;
+}
+.dbg-hero h1 { font-family: var(--font-display); font-size: clamp(2rem,5vw,3.5rem); margin-bottom: 1rem; }
+.dbg-hero h1 span { color: var(--accent-primary); }
+.dbg-hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 620px; margin: 0 auto 2rem; line-height: 1.7; }
+.dbg-stats { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; }
+.dbg-stat-val { font-family: var(--font-heading); font-size: 1.9rem; font-weight: 700; color: var(--text-primary); }
+.dbg-stat-lbl { font-size: .75rem; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* ── Filter bar ── */
+.dbg-filter {
+  display: flex; gap: .5rem; flex-wrap: wrap;
+  padding: .85rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  background: rgba(255,255,255,.01);
+}
+.filt-btn {
+  padding: 5px 14px; border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: transparent; color: var(--text-secondary);
+  font-size: .75rem; font-family: var(--font-mono);
+  cursor: pointer; transition: all .18s;
+}
+.filt-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+.filt-btn.active { background: rgba(0,255,170,.1); border-color: var(--accent-primary); color: var(--accent-primary); }
+
+/* ── IDE layout ── */
+.ide-wrap {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 42px - 68px - 200px - 52px);
+  min-height: 520px;
+}
+
+/* ── Bug list ── */
+.bug-panel {
+  overflow-y: auto; border-right: 1px solid rgba(255,255,255,.06);
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.08) transparent;
+}
+.bug-panel-hdr {
+  position: sticky; top: 0; z-index: 2;
+  padding: .6rem 1rem; background: var(--bg-primary);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: .65rem; font-family: var(--font-mono);
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bug-count { color: var(--accent-primary); }
+.bug-row {
+  padding: .7rem 1rem; border-bottom: 1px solid rgba(255,255,255,.04);
+  cursor: pointer; transition: background .14s;
+}
+.bug-row:hover { background: rgba(255,255,255,.025); }
+.bug-row.active { background: rgba(239,68,68,.07); border-left: 3px solid #ef4444; }
+.bug-row.active.solved { background: rgba(0,255,170,.05); border-left-color: var(--accent-primary); }
+.bug-row-top { display: flex; align-items: center; gap: .4rem; margin-bottom: 4px; }
+.bug-num { font-family: var(--font-mono); font-size: .6rem; color: var(--text-muted); background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 3px; }
+.bug-cat { font-size: .6rem; font-family: var(--font-mono); padding: 2px 7px; border-radius: 9999px; }
+.bc-async   { background: rgba(168,85,247,.15); color: #a855f7; }
+.bc-config  { background: rgba(251,191,36,.15);  color: #fbbf24; }
+.bc-data    { background: rgba(59,130,246,.15);   color: #3b82f6; }
+.bc-memory  { background: rgba(239,68,68,.15);    color: #ef4444; }
+.bc-network { background: rgba(16,185,129,.15);   color: #10b981; }
+.bc-agent   { background: rgba(0,255,170,.15);    color: var(--accent-primary); }
+.bc-rag     { background: rgba(0,212,255,.15);    color: var(--accent-secondary); }
+.bug-solved-tag { font-size: .6rem; color: var(--accent-primary); font-family: var(--font-mono); margin-left: auto; }
+.bug-title-txt  { font-size: .8rem; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); }
+
+/* ── Right IDE pane ── */
+.ide-right { display: flex; flex-direction: column; overflow: hidden; }
+
+/* Tab bar */
+.ide-tabs {
+  display: flex; border-bottom: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.01); flex-shrink: 0;
+}
+.ide-tab {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .7rem 1.4rem; font-size: .78rem; font-family: var(--font-mono);
+  color: var(--text-muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .18s;
+}
+.ide-tab:hover { color: var(--text-primary); }
+.ide-tab.active { color: var(--text-primary); border-bottom-color: var(--accent-primary); }
+.tab-dot { width: 8px; height: 8px; border-radius: 50%; }
+.ide-actions { margin-left: auto; display: flex; align-items: center; gap: .75rem; padding-right: 1rem; }
+.ide-act-btn {
+  padding: 4px 12px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: transparent; color: var(--text-secondary);
+  font-size: .7rem; font-family: var(--font-mono);
+  cursor: pointer; transition: all .18s;
+}
+.ide-act-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+
+/* Split editor area */
+.editors-wrap {
+  display: grid; grid-template-columns: 1fr 1fr;
+  flex: 1; overflow: hidden; min-height: 0;
+}
+.editors-wrap.single { grid-template-columns: 1fr; }
+
+/* Individual editor */
+.ed-pane { display: flex; flex-direction: column; overflow: hidden; }
+.ed-pane + .ed-pane { border-left: 1px solid rgba(255,255,255,.06); }
+.ed-header {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .4rem .8rem; flex-shrink: 0;
+  background: rgba(255,255,255,.015);
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .68rem; font-family: var(--font-mono);
+}
+.ed-lbl-bug  { color: #ef4444; font-weight: 700; }
+.ed-lbl-fix  { color: var(--accent-primary); font-weight: 700; }
+.ed-fname    { color: var(--text-muted); margin-left: auto; }
+.cp-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,.1);
+  color: var(--text-muted); padding: 1px 7px; border-radius: 3px;
+  cursor: pointer; font-family: var(--font-mono); font-size: .62rem;
+  transition: all .18s;
+}
+.cp-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+
+/* Code body */
+.ed-code {
+  flex: 1; overflow: auto; padding: 1rem;
+  font-family: var(--font-mono); font-size: .8rem; line-height: 1.75;
+  color: #e6edf3; white-space: pre;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.06) transparent;
+}
+.ed-pane.buggy .ed-code { background: rgba(239,68,68,.025); }
+.ed-pane.fixed .ed-code { background: rgba(0,255,170,.015); }
+
+/* Line wrappers */
+.ln-row   { display: flex; }
+.ln-num   { color: rgba(255,255,255,.18); user-select: none; min-width: 2.2em; text-align: right; margin-right: 1em; font-size: .7rem; padding-top: 2px; flex-shrink: 0; }
+
+/* Syntax colours */
+.cm { color: #8b949e; }
+.kw { color: #ff7b72; }
+.st { color: #a5d6ff; }
+.fn { color: #d2a8ff; }
+.nu { color: #79c0ff; }
+.cl { color: #ffa657; }
+
+/* Explain overlay */
+.explain-panel {
+  flex: 1; overflow-y: auto; padding: 1.5rem;
+  display: none;
+}
+.explain-panel.show { display: block; }
+.exp-block { margin-bottom: 1.5rem; }
+.exp-block h3 { font-family: var(--font-heading); font-size: .95rem; color: var(--accent-secondary); margin-bottom: .6rem; }
+.exp-block p  { color: var(--text-secondary); line-height: 1.75; font-size: .88rem; }
+.exp-error-code {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+  border-left: 3px solid #ef4444; padding: .7rem 1rem;
+  border-radius: 6px; font-family: var(--font-mono); font-size: .82rem;
+  color: #f97316; margin-top: .5rem;
+}
+
+/* Placeholder */
+.ide-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%;
+  color: var(--text-muted); font-family: var(--font-mono); font-size: .85rem;
+  gap: 1rem; text-align: center; opacity: .5;
+}
+
+/* Terminal */
+.terminal-pane {
+  border-top: 1px solid rgba(255,255,255,.06);
+  background: #080b0d;
+  height: 170px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.term-bar {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .4rem .8rem; border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .68rem; font-family: var(--font-mono); color: var(--text-muted);
+  flex-shrink: 0;
+}
+.term-dot  { width: 10px; height: 10px; border-radius: 50%; }
+.term-body { flex: 1; overflow-y: auto; padding: .5rem 1rem; font-family: var(--font-mono); font-size: .76rem; line-height: 1.65; }
+.t-dim  { color: #4b5563; }
+.t-txt  { color: #d1d5db; }
+.t-err  { color: #f97316; }
+.t-ok   { color: var(--accent-primary); }
+.t-warn { color: #fbbf24; }
+.t-row  { display: flex; gap: .5rem; }
+.t-ps   { color: var(--accent-primary); flex-shrink: 0; }
+.t-cur  { display: inline-block; width: 7px; height: 13px; background: var(--accent-primary); animation: tBlink 1s step-end infinite; vertical-align: text-bottom; }
+@keyframes tBlink { 50% { opacity: 0; } }
+
+/* Mobile */
+@media (max-width: 900px) {
+  .ide-wrap      { grid-template-columns: 1fr; height: auto; }
+  .bug-panel     { height: 220px; border-right: none; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .editors-wrap  { grid-template-columns: 1fr; }
+  .ed-pane + .ed-pane { border-left: none; border-top: 1px solid rgba(255,255,255,.06); }
+}
+</style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-bar-container">
-            <div class="top-bar-links">
-                <a href="https://www.library.myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">📚</span>
-                    <span class="link-text">AI Library</span>
-                </a>
-                <a href="https://www.ailadder.myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">🪜</span>
-                    <span class="link-text">AI Ladder</span>
-                </a>
-                <a href="https://www.myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">🏠</span>
-                    <span class="link-text">MYRQAI</span>
-                </a>
-            </div>
-            <div class="top-bar-right">Part of MYRQAI Network</div>
-        </div>
+
+<!-- Top bar -->
+<div class="top-bar"><div class="top-bar-container"><div class="top-bar-links">
+  <a href="https://www.library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+  <a href="https://www.ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+  <a href="https://www.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+</div><div class="top-bar-right">Part of MYRQAI Network</div></div></div>
+
+<div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+
+<!-- Nav -->
+<nav class="nav"><div class="nav-container">
+  <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+  <ul class="nav-menu">
+    <li><a href="../tutorials/index.html" class="nav-link">Tutorials</a></li>
+    <li><a href="../courses/index.html"   class="nav-link">Courses</a></li>
+    <li><a href="index.html"              class="nav-link active">Debugging</a></li>
+    <li><a href="../projects/index.html"  class="nav-link">Projects</a></li>
+  </ul>
+  <div class="nav-actions">
+    <div class="nav-search"><span>🔍</span><input type="text" id="bug-search" placeholder="Search 50 bugs…"><kbd>⌘K</kbd></div>
+    <a href="../tutorials/index.html" class="btn btn-primary">Start Free</a>
+  </div>
+  <button class="mobile-menu-btn">☰</button>
+</div></nav>
+
+<div class="debug-shell">
+
+  <!-- Hero -->
+  <div class="dbg-hero">
+    <div class="dbg-hero-badge">
+      <span style="width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
+      Interactive Debugging Lab
     </div>
-    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
-    <div class="floating-orb orb-1"></div>
-    <div class="floating-orb orb-2"></div>
+    <h1>Debug Real <span>AI Code Bugs</span><br>Like a Senior Engineer</h1>
+    <p>50 production-grade broken AI code examples. Split-pane IDE with red/green diff view, animated terminal output, and full explanations.</p>
+    <div class="dbg-stats">
+      <div><div class="dbg-stat-val">50</div><div class="dbg-stat-lbl">Bug Examples</div></div>
+      <div><div class="dbg-stat-val" id="stat-solved">0</div><div class="dbg-stat-lbl">Solved</div></div>
+      <div><div class="dbg-stat-val">7</div><div class="dbg-stat-lbl">Categories</div></div>
+      <div><div class="dbg-stat-val">433</div><div class="dbg-stat-lbl">Code Lines</div></div>
+    </div>
+  </div>
 
-    <nav class="nav">
-        <div class="nav-container">
-            <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
-            <ul class="nav-menu">
-                <li><a href="../tutorials/index.html" class="nav-link">Tutorials</a></li>
-                <li><a href="../courses/index.html" class="nav-link">Courses</a></li>
-                <li><a href="index.html" class="nav-link active">Debugging</a></li>
-                <li><a href="../projects/index.html" class="nav-link">Projects</a></li>
-            </ul>
-            <div class="nav-actions">
-                <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search errors..."><kbd>⌘K</kbd></div>
-                <a href="https://www.myrqai.com" target="_blank" class="btn btn-primary">Start Free</a>
-            </div>
-            <button class="mobile-menu-btn">☰</button>
+  <!-- Filter bar -->
+  <div class="dbg-filter">
+    <button class="filt-btn active" data-f="all">All (50)</button>
+    <button class="filt-btn" data-f="async">⚡ Async (8)</button>
+    <button class="filt-btn" data-f="config">⚙️ Config (6)</button>
+    <button class="filt-btn" data-f="data">📊 Data (6)</button>
+    <button class="filt-btn" data-f="memory">🧠 Memory (5)</button>
+    <button class="filt-btn" data-f="network">🌐 Network (6)</button>
+    <button class="filt-btn" data-f="agent">🤖 Agents (10)</button>
+    <button class="filt-btn" data-f="rag">🔍 RAG (9)</button>
+  </div>
+
+  <!-- IDE -->
+  <div class="ide-wrap">
+
+    <!-- Bug list panel -->
+    <div class="bug-panel" id="bug-panel">
+      <div class="bug-panel-hdr">
+        BUG LIST
+        <span class="bug-count" id="list-count">50</span>
+      </div>
+    </div>
+
+    <!-- Right IDE pane -->
+    <div class="ide-right">
+
+      <!-- Tabs -->
+      <div class="ide-tabs">
+        <div class="ide-tab active" id="tab-buggy"   onclick="switchTab('buggy')">
+          <span class="tab-dot" style="background:#ef4444"></span>Buggy Code
         </div>
-    </nav>
-
-    <section class="page-hero">
-        <h1><span>50,000+</span> Debugging Solutions</h1>
-        <p>Every AI coding error documented and solved. Paste your error message and get instant solutions with working code.</p>
-        <div class="search-hero">
-            <input type="text" placeholder="Paste your error message here... (e.g., 'RateLimitError: Rate limit reached')">
-            <div class="search-examples">
-                <span>Try:</span>
-                <span class="search-example">AuthenticationError</span>
-                <span class="search-example">RateLimitError</span>
-                <span class="search-example">InvalidRequestError</span>
-                <span class="search-example">context_length_exceeded</span>
-                <span class="search-example">ChromaDB connection</span>
-            </div>
+        <div class="ide-tab"        id="tab-fixed"   onclick="switchTab('fixed')">
+          <span class="tab-dot" style="background:#00ffaa"></span>Fixed Code
         </div>
-    
-<a href="lab.html" class="category-card" style="border-color:rgba(0,255,170,0.2);background:linear-gradient(135deg,rgba(0,255,170,0.05),rgba(0,212,255,0.05));display:block;padding:var(--space-xl);border-radius:var(--radius-lg);text-decoration:none;margin-top:var(--space-lg)"><div style="font-size:2.5rem;margin-bottom:var(--space-md)">🔬</div><h3 style="font-family:var(--font-heading);font-size:1.2rem;color:var(--accent-primary);margin-bottom:var(--space-sm)">Debugging Lab</h3><p style="color:var(--text-secondary);font-size:.95rem">10 real broken AI code examples with complete fixes. Infinite loops, async bugs, context overflow, race conditions, rate limits, and more.</p></a>
-</section>
-
-    <div class="ad-container ad-container-horizontal">
-                <div class="ad-label">Advertisement</div>
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-8668540803235423"
-                     data-ad-slot="auto"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-            </div>
-
-    <section class="debug-section">
-        <div class="debug-container">
-            
-            <!-- Error Categories -->
-            <div class="category-grid">
-                <a href="api-keys.html" class="category-card reveal">
-                    <div class="icon">🔑</div>
-                    <h3>API Key Errors</h3>
-                    <div class="count">8,500+</div>
-                    <p>Authentication, invalid keys, permissions</p>
-                </a>
-                <a href="network.html" class="category-card reveal reveal-delay-1">
-                    <div class="icon">🧠</div>
-                    <h3>Memory & Context</h3>
-                    <div class="count">6,200+</div>
-                    <p>Token limits, context overflow, memory leaks</p>
-                </a>
-                <a href="memory.html" class="category-card reveal reveal-delay-2">
-                    <div class="icon">🌐</div>
-                    <h3>Network Errors</h3>
-                    <div class="count">5,800+</div>
-                    <p>Timeouts, connection, rate limits</p>
-                </a>
-                <a href="data.html" class="category-card reveal reveal-delay-3">
-                    <div class="icon">📊</div>
-                    <h3>Data & Format</h3>
-                    <div class="count">9,400+</div>
-                    <p>JSON parsing, encoding, validation</p>
-                </a>
-                <a href="https://www.myrqai.com" target="_blank" class="category-card reveal">
-                    <div class="icon">⚙️</div>
-                    <h3>Configuration</h3>
-                    <div class="count">7,100+</div>
-                    <p>Environment, dependencies, setup</p>
-                </a>
-                <a href="https://www.myrqai.com" target="_blank" class="category-card reveal reveal-delay-1">
-                    <div class="icon">⚡</div>
-                    <h3>Async & Streaming</h3>
-                    <div class="count">5,500+</div>
-                    <p>Async errors, streaming issues, callbacks</p>
-                </a>
-                <a href="https://www.myrqai.com" target="_blank" class="category-card reveal reveal-delay-2">
-                    <div class="icon">🗄️</div>
-                    <h3>Vector DB Errors</h3>
-                    <div class="count">4,800+</div>
-                    <p>Pinecone, Chroma, Weaviate issues</p>
-                </a>
-                <a href="https://www.myrqai.com" target="_blank" class="category-card reveal reveal-delay-3">
-                    <div class="icon">🚀</div>
-                    <h3>Deployment</h3>
-                    <div class="count">3,700+</div>
-                    <p>Docker, AWS, production errors</p>
-                </a>
-            </div>
-
-            <!-- Most Common Errors -->
-            <div class="popular-section">
-                <h2 class="section-title">🔥 Most Common Errors This Week</h2>
-                <div class="error-list">
-                    <a href="api-keys.html" class="error-card reveal" data-searchable>
-                        <div class="error-card-header">
-                            <div class="error-code">openai.RateLimitError</div>
-                            <span class="badge badge-beginner">Easy Fix</span>
-                        </div>
-                        <h3>Rate limit reached for requests</h3>
-                        <p>You've exceeded the API rate limit. Learn how to implement exponential backoff, manage request queues, and optimize your API usage.</p>
-                        <div class="error-tags">
-                            <span class="error-tag">OpenAI</span>
-                            <span class="error-tag">Rate Limits</span>
-                            <span class="error-tag">API</span>
-                        </div>
-                    </a>
-                    
-                    <a href="api-keys.html" class="error-card reveal reveal-delay-1" data-searchable>
-                        <div class="error-card-header">
-                            <div class="error-code">AuthenticationError</div>
-                            <span class="badge badge-beginner">Easy Fix</span>
-                        </div>
-                        <h3>Incorrect API key provided</h3>
-                        <p>Your API key is invalid, expired, or not set correctly. Complete guide to fixing authentication issues across all major AI APIs.</p>
-                        <div class="error-tags">
-                            <span class="error-tag">OpenAI</span>
-                            <span class="error-tag">Claude</span>
-                            <span class="error-tag">Authentication</span>
-                        </div>
-                    </a>
-                    
-                    <a href="api-keys.html" class="error-card reveal reveal-delay-2" data-searchable>
-                        <div class="error-card-header">
-                            <div class="error-code">context_length_exceeded</div>
-                            <span class="badge badge-intermediate">Moderate</span>
-                        </div>
-                        <h3>This model's maximum context length is 128000 tokens</h3>
-                        <p>Your prompt + response exceeds the model's token limit. Learn chunking strategies, summarization, and context management.</p>
-                        <div class="error-tags">
-                            <span class="error-tag">Tokens</span>
-                            <span class="error-tag">Context</span>
-                            <span class="error-tag">GPT-4</span>
-                        </div>
-                    </a>
-                    
-                    <a href="api-keys.html" class="error-card reveal" data-searchable>
-                        <div class="error-card-header">
-                            <div class="error-code">JSONDecodeError</div>
-                            <span class="badge badge-intermediate">Moderate</span>
-                        </div>
-                        <h3>Expecting value: line 1 column 1</h3>
-                        <p>The LLM returned invalid JSON. Learn to force valid JSON output, handle parsing errors, and validate responses.</p>
-                        <div class="error-tags">
-                            <span class="error-tag">JSON</span>
-                            <span class="error-tag">Parsing</span>
-                            <span class="error-tag">Output</span>
-                        </div>
-                    </a>
-                    
-                    <a href="api-keys.html" class="error-card reveal reveal-delay-1" data-searchable>
-                        <div class="error-card-header">
-                            <div class="error-code">chromadb.errors.InvalidCollectionException</div>
-                            <span class="badge badge-intermediate">Moderate</span>
-                        </div>
-                        <h3>Collection not found</h3>
-                        <p>ChromaDB can't find your collection. Debugging guide for collection management, persistence, and connection issues.</p>
-                        <div class="error-tags">
-                            <span class="error-tag">ChromaDB</span>
-                            <span class="error-tag">Vector DB</span>
-                            <span class="error-tag">RAG</span>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Errors by API -->
-            <h2 class="section-title">📚 Errors by API</h2>
-            <div class="api-section">
-                <div class="api-card reveal">
-                    <div class="api-card-header">
-                        <div class="icon">🤖</div>
-                        <h3>OpenAI API Errors</h3>
-                    </div>
-                    <ul class="api-errors">
-                        <li><a href="https://www.myrqai.com" target="_blank">RateLimitError <span class="count">2,400+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">AuthenticationError <span class="count">1,800+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">InvalidRequestError <span class="count">3,200+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">APIConnectionError <span class="count">1,500+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">context_length_exceeded <span class="count">1,200+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Timeout errors <span class="count">900+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">View all OpenAI errors → <span class="count">12,500+</span></a></li>
-                    </ul>
-                </div>
-                
-                <div class="api-card reveal reveal-delay-1">
-                    <div class="api-card-header">
-                        <div class="icon">🧠</div>
-                        <h3>Claude API Errors</h3>
-                    </div>
-                    <ul class="api-errors">
-                        <li><a href="https://www.myrqai.com" target="_blank">authentication_error <span class="count">1,200+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">rate_limit_error <span class="count">1,500+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">invalid_request_error <span class="count">1,800+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">overloaded_error <span class="count">800+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">api_error <span class="count">1,100+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">View all Claude errors → <span class="count">8,200+</span></a></li>
-                    </ul>
-                </div>
-                
-                <div class="api-card reveal">
-                    <div class="api-card-header">
-                        <div class="icon">🦜</div>
-                        <h3>LangChain Errors</h3>
-                    </div>
-                    <ul class="api-errors">
-                        <li><a href="https://www.myrqai.com" target="_blank">OutputParserException <span class="count">2,100+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">ValueError: Invalid chain <span class="count">1,800+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Memory errors <span class="count">1,500+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Agent execution errors <span class="count">2,400+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">LCEL errors <span class="count">1,200+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">View all LangChain errors → <span class="count">15,000+</span></a></li>
-                    </ul>
-                </div>
-                
-                <div class="api-card reveal reveal-delay-1">
-                    <div class="api-card-header">
-                        <div class="icon">🗄️</div>
-                        <h3>Vector Database Errors</h3>
-                    </div>
-                    <ul class="api-errors">
-                        <li><a href="https://www.myrqai.com" target="_blank">Pinecone connection errors <span class="count">1,400+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">ChromaDB persistence issues <span class="count">1,200+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Weaviate schema errors <span class="count">800+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Embedding dimension mismatch <span class="count">1,100+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">Index errors <span class="count">900+ solutions</span></a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">View all Vector DB errors → <span class="count">7,500+</span></a></li>
-                    </ul>
-                </div>
-            </div>
-
+        <div class="ide-tab"        id="tab-explain" onclick="switchTab('explain')">
+          <span class="tab-dot" style="background:#00d4ff"></span>Explain
         </div>
-    </section>
-    <div class="ad-container ad-container-horizontal">
-                <div class="ad-label">Advertisement</div>
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-8668540803235423"
-                     data-ad-slot="auto"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-            </div>
-
-
-    <footer>
-        <div class="footer-container">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
-                    <p>The most comprehensive AI coding learning platform. 100,000+ tutorials from beginner to expert.</p>
-                    <div style="margin-top: var(--space-md);">
-                        <a href="https://www.myrqai.com" target="_blank" style="color: var(--accent-primary); font-size: 0.85rem;">Part of MYRQAI Network →</a>
-                    </div>
-                </div>
-                <div class="footer-column">
-                    <h4>Learn</h4>
-                    <ul>
-                        <li><a href="../tutorials/index.html">All Tutorials</a></li>
-                        <li><a href="../courses/index.html">Courses</a></li>
-                        <li><a href="../projects/index.html">Projects</a></li>
-                        <li><a href="../debugging/index.html">Debugging</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h4>Topics</h4>
-                    <ul>
-                        <li><a href="../courses/openai.html">OpenAI API</a></li>
-                        <li><a href="../courses/claude.html">Claude API</a></li>
-                        <li><a href="../courses/langchain.html">LangChain</a></li>
-                        <li><a href="../courses/rag.html">RAG Systems</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h4>MYRQAI Network</h4>
-                    <ul>
-                        <li><a href="https://www.library.myrqai.com" target="_blank">AI Library</a></li>
-                        <li><a href="https://www.ailadder.myrqai.com" target="_blank">AI Ladder</a></li>
-                        <li><a href="https://www.myrqai.com" target="_blank">MYRQAI Home</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h4>Legal</h4>
-                    <ul>
-                        <li><a href="https://www.myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li>
-                        <li><a href="https://www.myrqai.com/admin/terms" target="_blank">Terms of Service</a></li>
-                        <li><a href="https://www.myrqai.com/admin/contact" target="_blank">Contact Us</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2026 AI Coding Academy by <a href="https://www.myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
-                <div class="footer-links">
-                    <a href="https://www.myrqai.com/admin/privacy" target="_blank">Privacy</a>
-                    <span>•</span>
-                    <a href="https://www.myrqai.com/admin/terms" target="_blank">Terms</a>
-                    <span>•</span>
-                    <a href="https://www.myrqai.com/admin/contact" target="_blank">Contact</a>
-                </div>
-            </div>
+        <div class="ide-actions">
+          <button class="ide-act-btn" id="btn-split"  onclick="toggleSplit()">⬛ Split</button>
+          <button class="ide-act-btn" id="btn-run"    onclick="runFixed()">▶ Run Fixed</button>
         </div>
-    </footer>
-    <script src="../assets/js/main.js"></script>
-    <script src="../assets/js/donation-widget.js" defer></script>
+      </div>
+
+      <!-- Editor panels -->
+      <div class="editors-wrap" id="editors-wrap">
+
+        <!-- Buggy -->
+        <div class="ed-pane buggy" id="pane-buggy">
+          <div class="ed-header">
+            <span class="tab-dot" style="background:#ef4444"></span>
+            <span class="ed-lbl-bug">BROKEN</span>
+            <span class="ed-fname" id="fn-buggy">—</span>
+            <button class="cp-btn" onclick="copyPane('buggy')">Copy</button>
+          </div>
+          <div class="ed-code" id="code-buggy">
+            <div class="ide-placeholder">
+              <span style="font-size:2rem">🐛</span>
+              <span>← Select a bug to start debugging</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixed -->
+        <div class="ed-pane fixed" id="pane-fixed">
+          <div class="ed-header">
+            <span class="tab-dot" style="background:#00ffaa"></span>
+            <span class="ed-lbl-fix">FIXED</span>
+            <span class="ed-fname" id="fn-fixed">—</span>
+            <button class="cp-btn" onclick="copyPane('fixed')">Copy</button>
+          </div>
+          <div class="ed-code" id="code-fixed">
+            <div class="ide-placeholder">
+              <span style="font-size:2rem">✅</span>
+              <span>Fix will appear here</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /editors-wrap -->
+
+      <!-- Explain panel (hidden by default) -->
+      <div class="explain-panel" id="explain-panel"></div>
+
+      <!-- Terminal -->
+      <div class="terminal-pane">
+        <div class="term-bar">
+          <span class="term-dot" style="background:#ef4444"></span>
+          <span class="term-dot" style="background:#fbbf24"></span>
+          <span class="term-dot" style="background:#22c55e"></span>
+          <span style="margin-left:.4rem">Terminal — Python 3.12</span>
+          <button class="ide-act-btn" style="margin-left:auto" onclick="clearTerm()">Clear</button>
+        </div>
+        <div class="term-body" id="term-body">
+          <div class="t-row"><span class="t-dim"># Select a bug and click ▶ Run Fixed</span></div>
+          <div class="t-row"><span class="t-ps">$</span><span class="t-txt"> <span class="t-cur"></span></span></div>
+        </div>
+      </div>
+
+    </div><!-- /ide-right -->
+  </div><!-- /ide-wrap -->
+</div><!-- /debug-shell -->
+
+<footer><div class="footer-container"><div class="footer-grid">
+  <div class="footer-brand">
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+    <p>The most comprehensive AI coding learning platform.</p>
+  </div>
+  <div class="footer-column"><h4>Learn</h4><ul>
+    <li><a href="../tutorials/index.html">Tutorials</a></li>
+    <li><a href="../courses/index.html">Courses</a></li>
+    <li><a href="index.html">Debugging Lab</a></li>
+    <li><a href="../projects/index.html">Projects</a></li>
+  </ul></div>
+  <div class="footer-column"><h4>MYRQAI Network</h4><ul>
+    <li><a href="https://www.library.myrqai.com" target="_blank">AI Library</a></li>
+    <li><a href="https://www.myrqai.com" target="_blank">MYRQAI Home</a></li>
+  </ul></div>
+  <div class="footer-column"><h4>Legal</h4><ul>
+    <li><a href="https://www.myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li>
+    <li><a href="https://www.myrqai.com/admin/terms" target="_blank">Terms</a></li>
+  </ul></div>
+</div><div class="footer-bottom"><p>© 2026 AI Coding Academy by <a href="https://www.myrqai.com" target="_blank" style="color:var(--accent-primary)">MYRQAI</a>.</p></div></div></footer>
+
+<script src="../assets/js/main.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DEBUGGING LAB — full interactive IDE
+   50 bugs, 7 categories, split-pane, terminal simulation
+═══════════════════════════════════════════════════════════════ */
+
+const BUGS = [
+  /* ── ASYNC ──────────────────────────────────────────────── */
+  {id:'as1',cat:'async',title:'asyncio.run() inside running event loop',
+   file:'async_client.py',
+   buggy:`import asyncio\nfrom openai import AsyncOpenAI\n\nasync def ask(q):\n    client = AsyncOpenAI()\n    r = await client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{"role":"user","content":q}]\n    )\n    return r.choices[0].message.content\n\n# In Jupyter / FastAPI — CRASHES!\nresult = asyncio.run(ask("hello"))`,
+   fixed:`# Jupyter: install nest_asyncio once\nimport nest_asyncio\nnest_asyncio.apply()\nresult = asyncio.run(ask("hello"))\n\n# FastAPI: just await — no asyncio.run() needed\nfrom fastapi import FastAPI\napp = FastAPI()\n\n@app.get("/")\nasync def ep(q: str):\n    return {"answer": await ask(q)}`,
+   error:'RuntimeError: This event loop is already running',
+   why:'asyncio.run() creates a NEW loop. Jupyter and FastAPI already have one running.',
+   fix:'In Jupyter apply nest_asyncio. In async frameworks, await coroutines directly.',
+   lesson:'asyncio.run() is only for the top-level entry point of a program.',
+   ob:['RuntimeError: This event loop is already running',
+       '  File "async_client.py", line 13 in asyncio.run(ask("hello"))'],
+   of:['✓ nest_asyncio applied','✓ result = "Hello! How can I help you today?"']},
+
+  {id:'as2',cat:'async',title:'Missing await — coroutine never executes',
+   file:'missing_await.py',
+   buggy:`from openai import AsyncOpenAI\n\nasync def summarize(text: str) -> str:\n    client = AsyncOpenAI()\n    # MISSING await — returns coroutine object!\n    resp = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role":"user","content":text}]\n    )\n    return resp.choices[0].message.content  # AttributeError`,
+   fixed:`from openai import AsyncOpenAI\n\nasync def summarize(text: str) -> str:\n    client = AsyncOpenAI()\n    resp = await client.chat.completions.create(  # ← await added\n        model="gpt-4o",\n        messages=[{"role":"user","content":text}]\n    )\n    return resp.choices[0].message.content`,
+   error:"AttributeError: 'coroutine' object has no attribute 'choices'",
+   why:'Without await, the call returns a coroutine object instead of executing it.',
+   fix:'Add await before every async function call.',
+   lesson:'If async def defines it, await must call it — no exceptions.',
+   ob:["AttributeError: 'coroutine' object has no attribute 'choices'",
+       "RuntimeWarning: coroutine 'create' was never awaited"],
+   of:['✓ awaited create()','✓ Summary: "The document covers..." (312 tokens)']},
+
+  {id:'as3',cat:'async',title:'Sequential await loop — zero parallelism',
+   file:'sequential_async.py',
+   buggy:`async def batch(texts: list) -> list:\n    results = []\n    for t in texts:\n        # Waits for each before starting next — sequential!\n        result = await summarize(t)\n        results.append(result)\n    return results\n# 10 items × 2s = 20s`,
+   fixed:`async def batch(texts: list) -> list:\n    # All launch simultaneously — same wall time as 1\n    tasks = [summarize(t) for t in texts]\n    results = await asyncio.gather(*tasks, return_exceptions=True)\n    return [\n        r if not isinstance(r, Exception) else f"ERR: {r}"\n        for r in results\n    ]\n# 10 items × 2s = ~2s (10× faster)`,
+   error:'Performance: 20s instead of 2s for 10-item batch',
+   why:'for + await is sequential. Each iteration waits for the previous to finish.',
+   fix:'Create all coroutines first, run with asyncio.gather() for true concurrency.',
+   lesson:'Async ≠ parallel. You must explicitly schedule tasks with gather() or create_task().',
+   ob:['[1/10] done 2.0s','[2/10] done 4.1s','...','Total: 20.8s — NO parallelism!'],
+   of:['All 10 started simultaneously','[done] 10/10 in 2.2s','✓ 9.5× speedup']},
+
+  {id:'as4',cat:'async',title:'Shared mutable messages list — race condition',
+   file:'race_messages.py',
+   buggy:`# Shared global — ALL concurrent requests corrupt each other\nmessages = [{"role":"system","content":"You are helpful."}]\n\nasync def handle(user_msg: str) -> str:\n    messages.append({"role":"user","content":user_msg})\n    resp = await client.chat.completions.create(\n        model="gpt-4o-mini", messages=messages\n    )\n    msg = resp.choices[0].message.content\n    messages.append({"role":"assistant","content":msg})\n    return msg`,
+   fixed:`async def handle(user_msg: str) -> str:\n    # Each request gets its OWN local list\n    local = [\n        {"role":"system","content":"You are helpful."},\n        {"role":"user","content":user_msg}\n    ]\n    resp = await client.chat.completions.create(\n        model="gpt-4o-mini", messages=local\n    )\n    return resp.choices[0].message.content`,
+   error:'Non-deterministic: context from Request A leaks into Request B',
+   why:'Global mutable state shared across concurrent coroutines causes race conditions.',
+   fix:'Make messages a local variable inside each handler function.',
+   lesson:'Stateless handlers are race-free by design. Never share mutable state across concurrent requests.',
+   ob:['Request A context: [sys, userA, userB-crossed]','Request B: received wrong tool results','Garbled output on every 3rd request'],
+   of:['Request A: isolated ✓','Request B: isolated ✓','✓ 1000 concurrent requests, 0 conflicts']},
+
+  {id:'as5',cat:'async',title:'Background task exception silently lost',
+   file:'silent_task.py',
+   buggy:`async def main():\n    task = asyncio.create_task(background_job())\n    await asyncio.sleep(5)\n    print("Done — task exception was silently discarded!")`,
+   fixed:`import logging\n\ndef log_errors(task: asyncio.Task) -> None:\n    try:\n        task.result()  # re-raises stored exception\n    except asyncio.CancelledError:\n        pass\n    except Exception as e:\n        logging.error(f"Task failed: {e}", exc_info=True)\n\nasync def main():\n    task = asyncio.create_task(background_job())\n    task.add_done_callback(log_errors)  # always surface failures\n    await asyncio.sleep(5)`,
+   error:'Exception in background task silently discarded',
+   why:'asyncio.create_task() does not propagate exceptions unless someone reads the result.',
+   fix:'Add a done_callback that calls task.result() to re-raise stored exceptions.',
+   lesson:'Never fire-and-forget a task without a done_callback for error handling.',
+   ob:['background_job() raised ValueError("failed")','RuntimeWarning: Task exception was never retrieved','Program continues with corrupted state'],
+   of:['ERROR:root:Task failed: Something went wrong','  ValueError: Something went wrong','✓ Exception properly logged and surfaced']},
+
+  {id:'as6',cat:'async',title:'Semaphore deadlock — nested acquisition',
+   file:'semaphore_deadlock.py',
+   buggy:`sem = asyncio.Semaphore(2)\n\nasync def inner():\n    async with sem:  # acquires SAME semaphore\n        return await llm.complete("inner")\n\nasync def outer():\n    async with sem:          # holds sem...\n        return await inner() # ...tries to acquire again → DEADLOCK`,
+   fixed:`# Use SEPARATE semaphores for different call depths\nAPICALL_SEM = asyncio.Semaphore(5)   # API rate limit guard\nTOOL_SEM    = asyncio.Semaphore(10)  # tool execution guard\n\nasync def inner():\n    async with TOOL_SEM:    # different semaphore\n        return await llm.complete("inner")\n\nasync def outer():\n    async with APICHAIN_SEM:\n        return await inner()`,
+   error:'Program hangs indefinitely — deadlock',
+   why:'asyncio.Semaphore is not re-entrant. Acquiring it twice from the same call chain deadlocks.',
+   fix:'Use separate semaphores for each level of your async call hierarchy.',
+   lesson:'Design semaphore scopes so they never overlap in the call tree.',
+   ob:['outer() acquired sem (count: 1)','inner() waiting for sem...','(program hangs forever — Ctrl+C to exit)'],
+   of:['outer() acquired APICALL_SEM ✓','inner() acquired TOOL_SEM ✓','✓ Completed without deadlock']},
+
+  {id:'as7',cat:'async',title:'asyncio.gather() cancels all on one failure',
+   file:'gather_cancel.py',
+   buggy:`# Default: one exception cancels ALL remaining tasks\nresults = await asyncio.gather(\n    task1(), task2(), task3()\n)\n# task2 fails → task1 and task3 results lost!`,
+   fixed:`results = await asyncio.gather(\n    task1(), task2(), task3(),\n    return_exceptions=True  # exceptions become values\n)\nfor i, r in enumerate(results):\n    if isinstance(r, Exception):\n        print(f"task{i+1} failed: {r}")\n    else:\n        print(f"task{i+1} ok: {r}")`,
+   error:'Two tasks cancelled as collateral from one failure',
+   why:'asyncio.gather() default behaviour cancels remaining tasks when any raises.',
+   fix:'Pass return_exceptions=True to treat exceptions as values instead of raising.',
+   lesson:'Always use return_exceptions=True in batch processing to preserve partial results.',
+   ob:['task1: started','task2: FAILED ValueError','task3: cancelled (collateral)','ValueError — 2 good results lost'],
+   of:['task1: ok: result_a ✓','task2: failed: ValueError ✓ (caught)','task3: ok: result_c ✓','✓ 2/3 results preserved']},
+
+  {id:'as8',cat:'async',title:'httpx AsyncClient never closed — connection leak',
+   file:'client_leak.py',
+   buggy:`async def fetch(url: str) -> str:\n    # New pool per call — NEVER closed!\n    client = httpx.AsyncClient()\n    resp = await client.get(url)\n    return resp.text`,
+   fixed:`# Context manager: always closes cleanly\nasync def fetch(url: str) -> str:\n    async with httpx.AsyncClient(timeout=10.0) as client:\n        resp = await client.get(url)\n        return resp.text\n\n# OR: module-level singleton for high-throughput\n_client: httpx.AsyncClient | None = None\n\nasync def get_client() -> httpx.AsyncClient:\n    global _client\n    if _client is None:\n        _client = httpx.AsyncClient(\n            timeout=10.0,\n            limits=httpx.Limits(max_connections=100)\n        )\n    return _client`,
+   error:'ResourceWarning: Unclosed client session after 1000 requests',
+   why:'Each new AsyncClient creates a TCP pool that is never freed without aclose().',
+   fix:'Use async with for automatic cleanup, or a module-level singleton client.',
+   lesson:'HTTP clients should be long-lived and shared, not created per request.',
+   ob:['ResourceWarning: Unclosed <AsyncClient object>','After 1000 requests: OSError: Too many open files','fd exhaustion — service crash'],
+   of:['✓ Client opened','✓ Response: 200 OK','✓ Client closed — 0 leaked connections']},
+
+  /* ── CONFIG ──────────────────────────────────────────────── */
+  {id:'cf1',cat:'config',title:'.env not loaded — API key is None',
+   file:'missing_key.py',
+   buggy:`import os\nfrom openai import OpenAI\n\n# .env exists but was never loaded!\nkey = os.environ.get("OPENAI_API_KEY")  # → None\nclient = OpenAI(api_key=key)`,
+   fixed:`from dotenv import load_dotenv\nimport os\nfrom openai import OpenAI\n\nload_dotenv()  # reads .env into os.environ\n\nkey = os.environ.get("OPENAI_API_KEY")\nif not key:\n    raise EnvironmentError(\n        "OPENAI_API_KEY not set. Add it to .env or run:\\n"\n        "  export OPENAI_API_KEY='sk-...'\"\n    )\nclient = OpenAI(api_key=key)  # or just OpenAI() — reads key automatically`,
+   error:'openai.AuthenticationError: No API key provided',
+   why:'.env files are not automatically sourced by Python. load_dotenv() must be called.',
+   fix:'Call load_dotenv() before any os.environ.get() that depends on .env values.',
+   lesson:'load_dotenv() must precede os.environ.get() for .env values to be visible.',
+   ob:['OPENAI_API_KEY = None','openai.AuthenticationError: No API key provided'],
+   of:['✓ .env loaded: OPENAI_API_KEY=sk-proj-abcd...','✓ Client initialized']},
+
+  {id:'cf2',cat:'config',title:'Wrong base_url — Ollama hit OpenAI endpoint',
+   file:'wrong_base_url.py',
+   buggy:`from openai import OpenAI\n\n# No base_url → connects to api.openai.com\nclient = OpenAI()\nresp = client.chat.completions.create(\n    model="llama3.2",  # not a valid OpenAI model\n    messages=[{"role":"user","content":"hello"}]\n)  # 404 NotFoundError`,
+   fixed:`from openai import OpenAI\n\nclient = OpenAI(\n    base_url="http://localhost:11434/v1",  # Ollama local\n    api_key="ollama"  # required but ignored by Ollama\n)\nresp = client.chat.completions.create(\n    model="llama3.2",\n    messages=[{"role":"user","content":"hello"}]\n)\nprint(resp.choices[0].message.content)`,
+   error:"openai.NotFoundError: 404 — model 'llama3.2' does not exist",
+   why:'The SDK defaults to api.openai.com. Ollama runs at localhost:11434 with its own API.',
+   fix:'Set base_url to your local server URL.',
+   lesson:'Any OpenAI-compatible server (Ollama, vLLM, LiteLLM) needs base_url set explicitly.',
+   ob:["NotFoundError: The model 'llama3.2' does not exist","Status: 404, endpoint: api.openai.com"],
+   of:['✓ Connected to http://localhost:11434/v1','✓ Model: llama3.2 (3.2B)','Response: Hello! How can I help?']},
+
+  {id:'cf3',cat:'config',title:'Deprecated model name — 404 on every call',
+   file:'old_model.py',
+   buggy:`from openai import OpenAI\nclient = OpenAI()\n\n# All deprecated in 2025-2026:\nresp = client.chat.completions.create(\n    model="gpt-3.5-turbo",  # retired June 2024\n    messages=[{"role":"user","content":"hi"}]\n)`,
+   fixed:`# Current model names (2026)\nMODEL_FAST = "gpt-4o-mini"    # fast + cheap\nMODEL_BEST = "gpt-4o"          # flagship\nMODEL_REASON = "o3-mini"       # reasoning\n\nfrom openai import OpenAI\nclient = OpenAI()\nresp = client.chat.completions.create(\n    model=MODEL_FAST,\n    messages=[{"role":"user","content":"hi"}]\n)`,
+   error:"openai.NotFoundError: The model 'gpt-3.5-turbo' does not exist",
+   why:'OpenAI retires model names. gpt-3.5-turbo was deprecated in 2024.',
+   fix:'Centralise model names in config constants checked against provider docs.',
+   lesson:'Never hardcode model strings in application logic. Put them in config files.',
+   ob:["NotFoundError: model 'gpt-3.5-turbo' does not exist","Status: 404 — model retired"],
+   of:['✓ Model: gpt-4o-mini','✓ Response in 0.7s','✓ Cost: $0.000015']},
+
+  {id:'cf4',cat:'config',title:'API key committed to Git',
+   file:'hardcoded_key.py',
+   buggy:`from openai import OpenAI\n\n# CRITICAL: hardcoded — visible in git forever\nclient = OpenAI(api_key="sk-proj-abc123xyz...")\n# GitHub bots scrape public repos every 5 minutes`,
+   fixed:`import os\nfrom openai import OpenAI\nfrom dotenv import load_dotenv\n\nload_dotenv()\nclient = OpenAI()  # reads OPENAI_API_KEY from env\n\n# .gitignore must contain:\n#   .env\n#   *.env\n\n# If already committed — revoke key immediately:\n# platform.openai.com → API Keys → Delete\n# Then purge history:\n# git filter-repo --path .env --invert-paths`,
+   error:'SECURITY: key scraped, account billed $847 within 30 minutes',
+   why:'GitHub bots scan every public push for API key patterns in real time.',
+   fix:'Use environment variables. Add .env to .gitignore before first commit.',
+   lesson:'Treat API keys like passwords — they must never appear in source code.',
+   ob:['[ALERT] GitHub secret scanner: sk-proj-abc... detected','OpenAI key automatically disabled','Attacker spent $847.23 in 28 minutes'],
+   of:['✓ Key from env: sk-proj-abcd...','✓ No secrets in git log','✓ .gitignore: .env excluded']},
+
+  {id:'cf5',cat:'config',title:'No startup validation — silent None crashes 200 lines later',
+   file:'no_validate.py',
+   buggy:`import os\nfrom openai import OpenAI\n\nOPENAI_KEY = os.environ.get("OPENAI_API_KEY")  # might be None\nclient = OpenAI(api_key=OPENAI_KEY)  # no error yet...\n\n# ...200 lines of startup code...\n\nresp = client.chat.completions.create(...)  # AuthenticationError here!`,
+   fixed:`import os\n\ndef require_env(*keys: str) -> dict:\n    missing = [k for k in keys if not os.environ.get(k)]\n    if missing:\n        raise EnvironmentError(\n            f"Missing env vars: {', '.join(missing)}\\n"\n            "Create a .env file or export them manually."\n        )\n    return {k: os.environ[k] for k in keys}\n\n# Fails immediately at startup with a clear message\nenv = require_env("OPENAI_API_KEY", "ANTHROPIC_API_KEY")\n\nfrom openai import OpenAI\nclient = OpenAI(api_key=env["OPENAI_API_KEY"])`,
+   error:'AuthenticationError deep in request handler — 200 lines from root cause',
+   why:'os.environ.get() returns None silently. Error surfaces far from the cause.',
+   fix:'Validate all required env vars at startup with a require_env() helper.',
+   lesson:'Fail fast with clear messages. Config errors must surface at startup.',
+   ob:['...200 lines of startup...','AuthenticationError: No API key','(root cause: OPENAI_API_KEY was None since line 4)'],
+   of:['Startup check: OPENAI_API_KEY ✓','Startup check: ANTHROPIC_API_KEY ✓','✓ All env vars validated — app started']},
+
+  {id:'cf6',cat:'config',title:'Wrong anthropic SDK method name',
+   file:'anthropic_method.py',
+   buggy:`import anthropic\nclient = anthropic.Anthropic()\n\n# WRONG: completion() does not exist in the current SDK\nresp = client.completion(\n    model="claude-sonnet-4-6",\n    prompt="Hello",\n    max_tokens_to_sample=1024\n)`,
+   fixed:`import anthropic\nclient = anthropic.Anthropic()\n\n# Current SDK (0.39+): messages.create()\nresp = client.messages.create(\n    model="claude-sonnet-4-6",\n    max_tokens=1024,\n    messages=[{"role":"user","content":"Hello"}]\n)\nprint(resp.content[0].text)`,
+   error:"AttributeError: 'Anthropic' object has no attribute 'completion'",
+   why:'The legacy completion() API was removed. Current SDK uses messages.create().',
+   fix:'Use client.messages.create() with a messages list — matches OpenAI format.',
+   lesson:'Always check the current SDK docs. Anthropic renamed methods in v0.18.',
+   ob:["AttributeError: 'Anthropic' object has no attribute 'completion'"],
+   of:['✓ messages.create() successful','✓ Response: "Hello! How can I help you today?"']},
+
+  /* ── DATA ──────────────────────────────────────────────── */
+  {id:'da1',cat:'data',title:'json.loads() on already-decoded dict',
+   file:'double_json.py',
+   buggy:`import json, requests\n\nresp = requests.post("https://api.openai.com/...", ...)\n\n# resp.json() already returns a dict — not a string!\ndata = json.loads(resp.json())  # TypeError`,
+   fixed:`import requests\n\nresp = requests.post("https://api.openai.com/...", ...)\n\n# Use ONE of these — never combine:\ndata = resp.json()        # ← recommended\n# data = json.loads(resp.text)  # equivalent alternative\n\ncontent = data["choices"][0]["message"]["content"]`,
+   error:"TypeError: the JSON object must be str, bytes or bytearray, not dict",
+   why:'resp.json() decodes the JSON body to a dict. json.loads() expects a string, not a dict.',
+   fix:'Use resp.json() OR json.loads(resp.text) — they are equivalent. Never nest them.',
+   lesson:'resp.json() == json.loads(resp.text). Pick one.',
+   ob:['TypeError: the JSON object must be str, bytes or bytearray, not dict'],
+   of:['✓ data = resp.json()','✓ content = "The answer is 42"','✓ Parsed successfully']},
+
+  {id:'da2',cat:'data',title:'Pandas NaN becomes literal string "nan" in prompt',
+   file:'nan_prompt.py',
+   buggy:`import pandas as pd\ndf = pd.read_csv("customers.csv")\n\nfor _, row in df.iterrows():\n    prompt = f"Customer: {row['name']}, Email: {row['email']}"\n    # Produces: "Customer: Alice, Email: nan"\n    result = llm_call(prompt)  # LLM hallucinates`,
+   fixed:`import pandas as pd\ndf = pd.read_csv("customers.csv").fillna("")\n\nfor _, row in df.iterrows():\n    parts = []\n    if row["name"]:  parts.append(f"Name: {row['name']}")\n    if row["email"]: parts.append(f"Email: {row['email']}")\n    prompt = f"Customer info: {', '.join(parts)}"\n    # Produces: "Customer info: Name: Alice"\n    result = llm_call(prompt)`,
+   error:'LLM receives "nan" and hallucinates incorrect field values',
+   why:'float NaN formatted in an f-string produces the literal text "nan".',
+   fix:'Use df.fillna("") to replace NaN with empty strings before building prompts.',
+   lesson:'Always inspect DataFrames for NaN before building LLM prompts.',
+   ob:['Prompt: "Customer: Alice, Email: nan, Phone: nan"','LLM: "email is nan and phone is nan"  ❌'],
+   of:['Prompt: "Customer info: Name: Alice"','LLM: "No email on file for Alice"  ✓']},
+
+  {id:'da3',cat:'data',title:'max_tokens too low — JSON truncated mid-object',
+   file:'truncated_json.py',
+   buggy:`resp = client.chat.completions.create(\n    model="gpt-4o",\n    messages=[{"role":"user","content":"Return a 50-item JSON list"}],\n    max_tokens=128  # way too low!\n)\ndata = json.loads(resp.choices[0].message.content)  # JSONDecodeError`,
+   fixed:`resp = client.chat.completions.create(\n    model="gpt-4o",\n    messages=[{"role":"user","content":"Return a 50-item JSON list"}],\n    max_tokens=4096,\n    response_format={"type":"json_object"}  # guarantee valid JSON\n)\n\n# Always check stop reason before parsing\nif resp.choices[0].finish_reason == "max_tokens":\n    raise ValueError("Response truncated — increase max_tokens")\n\ndata = json.loads(resp.choices[0].message.content)`,
+   error:'json.JSONDecodeError: Expecting "," delimiter — JSON cut off',
+   why:'max_tokens reached before model finished writing JSON, producing an invalid fragment.',
+   fix:'Set max_tokens generously and use response_format to enforce valid JSON output.',
+   lesson:'Always check finish_reason == "stop" before parsing structured output.',
+   ob:['Response: \'[{"id":1,"name":"Alice"},{"id":2,"na','JSONDecodeError: Expecting \',\' delimiter: line 1'],
+   of:['✓ finish_reason: stop','✓ Parsed 50 items successfully']},
+
+  {id:'da4',cat:'data',title:'Pydantic rejects LLM null fields',
+   file:'pydantic_null.py',
+   buggy:`from pydantic import BaseModel\n\nclass Profile(BaseModel):\n    name: str\n    email: str\n    phone: str   # NOT Optional!\n\n# LLM returns {"name":"Alice","email":"a@b.com","phone":null}\nprofile = Profile(**json.loads(llm_response))  # ValidationError`,
+   fixed:`from pydantic import BaseModel\nfrom typing import Optional\n\nclass Profile(BaseModel):\n    name: str\n    email: str\n    phone: Optional[str] = None  # accepts null\n    age:   Optional[int] = None\n\nprofile = Profile(**json.loads(llm_response))\nprint(profile.phone or "not provided")  # safe`,
+   error:'ValidationError: phone — Input should be a valid string',
+   why:'LLMs often omit optional fields or return null. str rejects null.',
+   fix:'Make any field an LLM might not populate Optional with default=None.',
+   lesson:'Treat LLM-generated structured data as untrusted input. All non-required fields must be Optional.',
+   ob:['ValidationError: 1 validation error for Profile','phone','  Input should be a valid string [type=string_type]'],
+   of:['✓ Profile(name="Alice", email="a@b.com", phone=None)','✓ Validation passed']},
+
+  {id:'da5',cat:'data',title:'Streaming JSON parsed per-chunk',
+   file:'stream_json.py',
+   buggy:`buffer = ""\nwith client.chat.completions.stream(...) as s:\n    for event in s:\n        chunk = event.choices[0].delta.content\n        if chunk:\n            obj = json.loads(chunk)  # JSONDecodeError every chunk!`,
+   fixed:`buffer = ""\nwith client.chat.completions.stream(\n    model="gpt-4o",\n    messages=[{"role":"user","content":"Return JSON: name Alice age 30"}],\n    response_format={"type":"json_object"}\n) as stream:\n    for event in stream:\n        chunk = event.choices[0].delta.content or ""\n        buffer += chunk\n        print(chunk, end="", flush=True)  # live display\n\n# Parse ONCE after complete\nobj = json.loads(buffer)\nprint(f"\\nParsed: {obj}")`,
+   error:'JSONDecodeError on every streaming chunk — fragments are not valid JSON',
+   why:'Each chunk is a partial token. Individual chunks are never valid JSON.',
+   fix:'Accumulate all chunks into a buffer. Parse once after streaming completes.',
+   lesson:'Streaming and JSON parsing are separate concerns. Stream for UX, parse once for structure.',
+   ob:['chunk: \'{\'','JSONDecodeError: Expecting property name','chunk: \'"name"\'','JSONDecodeError: Expecting value'],
+   of:['{"name": "Alice", "age": 30}  ← streamed live','Parsed: {\'name\': \'Alice\', \'age\': 30}  ✓']},
+
+  {id:'da6',cat:'data',title:'Non-UTF-8 encoding crashes file read',
+   file:'encoding_error.py',
+   buggy:`# Reading a Windows-1252 encoded file without specifying encoding\nwith open("notes.txt") as f:\n    content = f.read()  # UnicodeDecodeError!\n\nmessages = [{"role":"user","content":content}]`,
+   fixed:`# Always specify encoding; use errors='replace' as safety net\nwith open("notes.txt", encoding="utf-8", errors="replace") as f:\n    content = f.read()\n\n# Or auto-detect with chardet for unknown sources\nimport chardet\nraw = open("notes.txt","rb").read()\nenc = chardet.detect(raw)["encoding"] or "utf-8"\ncontent = raw.decode(enc, errors="replace")`,
+   error:"UnicodeDecodeError: 'utf-8' codec can't decode byte 0x92 at position 145",
+   why:'Files from Windows or legacy systems use non-UTF-8 encodings. Python defaults to system locale.',
+   fix:'Always specify encoding="utf-8" and errors="replace" when opening text files.',
+   lesson:'Treat all external text as potentially mal-encoded. Sanitize before sending to LLMs.',
+   ob:["UnicodeDecodeError: 'utf-8' codec can't decode byte 0x92","0x92 = Windows-1252 right single quote"],
+   of:['✓ Detected encoding: Windows-1252 (73% confidence)','✓ Decoded 4521 chars, 3 replacement chars']},
+
+  /* ── MEMORY ──────────────────────────────────────────────── */
+  {id:'me1',cat:'memory',title:'Context window overflow — no truncation',
+   file:'context_overflow.py',
+   buggy:`history = []  # grows unbounded!\n\ndef chat(user_msg: str) -> str:\n    history.append({"role":"user","content":user_msg})\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=history  # will exceed 128K tokens eventually\n    )\n    assistant_msg = resp.choices[0].message.content\n    history.append({"role":"assistant","content":assistant_msg})\n    return assistant_msg`,
+   fixed:`import tiktoken\n\nenc = tiktoken.encoding_for_model("gpt-4o-mini")\n\ndef token_count(messages: list) -> int:\n    return sum(len(enc.encode(m["content"])) + 4 for m in messages)\n\ndef trim_history(messages: list, max_tokens=60_000) -> list:\n    system = [m for m in messages if m["role"] == "system"]\n    chat   = [m for m in messages if m["role"] != "system"]\n    while chat and token_count(system + chat) > max_tokens:\n        chat = chat[2:]  # drop oldest turn (user + assistant)\n    return system + chat\n\ndef chat(user_msg: str) -> str:\n    history.append({"role":"user","content":user_msg})\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=trim_history(history)\n    )\n    reply = resp.choices[0].message.content\n    history.append({"role":"assistant","content":reply})\n    return reply`,
+   error:'openai.BadRequestError: This model\'s maximum context length is 128000 tokens',
+   why:'The conversation history grows unbounded. Long sessions exceed the context window.',
+   fix:'Count tokens and trim oldest turns when approaching the limit.',
+   lesson:'Always implement context window management for long-running conversations.',
+   ob:['Turn 1-50: ok','Turn 51: BadRequestError: max context length 128000 exceeded','Request included 132847 tokens'],
+   of:['Turn 50: history=48 turns (58K tokens)','✓ Trimmed to 40 turns (50K tokens)','✓ Chat continues normally']},
+
+  {id:'me2',cat:'memory',title:'GPU VRAM OOM — model too large for hardware',
+   file:'vram_oom.py',
+   buggy:`from transformers import AutoModelForCausalLM\n\n# 70B FP16 needs 140GB VRAM — A100 has 80GB\nmodel = AutoModelForCausalLM.from_pretrained(\n    "meta-llama/Llama-3.1-70B-Instruct",\n    device_map="auto"  # tries to load in FP16\n)\n# CUDA out of memory: tried to allocate 80.00 GiB`,
+   fixed:`from transformers import AutoModelForCausalLM, BitsAndBytesConfig\nimport torch\n\n# 4-bit quantization: 140GB → 35GB\nquant = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_quant_type="nf4",\n    bnb_4bit_compute_dtype=torch.float16,\n    bnb_4bit_use_double_quant=True\n)\nmodel = AutoModelForCausalLM.from_pretrained(\n    "meta-llama/Llama-3.1-70B-Instruct",\n    quantization_config=quant,\n    device_map="auto"\n)\n# Fits on 2× A100s or 1× 80GB A100`,
+   error:'CUDA out of memory: tried to allocate 80.00 GiB on cuda:0',
+   why:'70B FP16 = 140GB VRAM. A single A100 has 80GB. Model does not fit.',
+   fix:'Use 4-bit quantization to reduce VRAM from 140GB to ~35GB with minimal quality loss.',
+   lesson:'70B FP16=140GB, INT8=70GB, INT4=35GB. Plan model size vs hardware.',
+   ob:['Loading 70B model in FP16...','CUDA OutOfMemoryError: tried to allocate 80.00 GiB','Only 74.5 GiB free on cuda:0'],
+   of:['Loading 70B model in NF4...','✓ Model loaded: 34.8 GB VRAM used','✓ Ready to generate']},
+
+  {id:'me3',cat:'memory',title:'Embedding model loaded per request — OOM',
+   file:'embed_per_req.py',
+   buggy:`async def embed(text: str) -> list[float]:\n    # Loads 500MB model into RAM on EVERY request!\n    from sentence_transformers import SentenceTransformer\n    model = SentenceTransformer("all-MiniLM-L6-v2")\n    return model.encode(text).tolist()`,
+   fixed:`from sentence_transformers import SentenceTransformer\n\n# Load ONCE at module level — shared across all requests\n_EMBED_MODEL: SentenceTransformer | None = None\n\ndef get_embed_model() -> SentenceTransformer:\n    global _EMBED_MODEL\n    if _EMBED_MODEL is None:\n        _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")\n    return _EMBED_MODEL\n\nasync def embed(text: str) -> list[float]:\n    model = get_embed_model()  # returns cached singleton\n    return model.encode(text).tolist()`,
+   error:'MemoryError: OOM after 50 concurrent requests — 500MB loaded 50 times',
+   why:'Loading a 500MB model on every request uses 500MB × concurrency = GB of RAM.',
+   fix:'Load the model once at module level and reuse it for all requests.',
+   lesson:'ML models are expensive to load. Always use a module-level singleton.',
+   ob:['Request 1: loaded model (500MB)','Request 2: loaded model (500MB)','...','Request 50: MemoryError: Out of memory'],
+   of:['App start: loading model (500MB) — once','Request 1-50: model cache hit ✓','✓ 50 requests, 500MB total (not 25GB)']},
+
+  {id:'me4',cat:'memory',title:'Accumulating tool results blow context window',
+   file:'tool_bloat.py',
+   buggy:`messages = [{"role":"system","content":"..."}]\n\nfor tc in tool_calls:\n    # Full 50KB search result appended each time\n    result = search_web(tc.query)  # returns 50KB of HTML\n    messages.append({"role":"tool","content":result})\n# After 5 tool calls: 250KB = ~62K tokens in tool results alone!`,
+   fixed:`def truncate_tool_result(result: str, max_chars: int = 2000) -> str:\n    """Keep only the most relevant content from tool output."""\n    if len(result) <= max_chars:\n        return result\n    return result[:max_chars] + f"\\n[...{len(result)-max_chars} chars truncated]"\n\nfor tc in tool_calls:\n    result = search_web(tc.query)\n    truncated = truncate_tool_result(result, max_chars=2000)\n    messages.append({"role":"tool","content":truncated})\n# After 5 calls: 10KB = ~2.5K tokens`,
+   error:'BadRequestError: maximum context length exceeded after 5 tool calls',
+   why:'Raw tool outputs (HTML pages, large JSON) are enormous. 5 search results can fill the context.',
+   fix:'Truncate or summarize tool results before appending to the message history.',
+   lesson:'Tool result size × tool calls = context budget. Plan it explicitly.',
+   ob:['Tool call 1: 48K chars appended','Tool call 2: 51K chars appended','Tool call 5: BadRequestError — 262K tokens'],
+   of:['Tool call 1: truncated to 2000 chars ✓','Tool call 2: truncated to 2000 chars ✓','✓ 5 tool calls: 10K total chars']},
+
+  {id:'me5',cat:'memory',title:'Vector store index rebuilt on every app restart',
+   file:'no_persist.py',
+   buggy:`# Re-embeds 10K docs on EVERY restart — $5 and 45s each time\nfrom langchain_community.vectorstores import FAISS\nfrom langchain_openai import OpenAIEmbeddings\n\nvs = FAISS.from_documents(docs, OpenAIEmbeddings())\n# Not saved — lost when Python process exits`,
+   fixed:`import os\nfrom langchain_community.vectorstores import FAISS\nfrom langchain_openai import OpenAIEmbeddings\n\nINDEX_PATH = "./faiss_cache"\nembeddings  = OpenAIEmbeddings(model="text-embedding-3-small")\n\nif os.path.exists(INDEX_PATH):\n    vs = FAISS.load_local(\n        INDEX_PATH, embeddings,\n        allow_dangerous_deserialization=True\n    )\n    print(f"Loaded {vs.index.ntotal} cached vectors")\nelse:\n    vs = FAISS.from_documents(docs, embeddings)\n    vs.save_local(INDEX_PATH)\n    print(f"Built and saved {vs.index.ntotal} vectors")`,
+   error:'$50/day wasted re-embedding 10K docs × 10 restarts/day',
+   why:'FAISS.from_documents() creates an in-memory index that disappears on restart.',
+   fix:'Call save_local() after building. Load it on subsequent startups.',
+   lesson:'Persist your vector index. Loading from disk takes 0.2s; rebuilding takes 45s and costs money.',
+   ob:['Startup: embedding 10,000 docs...','45.3s elapsed, $0.48 cost','(happens EVERY restart)'],
+   of:['Startup: loading cached index...','✓ Loaded 10,000 vectors in 0.19s, $0.00','✓ Ready to serve queries']},
+
+  /* ── NETWORK ──────────────────────────────────────────────── */
+  {id:'ne1',cat:'network',title:'No timeout — request hangs forever',
+   file:'no_timeout.py',
+   buggy:`import requests\n\n# No timeout — will hang indefinitely if server is slow\nresp = requests.post(\n    "https://api.openai.com/v1/chat/completions",\n    headers={"Authorization":f"Bearer {key}"},\n    json=payload\n)\ndata = resp.json()`,
+   fixed:`import requests\n\nresp = requests.post(\n    "https://api.openai.com/v1/chat/completions",\n    headers={"Authorization":f"Bearer {key}"},\n    json=payload,\n    timeout=(5, 60)  # (connect timeout, read timeout) in seconds\n)\n\nif resp.status_code == 200:\n    data = resp.json()\nelif resp.status_code == 429:\n    retry_after = int(resp.headers.get("Retry-After", 5))\n    print(f"Rate limited, retry in {retry_after}s")\nelse:\n    resp.raise_for_status()`,
+   error:'Thread hangs forever — brings down worker pool in production',
+   why:'Without a timeout, a slow server or dropped connection hangs the thread forever.',
+   fix:'Always pass timeout=(connect_sec, read_sec). Handle 429 with Retry-After header.',
+   lesson:'Every external HTTP call must have a timeout. No exceptions.',
+   ob:['POST https://api.openai.com/v1/chat/completions','... (30 minutes later)','... (worker pool exhausted — service down)'],
+   of:['POST https://api.openai.com ... (connect 5s)','✓ 200 OK in 1.2s','✓ Timeout guard: 5s connect, 60s read']},
+
+  {id:'ne2',cat:'network',title:'Rate limit not handled — retries fail instantly',
+   file:'no_retry.py',
+   buggy:`def call_api(prompt: str) -> str:\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{"role":"user","content":prompt}]\n    )\n    return resp.choices[0].message.content\n# RateLimitError immediately re-raised — no retry`,
+   fixed:`import time, random\nfrom openai import RateLimitError\n\ndef call_api(prompt: str, retries=6) -> str:\n    for attempt in range(retries):\n        try:\n            resp = client.chat.completions.create(\n                model="gpt-4o-mini",\n                messages=[{"role":"user","content":prompt}]\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            if attempt == retries - 1: raise\n            wait = min(2 ** attempt + random.uniform(0,1), 60)\n            print(f"Rate limited. Retry {attempt+1}/{retries} in {wait:.1f}s")\n            time.sleep(wait)\n    raise Exception("Max retries exhausted")`,
+   error:'openai.RateLimitError: Rate limit reached — request aborted',
+   why:'No retry logic means every rate limit hit fails permanently.',
+   fix:'Implement exponential backoff with jitter: wait 1, 2, 4, 8... seconds.',
+   lesson:'Rate limits are expected in production. Exponential backoff is standard practice.',
+   ob:['RateLimitError: Rate limit reached for gpt-4o-mini','Request failed — no retry attempted'],
+   of:['Rate limited. Retry 1/6 in 1.4s','Rate limited. Retry 2/6 in 2.8s','✓ Success on attempt 3']},
+
+  {id:'ne3',cat:'network',title:'SSL certificate error on corporate proxy',
+   file:'ssl_error.py',
+   buggy:`import requests\n\n# Fails behind corporate HTTPS inspection proxy\nresp = requests.get("https://api.openai.com/")\n# SSLError: certificate verify failed: unable to get local issuer certificate`,
+   fixed:`import requests\nimport ssl, certifi\n\n# Option 1: trust the corporate CA bundle\n# Set env: REQUESTS_CA_BUNDLE=/path/to/corporate_ca.pem\n\n# Option 2: use certifi + custom cert\ncustom_bundle = "/etc/ssl/corporate-bundle.pem"\nresp = requests.get(\n    "https://api.openai.com/",\n    verify=custom_bundle  # or False for dev only — NEVER in prod\n)\n\n# For httpx:\nimport httpx\nclient = httpx.Client(verify=custom_bundle)\n\n# For OpenAI SDK:\nimport os\nos.environ["SSL_CERT_FILE"] = custom_bundle`,
+   error:'ssl.SSLCertVerificationError: certificate verify failed',
+   why:'Corporate networks intercept TLS with their own CA. Python does not trust it by default.',
+   fix:'Add the corporate CA bundle to requests verify= or set REQUESTS_CA_BUNDLE env var.',
+   lesson:'Never use verify=False in production. Add the corporate cert to your trust store.',
+   ob:['SSLError: HTTPSConnectionPool(host=\'api.openai.com\')','ssl.SSLCertVerificationError: unable to get local issuer certificate'],
+   of:['✓ Corporate CA bundle loaded','✓ SSL handshake verified','✓ GET https://api.openai.com/ → 200 OK']},
+
+  {id:'ne4',cat:'network',title:'Connection pool exhausted under load',
+   file:'pool_exhaust.py',
+   buggy:`import requests\n\nasync def fetch(url):\n    # New Session per request = new TCP connection each time\n    session = requests.Session()\n    return session.get(url).json()`,
+   fixed:`import httpx\n\n# Module-level client with connection pool\n_HTTP = httpx.AsyncClient(\n    timeout=httpx.Timeout(10.0),\n    limits=httpx.Limits(\n        max_connections=100,\n        max_keepalive_connections=20,\n        keepalive_expiry=30\n    )\n)\n\nasync def fetch(url: str) -> dict:\n    resp = await _HTTP.get(url)\n    resp.raise_for_status()\n    return resp.json()`,
+   error:'OSError: [Errno 24] Too many open files — fd exhaustion after 1000 requests',
+   why:'Creating a new Session per request creates a new TCP connection that is never reused.',
+   fix:'Use a module-level async client with a connection pool set to reasonable limits.',
+   lesson:'HTTP clients must be shared, not created per request.',
+   ob:['Request 1: new TCP connection','Request 2: new TCP connection','...','Request 1024: OSError: Too many open files'],
+   of:['Pool: 20 keepalive connections shared across 1000 requests','✓ 0 leaked connections','✓ p95 latency: 120ms (was 380ms)']},
+
+  {id:'ne5',cat:'network',title:'Webhook signature not verified — security vulnerability',
+   file:'webhook_no_verify.py',
+   buggy:`from flask import Flask, request\napp = Flask(__name__)\n\n@app.post("/webhook")\ndef webhook():\n    # WRONG: trusting the payload without verifying sender\n    data = request.json\n    process_event(data)  # attacker can forge any event!`,
+   fixed:`import hmac, hashlib\nfrom flask import Flask, request, abort\n\napp  = Flask(__name__)\nSECRET = os.environ["WEBHOOK_SECRET"].encode()\n\n@app.post("/webhook")\ndef webhook():\n    sig = request.headers.get("X-Signature-256", "")\n    body = request.get_data()\n    expected = "sha256=" + hmac.new(SECRET, body, hashlib.sha256).hexdigest()\n    if not hmac.compare_digest(sig, expected):\n        abort(403, "Invalid signature")\n    process_event(request.json)\n    return "", 200`,
+   error:'SECURITY: Attacker forges fake payment/event webhooks',
+   why:'Without signature verification, anyone can POST to your webhook endpoint.',
+   fix:'Verify HMAC-SHA256 signature from request headers before processing any event.',
+   lesson:'Always verify webhook signatures. Use hmac.compare_digest() (not ==) to prevent timing attacks.',
+   ob:['POST /webhook from 141.11.23.99','{"event":"payment.succeeded","amount":9999}','process_event() — attacker forged $9999 payment!'],
+   of:['POST /webhook','Signature check: sha256=abc... ✓','✓ Authentic event processed']},
+
+  {id:'ne6',cat:'network',title:'LangChain LLM chain not streaming to client',
+   file:'no_stream.py',
+   buggy:`from langchain_openai import ChatOpenAI\nfrom langchain_core.messages import HumanMessage\n\nllm = ChatOpenAI(model="gpt-4o")\n# Waits for FULL response before returning — bad UX\nresult = llm.invoke([HumanMessage(content="Write 500 words about AI")])\nreturn result.content  # user waits 30s for anything`,
+   fixed:`from langchain_openai import ChatOpenAI\nfrom fastapi import FastAPI\nfrom fastapi.responses import StreamingResponse\n\nllm = ChatOpenAI(model="gpt-4o", streaming=True)\napp = FastAPI()\n\n@app.get("/chat")\nasync def chat(q: str):\n    async def token_stream():\n        async for chunk in llm.astream([HumanMessage(content=q)]):\n            if chunk.content:\n                yield chunk.content\n    return StreamingResponse(token_stream(), media_type="text/event-stream")`,
+   error:'User stares at blank screen for 30s before first token appears',
+   why:'Without streaming, the client receives nothing until the entire response is generated.',
+   fix:'Use streaming=True in ChatOpenAI and stream tokens via StreamingResponse.',
+   lesson:'For anything > 2s generation time, stream tokens. Users perceive streaming as instant.',
+   ob:['GET /chat?q=...','[30 seconds of silence]','200 OK — full response received at once'],
+   of:['GET /chat?q=...','Token: "AI" → client in 0.1s','Token: " is" → 0.15s','✓ Full response streamed over 2s']},
+
+  /* ── AGENT ──────────────────────────────────────────────── */
+  {id:'ag1',cat:'agent',title:'No max_steps guard — infinite agent loop',
+   file:'infinite_agent.py',
+   buggy:`def run(goal: str) -> str:\n    msgs = [{"role":"user","content":goal}]\n    while True:  # NO EXIT CONDITION!\n        r = client.chat.completions.create(\n            model="gpt-4o", messages=msgs,\n            tools=TOOLS, tool_choice="auto"\n        )\n        if r.choices[0].finish_reason=="stop":\n            return r.choices[0].message.content\n        execute_tools(r, msgs)  # if stuck, loops forever`,
+   fixed:`def run(goal: str, max_steps: int = 20) -> str:\n    msgs = [{"role":"user","content":goal}]\n    for step in range(max_steps):\n        r = client.chat.completions.create(\n            model="gpt-4o", messages=msgs,\n            tools=TOOLS, tool_choice="auto"\n        )\n        if r.choices[0].finish_reason=="stop":\n            return r.choices[0].message.content\n        execute_tools(r, msgs)\n    return f"Max steps ({max_steps}) reached: {msgs[-1].get('content','')}"`,
+   error:'Agent runs forever — burns all token budget, crashes process',
+   why:'Agents can get stuck in tool call loops. Without max_steps, they run indefinitely.',
+   fix:'Replace while True with for step in range(max_steps) and return partial result on limit.',
+   lesson:'Every agent loop must have a hard max_steps guard. Never use while True.',
+   ob:['Step 1: tool_call ✓','Step 2: tool_call ✓','...','Step 847: ($12.43 spent, process still running)'],
+   of:['Step 1: tool_call ✓','Step 2: stop ✓','✓ Completed in 2 steps, $0.003']},
+
+  {id:'ag2',cat:'agent',title:'Tool result not JSON serializable',
+   file:'bad_tool_result.py',
+   buggy:`from datetime import datetime\nfrom decimal import Decimal\n\ndef get_order(id: str) -> dict:\n    return {\n        "id": id,\n        "created": datetime.now(),  # NOT serializable\n        "amount": Decimal("49.99"),  # NOT serializable\n    }\n\nresult = get_order("ORD-1")\njson.dumps(result)  # TypeError!`,
+   fixed:`from datetime import datetime\nfrom decimal import Decimal\nimport json\n\ndef get_order(id: str) -> dict:\n    return {\n        "id": id,\n        "created": datetime.now().isoformat(),  # str ✓\n        "amount": float(Decimal("49.99")),       # float ✓\n    }\n\n# Universal safe serializer\ndef safe_json(obj) -> str:\n    def default(o):\n        if isinstance(o, datetime): return o.isoformat()\n        if isinstance(o, Decimal):  return float(o)\n        return str(o)\n    return json.dumps(obj, default=default)`,
+   error:"TypeError: Object of type datetime is not JSON serializable",
+   why:'Tool results must be JSON-serialized to send back to the LLM. datetime and Decimal are not JSON-safe.',
+   fix:'Return only JSON-safe types from tool functions: str, int, float, bool, list, dict.',
+   lesson:'All tool return values must be JSON-serializable. Use .isoformat() for dates, float() for Decimal.',
+   ob:['TypeError: Object of type datetime is not JSON serializable','In execute_tool() → json.dumps(result)'],
+   of:['✓ {"id":"ORD-1","created":"2026-03-27T...","amount":49.99}','✓ Tool result serialized: 87 bytes']},
+
+  {id:'ag3',cat:'agent',title:'Hallucinated tool arguments bypass schema',
+   file:'hallucinated_args.py',
+   buggy:`def execute(tc):\n    args = json.loads(tc.function.arguments)\n    fn = TOOLS[tc.function.name]\n    return fn(**args)  # KeyError if LLM invented wrong arg name`,
+   fixed:`from jsonschema import validate, ValidationError\n\nSCHEMAS = {\n    "get_weather": {\n        "type":"object",\n        "properties":{"city":{"type":"string"}},\n        "required":["city"]\n    }\n}\n\ndef execute(tc) -> str:\n    name = tc.function.name\n    try:\n        args = json.loads(tc.function.arguments)\n    except json.JSONDecodeError as e:\n        return json.dumps({"error":f"Invalid JSON args: {e}"})\n    schema = SCHEMAS.get(name)\n    if schema:\n        try: validate(args, schema)\n        except ValidationError as e:\n            return json.dumps({"error":f"Bad args for {name}: {e.message}"})\n    fn = TOOLS.get(name)\n    if not fn: return json.dumps({"error":f"Unknown tool: {name}"})\n    try: return json.dumps(fn(**args))\n    except Exception as e: return json.dumps({"error":str(e)})`,
+   error:'KeyError: LLM sent {"location":"Tokyo"} but schema requires {"city":"Tokyo"}',
+   why:'LLMs can hallucinate argument names. Blindly unpacking causes KeyError or TypeError.',
+   fix:'Validate tool arguments against their JSON schema before executing.',
+   lesson:'Never trust LLM-generated function arguments without validation. Return errors so the agent can self-correct.',
+   ob:['LLM: get_weather({"location":"Tokyo"})','KeyError: \'location\' not in schema'],
+   of:['Validation: \'location\' invalid — required: [\'city\']','Returned {"error":"Bad args"}','LLM retry: get_weather({"city":"Tokyo"}) ✓']},
+
+  {id:'ag4',cat:'agent',title:'Agent has no memory between sessions',
+   file:'no_memory.py',
+   buggy:`def handle(msg: str) -> str:\n    # Every call starts with no history\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{"role":"user","content":msg}]  # no context!\n    )\n    return resp.choices[0].message.content\n\nhandle("My name is Alice")\nhandle("What is my name?")  # "I don't know"`,
+   fixed:`from langchain_community.vectorstores import FAISS\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain_core.documents import Document\nimport os\n\nMEM_PATH = "./agent_memory"\nembeds = OpenAIEmbeddings()\n\nif os.path.exists(MEM_PATH):\n    memory = FAISS.load_local(MEM_PATH, embeds, allow_dangerous_deserialization=True)\nelse:\n    memory = FAISS.from_documents([Document(page_content="init")], embeds)\n\ndef handle(msg: str) -> str:\n    related = memory.similarity_search(msg, k=3)\n    context = "\\n".join(d.page_content for d in related)\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[\n            {"role":"system","content":f"Context:\\n{context}"},\n            {"role":"user","content":msg}\n        ]\n    )\n    reply = resp.choices[0].message.content\n    memory.add_documents([Document(page_content=f"User said: {msg}")])\n    memory.save_local(MEM_PATH)\n    return reply`,
+   error:'Agent forgets everything between sessions — useless for long-running use cases',
+   why:'Each LLM call is stateless. Without a persistent store, context is lost on process exit.',
+   fix:'Use a vector store-backed memory that persists to disk.',
+   lesson:'LLMs have zero memory between API calls. You must build and manage memory explicitly.',
+   ob:['Session 1: "My name is Alice"','Session 2: "What is my name?" → "I don\'t know" ❌'],
+   of:['Session 1: stored "User said: My name is Alice"','Session 2: recalled → "Your name is Alice" ✓']},
+
+  {id:'ag5',cat:'agent',title:'Tool name in schema missing from execution map',
+   file:'tool_map_mismatch.py',
+   buggy:`TOOLS = [\n    {"type":"function","function":{"name":"search_web",...}},\n    {"type":"function","function":{"name":"write_file",...}},  # schema only!\n]\n\nTOOL_FNS = {\n    "search_web": search_web,\n    # write_file missing!\n}\n\nfor tc in msg.tool_calls:\n    result = TOOL_FNS[tc.function.name]()  # KeyError: 'write_file'`,
+   fixed:`TOOL_FNS = {\n    "search_web": search_web,\n    "write_file": write_file,  # added\n}\n\n# Defensive executor — never raises\ndef run_tool(tc) -> str:\n    fn = TOOL_FNS.get(tc.function.name)\n    if fn is None:\n        return json.dumps({"error":f"Tool '{tc.function.name}' unavailable"})\n    try:\n        return json.dumps(fn(**json.loads(tc.function.arguments)))\n    except Exception as e:\n        return json.dumps({"error":str(e)})`,
+   error="KeyError: 'write_file' — schema and execution map out of sync",
+   why:'The TOOLS list tells the LLM what it can call. TOOL_FNS must match exactly.',
+   fix:'Keep TOOLS and TOOL_FNS in sync. Use a defensive executor that returns errors for unknown tools.',
+   lesson:'Consider generating TOOLS from TOOL_FNS automatically to prevent drift.',
+   ob:['LLM called: write_file(path="out.txt")','KeyError: \'write_file\' not in TOOL_FNS'],
+   of:['LLM called: write_file(path="out.txt")','✓ Executed write_file: 247 bytes written']},
+
+  {id:'ag6',cat:'agent',title:'Agent prompt does not specify output format',
+   file:'vague_prompt.py',
+   buggy:`system = "You are a helpful assistant."\n# No format instructions — LLM returns prose, JSON, markdown,\n# bullet points... anything. Parsing is impossible.`,
+   fixed:`system = """You are a data extraction agent.\n\nAlways respond with ONLY valid JSON matching this schema:\n{\n  "entities": [{"name": str, "type": str, "confidence": float}],\n  "summary": str,\n  "requires_followup": bool\n}\n\nDo not include any text outside the JSON object.\nDo not use markdown code fences.\"""`,
+   error:'Inconsistent output format — parsing fails on ~40% of responses',
+   why:'Without explicit format instructions, LLMs choose their own format unpredictably.',
+   fix:'Specify the exact output schema in the system prompt. Use response_format={"type":"json_object"} as backup.',
+   lesson:'For structured output, always specify the exact format with a JSON schema example.',
+   ob:['Response 1: ```json\\n{...}\\n```  ← markdown fenced','Response 2: "Here is the data: {...}"  ← prose','Response 3: {valid json}  ← actually parseable'],
+   of:['Response 1: {valid json} ✓','Response 2: {valid json} ✓','✓ 100% parse rate with format instructions']},
+
+  {id:'ag7',cat:'agent',title:'LangGraph node raises — entire graph crashes',
+   file:'langgraph_crash.py',
+   buggy:`from langgraph.graph import StateGraph\n\ndef search_node(state):\n    results = web_search(state["query"])  # raises if search fails\n    return {"results": results}\n\ngraph = StateGraph(AgentState)\ngraph.add_node("search", search_node)\n# No error handling — any exception kills the whole graph run`,
+   fixed:`from langgraph.graph import StateGraph\n\ndef search_node(state):\n    try:\n        results = web_search(state["query"])\n        return {"results": results, "error": None}\n    except Exception as e:\n        return {\n            "results": [],\n            "error": str(e),\n            "should_retry": state.get("retries", 0) < 3\n        }\n\ndef route_after_search(state):\n    if state.get("error") and state.get("should_retry"):\n        return "retry"\n    elif state.get("error"):\n        return "fallback"\n    return "continue"\n\ngraph.add_conditional_edges("search", route_after_search)`,
+   error:'GraphStateError: Unhandled exception in node — full graph execution cancelled',
+   why:'A single node exception terminates the entire graph run, losing all prior state.',
+   fix:'Catch exceptions in nodes, return error state, and use conditional edges to route to retry or fallback.',
+   lesson:'LangGraph nodes must be fault-tolerant. Use error state + conditional routing instead of raising.',
+   ob:['search_node: ConnectionError: search failed','GraphStateError: Unhandled exception in node "search"','Full graph run cancelled — all previous state lost'],
+   of:['search_node: ConnectionError caught','State: {error: "search failed", should_retry: true}','✓ Routed to retry node']},
+
+  {id:'ag8',cat:'agent',title:'CrewAI agents share state accidentally',
+   file:'crew_state.py',
+   buggy:`from crewai import Agent, Task\n\nSHARED_CONTEXT = {}  # global — shared by all agents!\n\nresearcher = Agent(role="Researcher", ...)\nwriter = Agent(role="Writer", ...)\n\n# Both agents read and write SHARED_CONTEXT\n# Race conditions corrupt output`,
+   fixed:`from crewai import Agent, Task, Crew\n\n# Each task gets its own context via proper inputs\nresearcher = Agent(role="Researcher", ...)\nwriter = Agent(role="Writer", ...)\n\nresearch_task = Task(\n    description="Research AI trends in {topic}",\n    expected_output="A bullet list of 10 trends",\n    agent=researcher\n)\nwriting_task = Task(\n    description="Write an article based on the research",\n    expected_output="500-word article",\n    agent=writer,\n    context=[research_task]  # explicit dependency\n)\n\ncrew = Crew(agents=[researcher,writer], tasks=[research_task,writing_task])\nresult = crew.kickoff(inputs={"topic":"LLMs in 2026"})`,
+   error:'Writer agent received corrupted context — wrong research output',
+   why:'Global mutable state shared between agents causes race conditions and context corruption.',
+   fix:'Pass context between agents through explicit Task.context dependencies, not global variables.',
+   lesson:'Agent state must flow through the graph topology, not shared globals.',
+   ob:['researcher wrote to SHARED_CONTEXT["research"]','writer: read wrong key — got previous run data','Output: article about wrong topic'],
+   of:['research_task completed: 10 trends listed','writing_task context=[research_task] ✓','✓ Writer used correct research output']},
+
+  {id:'ag9',cat:'agent',title:'Tool definition missing required parameter',
+   file:'incomplete_schema.py',
+   buggy:`tools = [{\n    "type":"function",\n    "function":{\n        "name":"send_email",\n        "description":"Send an email",\n        "parameters":{\n            "type":"object",\n            "properties":{\n                "to":{"type":"string"},\n                "subject":{"type":"string"},\n                "body":{"type":"string"}\n            }\n            # missing "required"! LLM may omit fields\n        }\n    }\n}]`,
+   fixed:`tools = [{\n    "type":"function",\n    "function":{\n        "name":"send_email",\n        "description":"Send an email to a recipient",\n        "parameters":{\n            "type":"object",\n            "properties":{\n                "to":     {"type":"string","description":"Recipient email address"},\n                "subject":{"type":"string","description":"Email subject line"},\n                "body":   {"type":"string","description":"Email body in plain text"},\n                "cc":     {"type":"string","description":"Optional CC address"}\n            },\n            "required":["to","subject","body"]  # LLM must include these\n        }\n    }\n}]`,
+   error='LLM sends {"to":"alice@co.com"} — missing subject and body — KeyError in handler',
+   why:'Without "required", the LLM treats all parameters as optional and may omit critical ones.',
+   fix:'Always include "required" in your tool parameter schema.',
+   lesson:'Define "required" for every mandatory parameter. Add "description" to guide the LLM.',
+   ob:['LLM called send_email({"to":"alice@co.com"})','KeyError: \'subject\' not in args'],
+   of:['LLM called send_email({"to":"alice@co.com","subject":"Hello","body":"..."})','✓ All required fields present']},
+
+  {id:'ag10',cat:'agent',title:'Parallel tool call results appended out of order',
+   file:'tool_order.py',
+   buggy:`msg = resp.choices[0].message\nfor tc in msg.tool_calls:\n    result = execute_tool(tc)\n    messages.append({"role":"tool","content":result})\n# If execute_tool is async and results arrive out of order,\n# tool_call_id no longer matches the result!`,
+   fixed:`import asyncio\n\nmsg = resp.choices[0].message\n\nasync def execute_and_wrap(tc):\n    result = await execute_tool_async(tc)\n    return {\n        "role": "tool",\n        "tool_call_id": tc.id,  # MUST match the tool call id\n        "content": json.dumps(result)\n    }\n\n# Gather preserves order relative to input list\ntool_results = await asyncio.gather(\n    *[execute_and_wrap(tc) for tc in msg.tool_calls]\n)\nmessages.extend(tool_results)`,
+   error='Error: Each tool_call_id must be responded to exactly once',
+   why='Async tool execution may complete out of order. If tool_call_id does not match position, the API rejects the request.',
+   fix='Use asyncio.gather() which preserves input order for results. Always set tool_call_id explicitly.',
+   lesson='tool_call_id in the tool result must exactly match the id in the tool call. Order matters.',
+   ob:['Tool call 1 id: call_abc','Tool call 2 id: call_xyz','Result 2 appended first (faster) → mismatch','Error: tool_call_id mismatch'],
+   of:['gather() preserves order ✓','Result 1 id: call_abc ✓','Result 2 id: call_xyz ✓','✓ Tool results matched correctly']},
+
+  /* ── RAG ──────────────────────────────────────────────────── */
+  {id:'ra1',cat:'rag',title:'Embedding model changed — dimension mismatch',
+   file:'dim_mismatch.py',
+   buggy:`# Indexed with small (1536 dims)\nvs = FAISS.from_documents(docs, OpenAIEmbeddings(model="text-embedding-3-small"))\nvs.save_local("./idx")\n\n# Later: switched to large (3072 dims) — CRASH\nvs = FAISS.load_local("./idx",\n    OpenAIEmbeddings(model="text-embedding-3-large"),  # WRONG!\n    allow_dangerous_deserialization=True\n)\nvs.similarity_search("query")  # dimension error!`,
+   fixed:`import json\nfrom pathlib import Path\n\nMODEL = "text-embedding-3-small"  # single source of truth\nDIMS  = 1536\n\ndef save_vs(vs, path="./faiss_idx"):\n    vs.save_local(path)\n    Path(f"{path}/meta.json").write_text(\n        json.dumps({"model":MODEL,"dims":DIMS})\n    )\n\ndef load_vs(path="./faiss_idx"):\n    meta = json.loads(Path(f"{path}/meta.json").read_text())\n    if meta["model"] != MODEL:\n        raise ValueError(f"Index uses {meta['model']}, current model is {MODEL}. Rebuild index.")\n    return FAISS.load_local(path, OpenAIEmbeddings(model=MODEL), allow_dangerous_deserialization=True)`,
+   error='InvalidDimensionException: collection has 1536 dims, query has 3072',
+   why:'The saved index has 1536-dim vectors. The new model produces 3072-dim queries. Incompatible.',
+   fix:'Store model name in a metadata file. Assert it matches on load.',
+   lesson:'Embedding model is part of the index schema. Changing it requires a full rebuild.',
+   ob:['InvalidDimensionException: Mismatch between index(1536) and query(3072)'],
+   of:['meta check: text-embedding-3-small ✓','✓ 1247 vectors loaded (1536 dims)','✓ Query executed: 3 results']},
+
+  {id:'ra2',cat:'rag',title:'Chroma where filter wrong operator syntax',
+   file:'chroma_filter.py',
+   buggy:`collection.query(\n    query_texts=["Python tutorial"],\n    where={"category": "python"},  # WRONG — direct value\n    n_results=5\n)`,
+   fixed:`# Correct: use explicit $eq operator\ncollection.query(\n    query_texts=["Python tutorial"],\n    where={"category": {"$eq": "python"}},\n    n_results=5\n)\n\n# Other operators:\n# {"score":  {"$gt": 4.5}}                 — greater than\n# {"tag":    {"$in": ["ai","ml"]}}          — in list\n# {"$and":[{"cat":{"$eq":"py"}},\n#          {"diff":{"$in":["beg","int"]}}]} — logical and`,
+   error='ValueError: Expected where operator, got string "python"',
+   why:'Chroma requires explicit comparison operators ($eq, $gt, $in) in where clauses.',
+   fix:'Wrap comparison values in operator objects: {"field": {"$eq": "value"}}.',
+   lesson:'Chroma filter syntax mirrors MongoDB query operators. Always use $eq, $gt, $in, etc.',
+   ob:['ValueError: Expected where operator, got: python','where clause malformed'],
+   of:['✓ Filter: {"category":{"$eq":"python"}}','✓ Query executed: 5 results all category=python']},
+
+  {id:'ra3',cat:'rag',title:'RAG context window bloat — no truncation',
+   file:'context_bloat.py',
+   buggy:`docs = retriever.invoke(query)  # returns 20 docs × 500 words = 10K words\ncontext = "\\n\\n".join(d.page_content for d in docs)\n# 10K words ≈ 13K tokens — most of context window used for retrieval!`,
+   fixed:`def build_rag_context(\n    docs: list, query: str,\n    max_tokens: int = 3000,\n    chars_per_token: float = 4.0\n) -> str:\n    max_chars = int(max_tokens * chars_per_token)\n    context = ""\n    for i, doc in enumerate(docs):\n        candidate = f"[Source {i+1}]\\n{doc.page_content}\\n"\n        if len(context) + len(candidate) > max_chars:\n            break\n        context += candidate\n    return context\n\ndocs    = retriever.invoke(query)\ncontext = build_rag_context(docs, query, max_tokens=3000)`,
+   error='BadRequestError: context window exceeded — 20 docs overwhelm 128K limit over many turns',
+   why:'Unbounded retrieval context grows the prompt on every turn until context window overflow.',
+   fix:'Cap retrieved context to a fixed token budget before building the prompt.',
+   lesson:'Always set a token budget for RAG context. Leave room for reasoning and output.',
+   ob:['Retrieved 20 docs: 12,847 tokens of context','Turn 8: BadRequestError — 131,072 token limit'],
+   of:['Retrieved 20 docs → truncated to 3,000 tokens','✓ Context budget maintained across 50 turns']},
+
+  {id:'ra4',cat:'rag',title:'Retriever returns duplicates — wastes tokens',
+   file:'rag_dupes.py',
+   buggy:`docs = retriever.invoke("Python async best practices")\ncontext = "\\n\\n".join(d.page_content for d in docs)\n# Same chunk appears 3× — 1500 tokens wasted`,
+   fixed:`def dedup(docs: list, fingerprint_len: int = 150) -> list:\n    seen, unique = set(), []\n    for d in docs:\n        key = hash(d.page_content[:fingerprint_len].strip())\n        if key not in seen:\n            seen.add(key)\n            unique.append(d)\n    return unique\n\ndocs = retriever.invoke("Python async best practices")\ndocs = dedup(docs)\ncontext = "\\n\\n".join(d.page_content for d in docs)`,
+   error='3 identical chunks retrieved — 1,500 tokens wasted per query',
+   why:'Multi-aspect queries can match the same chunk through different semantic angles.',
+   fix:'Hash the first N characters of each doc and filter duplicates before building context.',
+   lesson:'Always deduplicate retrieved documents. Duplicates waste tokens and bias the answer.',
+   ob:['10 docs retrieved: 3 duplicates','Context: 4200 tokens (1400 wasted)'],
+   of:['10 docs → 7 unique after dedup','Context: 2800 tokens (33% saved)','✓ Answer quality improved']},
+
+  {id:'ra5',cat:'rag',title:'Similarity threshold too low — irrelevant docs retrieved',
+   file:'low_threshold.py',
+   buggy:`# No threshold — returns k results even if they are irrelevant\ndocs = vectorstore.similarity_search(\n    "Python asyncio tutorial",\n    k=5  # returns 5 docs regardless of relevance\n)\ncontext = "\\n\\n".join(d.page_content for d in docs)\n# May include docs about completely unrelated topics`,
+   fixed:`# Use similarity_search_with_relevance_scores and filter\ndocs_and_scores = vectorstore.similarity_search_with_relevance_scores(\n    "Python asyncio tutorial",\n    k=10  # fetch more, filter down\n)\n\n# Keep only docs above relevance threshold\nMIN_SCORE = 0.75  # tune for your embedding model\nrelevant = [\n    doc for doc, score in docs_and_scores\n    if score >= MIN_SCORE\n]\n\nif not relevant:\n    return "I don't have enough context to answer that question."\n\ncontext = "\\n\\n".join(d.page_content for d in relevant[:5])`,
+   error='LLM confabulates — irrelevant chunks included in context',
+   why:'similarity_search always returns k results. Without a threshold, low-relevance docs pollute the context.',
+   fix:'Use similarity_search_with_relevance_scores and filter by a minimum score threshold.',
+   lesson:'A relevance threshold is mandatory for production RAG. Irrelevant context causes hallucination.',
+   ob:['Query: "Python asyncio" → "Java Spring Boot" doc retrieved (score 0.42)','LLM confabulated using wrong context'],
+   of:['10 docs fetched: 7 above threshold 0.75','✓ 3 low-relevance docs filtered out','✓ Context is 100% relevant to query']},
+
+  {id:'ra6',cat:'rag',title:'Parent–child chunk size mismatch',
+   file:'chunk_mismatch.py',
+   buggy:`# All text split into 200-char chunks — too small, loses context\nsplitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=0)\ndocs = splitter.split_documents(raw_docs)\nvs = FAISS.from_documents(docs, OpenAIEmbeddings())\n# Retrieved chunks have no surrounding context — LLM gets fragments`,
+   fixed:`from langchain.retrievers import ParentDocumentRetriever\nfrom langchain.storage import InMemoryStore\nfrom langchain.text_splitter import RecursiveCharacterTextSplitter\n\n# Parent: large chunks for reading context\n# Child:  small chunks for precise retrieval\nparent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)\nchild_splitter  = RecursiveCharacterTextSplitter(chunk_size=400,  chunk_overlap=50)\n\nstore = InMemoryStore()\nvs    = FAISS(OpenAIEmbeddings(), InMemoryDocstore(), {})\n\nretriever = ParentDocumentRetriever(\n    vectorstore=vs,\n    docstore=store,\n    child_splitter=child_splitter,\n    parent_splitter=parent_splitter,\n)\nretriever.add_documents(raw_docs)\n# Retrieves child chunks for relevance, returns parent chunk for context`,
+   error='LLM receives 200-char fragments — incomplete context, bad answers',
+   why:'Small chunks improve retrieval precision but lose surrounding context needed for good answers.',
+   fix:'Use ParentDocumentRetriever: small child chunks for retrieval, large parent chunks for generation.',
+   lesson:'Retrieval chunk size and generation context size have opposite optimal values. Use parent-child retrieval.',
+   ob:['Retrieved chunk: "asyncio.gather() runs coroutines"','Missing: why, when to use, example code','LLM answer: vague and incomplete'],
+   of:['Child match: "asyncio.gather()" (400 chars)','Parent returned: full 2000-char section with examples','✓ LLM answer: complete and accurate']},
+
+  {id:'ra7',cat:'rag',title:'RAG pipeline answers from outdated cached index',
+   file:'stale_index.py',
+   buggy:`# Index built once in January, never updated\nvs = FAISS.load_local("./idx", embeddings, allow_dangerous_deserialization=True)\n\n# New documents added in March — NOT in index\n# LLM answers based on 2-month old data`,
+   fixed:`import time\nfrom pathlib import Path\nimport json\n\nINDEX_PATH = "./idx"\nMAX_AGE_HOURS = 24\n\ndef index_is_stale(path: str) -> bool:\n    meta_file = Path(f"{path}/meta.json")\n    if not meta_file.exists(): return True\n    meta = json.loads(meta_file.read_text())\n    age_h = (time.time() - meta.get("built_at", 0)) / 3600\n    return age_h > MAX_AGE_HOURS\n\nif index_is_stale(INDEX_PATH):\n    print("Index stale — rebuilding...")\n    vs = FAISS.from_documents(load_all_docs(), embeddings)\n    meta = {"built_at": time.time(), "doc_count": vs.index.ntotal}\n    Path(f"{INDEX_PATH}/meta.json").write_text(json.dumps(meta))\n    vs.save_local(INDEX_PATH)\nelse:\n    vs = FAISS.load_local(INDEX_PATH, embeddings, allow_dangerous_deserialization=True)`,
+   error='LLM answers based on 2-month old documents — users get stale information',
+   why='A static cached index never receives new documents added after the initial build.',
+   fix:'Store a build timestamp in metadata. Rebuild if the index is older than your freshness threshold.',
+   lesson:'Vector indexes must have a freshness policy. Set MAX_AGE based on how often your data changes.',
+   ob:['Query: "What is the latest Claude model?"','LLM: "Claude 3 Sonnet" ← outdated (2024 answer)'],
+   of:['Index age: 26h > 24h threshold → rebuilding','✓ Rebuilt with latest docs','LLM: "Claude Sonnet 4.6" ✓']},
+
+  {id:'ra8',cat:'rag',title:'LangChain retriever not using MMR diversity',
+   file:'no_mmr.py',
+   buggy:`# Default similarity search returns k most similar docs\n# Problem: if query is broad, top-k docs can be near-identical\nvs = FAISS.from_documents(docs, OpenAIEmbeddings())\nretriever = vs.as_retriever(search_kwargs={"k": 5})\n# Returns 5 very similar docs about "Python async" — all say the same thing`,
+   fixed:`# MMR: Maximal Marginal Relevance\n# Balances relevance with diversity among retrieved docs\nvs = FAISS.from_documents(docs, OpenAIEmbeddings())\nretriever = vs.as_retriever(\n    search_type="mmr",  # use MMR instead of similarity\n    search_kwargs={\n        "k": 5,          # final docs to return\n        "fetch_k": 20,   # candidates to consider for diversity\n        "lambda_mult": 0.6  # 1.0=pure similarity, 0.0=pure diversity\n    }\n)`,
+   error='5 near-duplicate chunks retrieved — no topical diversity, poor multi-angle answers',
+   why:'Pure cosine similarity retrieves the most similar docs, which are often near-duplicates for broad queries.',
+   fix:'Use MMR (Maximal Marginal Relevance) which penalises similarity to already-selected documents.',
+   lesson:'Use MMR for broad or multi-topic queries. It improves answer quality by ensuring diverse source coverage.',
+   ob:['Doc 1: "asyncio intro" (score: 0.92)','Doc 2: "asyncio intro 2" (score: 0.91)  ← near-duplicate','Doc 3: "asyncio intro 3" (score: 0.90)  ← near-duplicate'],
+   of:['Doc 1: "asyncio intro" (relevance)','Doc 2: "asyncio.gather() parallelism" (diversity)','Doc 3: "async error handling" (diversity)','✓ 5 diverse topical angles']},
+
+  {id:'ra9',cat:'rag',title:'Missing source citations — hallucination not detectable',
+   file:'no_citations.py',
+   buggy:`docs = retriever.invoke(query)\ncontext = "\\n\\n".join(d.page_content for d in docs)\nresp = client.chat.completions.create(\n    model="gpt-4o",\n    messages=[{\n        "role":"user",\n        "content": f"Context:\\n{context}\\n\\nQuestion: {query}"\n    }]\n)\nprint(resp.choices[0].message.content)\n# No way to verify where the answer came from!`,
+   fixed:`docs = retriever.invoke(query)\n\n# Include source metadata in each context chunk\ncontext = "\\n\\n".join(\n    f"[Source {i+1}: {d.metadata.get('source','unknown')}]\\n{d.page_content}"\n    for i, d in enumerate(docs)\n)\n\nSYSTEM = """Answer based ONLY on the provided sources.\nCite sources by number, e.g. [Source 1].\nIf the answer is not in the sources, say so.\"\"\"\n\nresp = client.chat.completions.create(\n    model="gpt-4o",\n    messages=[\n        {"role":"system","content":SYSTEM},\n        {"role":"user","content":f"Sources:\\n{context}\\n\\nQuestion: {query}"}\n    ]\n)\nprint(resp.choices[0].message.content)\n# Output: "According to [Source 2], asyncio.gather()..."`,
+   error='Hallucinated answer not detectable — no source attribution',
+   why:'Without source metadata and citation instructions, the LLM may mix up sources or hallucinate.',
+   fix:'Embed source metadata in context chunks and instruct the LLM to cite by source number.',
+   lesson:'Production RAG must include citation. It is the primary mechanism for detecting hallucination.',
+   ob:['Answer: "asyncio.gather() was deprecated in Python 3.12"','No citation — impossible to verify or refute'],
+   of:['Answer: "asyncio.gather() is available in Python 3.12 [Source 1]"','✓ Source 1: docs/asyncio.md verifiable']}
+];
+
+/* ── STATE ─────────────────────────────────────────────── */
+let current  = null;
+let split    = true;
+let activeTab= 'buggy';
+let solved   = JSON.parse(localStorage.getItem('dbg_solved') || '{}');
+let filter   = 'all';
+
+/* ── BOOT ──────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  renderList();
+  document.getElementById('stat-solved').textContent = Object.keys(solved).length;
+
+  document.querySelectorAll('.filt-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.filt-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      filter = b.dataset.f;
+      renderList();
+    });
+  });
+
+  document.getElementById('bug-search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.bug-row').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+    document.getElementById('list-count').textContent =
+      [...document.querySelectorAll('.bug-row')].filter(r => r.style.display !== 'none').length;
+  });
+});
+
+/* ── RENDER LIST ─────────────────────────────────────────── */
+function renderList() {
+  const filtered = filter === 'all' ? BUGS : BUGS.filter(b => b.cat === filter);
+  const panel = document.getElementById('bug-panel');
+  panel.innerHTML = `<div class="bug-panel-hdr">BUG LIST <span class="bug-count" id="list-count">${filtered.length}</span></div>` +
+    filtered.map((b, i) => {
+      const realIdx = BUGS.indexOf(b);
+      return `<div class="bug-row ${solved[b.id]?'solved':''} ${current?.id===b.id?'active':''}"
+               onclick="selectBug(${realIdx})" title="${b.error}">
+        <div class="bug-row-top">
+          <span class="bug-num">#${String(realIdx+1).padStart(2,'0')}</span>
+          <span class="bug-cat bc-${b.cat}">${b.cat}</span>
+          ${solved[b.id]?'<span class="bug-solved-tag">✓</span>':''}
+        </div>
+        <div class="bug-title-txt">${b.title}</div>
+      </div>`;
+    }).join('');
+}
+
+/* ── SELECT BUG ──────────────────────────────────────────── */
+function selectBug(idx) {
+  current = BUGS[idx];
+  renderList();
+  document.getElementById('fn-buggy').textContent = current.file;
+  document.getElementById('fn-fixed').textContent = 'fixed_' + current.file;
+  switchTab(activeTab);
+  showBuggyTerminal();
+}
+
+/* ── TABS ────────────────────────────────────────────────── */
+function switchTab(tab) {
+  activeTab = tab;
+  ['buggy','fixed','explain'].forEach(t => {
+    document.getElementById('tab-'+t)?.classList.toggle('active', t===tab);
+  });
+  const ew = document.getElementById('editors-wrap');
+  const ep = document.getElementById('explain-panel');
+  if (tab === 'explain') {
+    ew.style.display = 'none';
+    ep.classList.add('show');
+    renderExplain();
+    markSolved();
+  } else {
+    ew.style.display = '';
+    ep.classList.remove('show');
+    if (tab === 'buggy') {
+      ew.className = split ? 'editors-wrap' : 'editors-wrap single';
+      document.getElementById('pane-buggy').style.display = '';
+      document.getElementById('pane-fixed').style.display = split ? '' : 'none';
+      if (current) document.getElementById('code-buggy').innerHTML = numbered(hl(current.buggy));
+      if (split && current) document.getElementById('code-fixed').innerHTML = numbered(hl(current.fixed));
+    } else {
+      ew.className = 'editors-wrap single';
+      document.getElementById('pane-buggy').style.display = 'none';
+      document.getElementById('pane-fixed').style.display = '';
+      if (current) document.getElementById('code-fixed').innerHTML = numbered(hl(current.fixed));
+      markSolved();
+    }
+  }
+}
+
+function toggleSplit() {
+  split = !split;
+  document.getElementById('btn-split').textContent = split ? '⬛ Split' : '▭ Single';
+  if (activeTab !== 'explain') switchTab(activeTab);
+}
+
+/* ── EXPLAIN ─────────────────────────────────────────────── */
+function renderExplain() {
+  if (!current) return;
+  const e = current;
+  document.getElementById('explain-panel').innerHTML = `
+    <div class="exp-block">
+      <h3>🔴 Root Cause</h3>
+      <p>${e.why}</p>
+    </div>
+    <div class="exp-block">
+      <h3>✅ The Fix</h3>
+      <p>${e.fix}</p>
+    </div>
+    <div class="exp-block">
+      <h3>📚 Key Lesson</h3>
+      <p>${e.lesson}</p>
+    </div>
+    <div class="exp-block">
+      <h3>⛔ Error Message</h3>
+      <div class="exp-error-code">${esc(e.error)}</div>
+    </div>`;
+}
+
+/* ── TERMINAL ────────────────────────────────────────────── */
+function showBuggyTerminal() {
+  clearTerm();
+  if (!current) return;
+  const tb = document.getElementById('term-body');
+  addTermLine('t-dim', `# Running: python3 ${current.file}`);
+  addTermLine('t-dim', `# Expected error: ${current.error}`);
+  const lines = current.ob || [];
+  lines.forEach((l, i) => {
+    setTimeout(() => {
+      const cls = l.startsWith('#') ? 't-dim' : l.includes('Error')||l.includes('error')||l.includes('FAIL')||l.includes('ALERT') ? 't-err' : l.includes('Warning') ? 't-warn' : 't-txt';
+      addTermLine(cls, l);
+      if (i === lines.length - 1) {
+        setTimeout(() => { addTermLine('t-dim','Process exited with code 1'); appendCursor(); }, 150);
+      }
+    }, i * 200 + 300);
+  });
+}
+
+function runFixed() {
+  clearTerm();
+  if (!current) { addTermLine('t-dim','# Select a bug first'); appendCursor(); return; }
+  markSolved();
+  addTermLine('t-dim', `# Running: python3 fixed_${current.file}`);
+  const lines = current.of || ['✓ Script completed successfully'];
+  lines.forEach((l, i) => {
+    setTimeout(() => {
+      const cls = l.startsWith('✓') || l.includes('✓') ? 't-ok' : l.includes('Error')||l.includes('error') ? 't-err' : l.includes('Warning') ? 't-warn' : l.startsWith('#') ? 't-dim' : 't-txt';
+      addTermLine(cls, l);
+      if (i === lines.length - 1) {
+        setTimeout(() => { addTermLine('t-dim','Process exited with code 0'); appendCursor(); }, 150);
+      }
+    }, i * 180 + 200);
+  });
+}
+
+function clearTerm() {
+  document.getElementById('term-body').innerHTML =
+    '<div class="t-row"><span class="t-ps">$</span><span class="t-txt"> <span class="t-cur"></span></span></div>';
+}
+
+function addTermLine(cls, text) {
+  const tb = document.getElementById('term-body');
+  // Remove trailing cursor line
+  tb.querySelector('.t-cur')?.closest('.t-row')?.remove();
+  const div = document.createElement('div');
+  div.className = 't-row';
+  div.innerHTML = `<span class="${cls}">${esc(text)}</span>`;
+  tb.appendChild(div);
+  tb.scrollTop = tb.scrollHeight;
+}
+
+function appendCursor() {
+  const tb = document.getElementById('term-body');
+  const div = document.createElement('div');
+  div.className = 't-row';
+  div.innerHTML = '<span class="t-ps">$</span><span class="t-txt"> <span class="t-cur"></span></span>';
+  tb.appendChild(div);
+  tb.scrollTop = tb.scrollHeight;
+}
+
+/* ── SOLVED ──────────────────────────────────────────────── */
+function markSolved() {
+  if (!current || solved[current.id]) return;
+  solved[current.id] = true;
+  localStorage.setItem('dbg_solved', JSON.stringify(solved));
+  document.getElementById('stat-solved').textContent = Object.keys(solved).length;
+  renderList();
+}
+
+/* ── COPY ────────────────────────────────────────────────── */
+function copyPane(which) {
+  if (!current) return;
+  const text = which === 'buggy' ? current.buggy : current.fixed;
+  navigator.clipboard.writeText(text).then(() => {
+    const btns = document.querySelectorAll('.cp-btn');
+    const btn = which === 'buggy' ? btns[0] : btns[1];
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+  });
+}
+
+/* ── SYNTAX HIGHLIGHT ─────────────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function hl(src) {
+  let h = esc(src);
+  h = h.replace(/(#[^\n]*)/g, '<span class="cm">$1</span>');
+  h = h.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, '<span class="st">"$1"</span>');
+  h = h.replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, "<span class='st'>'$1'</span>");
+  h = h.replace(/\b(import|from|as|def|class|return|if|else|elif|for|in|while|not|and|or|True|False|None|with|try|except|raise|async|await|yield|lambda|pass|break|continue|self|global|assert)\b/g, '<span class="kw">$1</span>');
+  h = h.replace(/\b([a-z_][a-z0-9_]*)\s*(?=\()/g, '<span class="fn">$1</span>');
+  h = h.replace(/\b([A-Z][A-Za-z0-9_]+)\b/g, '<span class="cl">$1</span>');
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="nu">$1</span>');
+  return h;
+}
+function numbered(code) {
+  return code.split('\n').map((l, i) =>
+    `<span class="ln-row"><span class="ln">${i+1}</span>${l}</span>`
+  ).join('\n');
+}
+</script>
 </body>
 </html>

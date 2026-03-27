@@ -537,5 +537,121 @@
     </footer>
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
+    <script>
+    /* ── Dynamic project grid from projects.json ── */
+    (async function initProjects() {
+      const TIER_LABELS = {1:'Foundations',2:'ML Core',3:'Deep Learning',4:'Modern AI / Agents'};
+      const TIER_COLORS = {1:'var(--level-beginner)',2:'var(--level-intermediate)',
+                            3:'var(--level-advanced)',4:'var(--level-expert)'};
+      const ICONS = {
+        'Machine Learning':'📊','NLP':'💬','Deep Learning':'🧠','Generative AI':'🎨',
+        'Audio / Deep Learning':'🎙️','MLOps':'⚙️','Computer Vision':'👁️',
+        'Deep Learning / MLOps':'🔬','Deep Learning / NLP':'🔤',
+        'default':'🤖'
+      };
+
+      // Inject dynamic section AFTER the static featured grid
+      const container = document.querySelector('.projects-container');
+      if (!container) return;
+
+      const dynSection = document.createElement('section');
+      dynSection.id = 'dynamic-projects';
+      dynSection.style.cssText = 'margin-top:3rem';
+      dynSection.innerHTML = `
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap">
+          <h2 style="font-family:var(--font-heading);font-size:1.5rem">🗂 All 50 Projects</h2>
+          <div id="proj-filters" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
+          <span id="proj-count" style="font-family:var(--font-mono);font-size:.8rem;color:var(--text-muted);margin-left:auto"></span>
+        </div>
+        <div id="proj-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem"></div>
+      `;
+      container.appendChild(dynSection);
+
+      let projects = [], activeTier = 0;
+
+      function card(p) {
+        const icon = ICONS[p.category] || ICONS.default;
+        const color = TIER_COLORS[p.tier] || 'var(--accent-primary)';
+        const stackHtml = (p.stack || []).slice(0,4).map(t =>
+          `<span style="font-size:.7rem;padding:2px 8px;background:rgba(255,255,255,.05);
+           border:1px solid rgba(255,255,255,.1);border-radius:20px;
+           font-family:var(--font-mono);color:var(--text-muted)">${t}</span>`
+        ).join('');
+        return `
+          <a href="../learn/project.html?id=${p.id}&type=project"
+             style="display:block;background:var(--bg-card);border:1px solid rgba(255,255,255,.05);
+             border-radius:16px;padding:1.5rem;text-decoration:none;
+             transition:transform .2s,border-color .2s;cursor:pointer"
+             onmouseover="this.style.transform='translateY(-6px)';this.style.borderColor='${color}33'"
+             onmouseout="this.style.transform='';this.style.borderColor='rgba(255,255,255,.05)'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+              <span style="font-size:2rem">${icon}</span>
+              <span style="font-size:.7rem;padding:3px 10px;background:${color}20;color:${color};
+                border-radius:20px;font-family:var(--font-mono);font-weight:600">
+                Tier ${p.tier}
+              </span>
+            </div>
+            <h4 style="font-family:var(--font-heading);font-size:1rem;color:var(--text-primary);
+              margin-bottom:.5rem;line-height:1.4">${p.title}</h4>
+            <p style="font-size:.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:1rem;
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+              ${p.desc}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem">${stackHtml}</div>
+            <div style="display:flex;gap:1rem;font-size:.78rem;color:var(--text-muted)">
+              <span>⏱ ${p.duration}</span>
+              <span style="padding:2px 8px;background:rgba(255,255,255,.04);border-radius:4px">
+                ${p.difficulty}</span>
+            </div>
+          </a>`;
+      }
+
+      function render() {
+        const grid = document.getElementById('proj-grid');
+        const count = document.getElementById('proj-count');
+        const filtered = activeTier ? projects.filter(p => p.tier === activeTier) : projects;
+        grid.innerHTML = filtered.map(card).join('');
+        count.textContent = `${filtered.length} projects`;
+      }
+
+      // Build filter buttons
+      function buildFilters() {
+        const bar = document.getElementById('proj-filters');
+        const allBtn = `<button onclick="window.setTier(0)" id="ftier-0"
+          style="padding:4px 14px;border-radius:20px;border:1px solid var(--accent-primary);
+          background:var(--accent-primary);color:#07080a;font-size:.8rem;cursor:pointer;
+          font-family:var(--font-mono)">All</button>`;
+        const tierBtns = [1,2,3,4].map(t =>
+          `<button onclick="window.setTier(${t})" id="ftier-${t}"
+            style="padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);
+            background:transparent;color:var(--text-secondary);font-size:.8rem;cursor:pointer;
+            font-family:var(--font-mono);transition:all .15s">
+            ${TIER_LABELS[t]}</button>`
+        ).join('');
+        bar.innerHTML = allBtn + tierBtns;
+      }
+
+      window.setTier = function(tier) {
+        activeTier = tier;
+        document.querySelectorAll('[id^="ftier-"]').forEach(b => {
+          const active = parseInt(b.id.split('-')[1]) === tier;
+          b.style.background = active ? 'var(--accent-primary)' : 'transparent';
+          b.style.color = active ? '#07080a' : 'var(--text-secondary)';
+          b.style.borderColor = active ? 'var(--accent-primary)' : 'rgba(255,255,255,.1)';
+        });
+        render();
+      };
+
+      try {
+        const resp = await fetch('../assets/data/projects.json');
+        projects = await resp.json();
+        buildFilters();
+        render();
+      } catch(e) {
+        document.getElementById('proj-grid').innerHTML =
+          '<p style="color:var(--text-muted);padding:2rem">Could not load projects. '
+          + 'Check that assets/data/projects.json is accessible.</p>';
+      }
+    })();
+    </script>
 </body>
 </html>
