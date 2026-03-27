@@ -1,1 +1,1 @@
-Add Random Forests lesson to MasterLibrary
+Add CNNs for Computer Vision lesson to MasterLibrary

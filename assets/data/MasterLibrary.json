@@ -915,7 +915,7 @@
           "duration": "40 min",
           "badge": "Advanced",
           "prev": "training-dynamics",
-          "next": "rag-production",
+          "next": "cnns-vision",
           "sections": [
             {
               "h2": "DistributedDataParallel (DDP) Setup",
@@ -923,6 +923,41 @@
               "code": {
                 "label": "Python - DDP multi-GPU training with torchrun",
                 "src": "import os\nimport torch\nimport torch.distributed as dist\nfrom torch.nn.parallel import DistributedDataParallel as DDP\nfrom torch.utils.data.distributed import DistributedSampler\n\ndef setup():\n    \"\"\"Initialize the process group. Called automatically by torchrun.\"\"\"\n    dist.init_process_group(backend='nccl')  # NCCL = fastest for GPU-GPU\n    torch.cuda.set_device(int(os.environ['LOCAL_RANK']))\n\ndef cleanup():\n    dist.destroy_process_group()\n\ndef train():\n    setup()\n    rank       = dist.get_rank()\n    world_size = dist.get_world_size()\n    device     = torch.device(f'cuda:{rank}')\n\n    model = MyModel().to(device)\n    model = DDP(model, device_ids=[rank])  # wrap with DDP\n\n    # Each GPU gets a different shard of the data\n    sampler    = DistributedSampler(dataset, num_replicas=world_size, rank=rank)\n    dataloader = DataLoader(dataset, batch_size=32, sampler=sampler, num_workers=4)\n\n    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)\n\n    for epoch in range(10):\n        sampler.set_epoch(epoch)  # ensures different shuffling per epoch\n        for batch in dataloader:\n            x, y = batch[0].to(device), batch[1].to(device)\n            loss = model(x, y)\n            loss.backward()       # gradients auto-synced across GPUs via NCCL\n            optimizer.step()\n            optimizer.zero_grad()\n\n        if rank == 0:  # only rank 0 saves checkpoints\n            torch.save(model.module.state_dict(), f'checkpoint_epoch_{epoch}.pt')\n\n    cleanup()\n\nif __name__ == '__main__':\n    train()\n\n# Launch: torchrun --nproc_per_node=4 train.py  (4 GPUs on 1 node)"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cnns-vision",
+          "title": "CNNs for Computer Vision",
+          "desc": "Build Convolutional Neural Networks from scratch in PyTorch. Understand conv layers, pooling, receptive fields, and fine-tune a ResNet for image classification.",
+          "duration": "45 min",
+          "badge": "Intermediate",
+          "prev": "distributed-training",
+          "next": "rag-production",
+          "sections": [
+            {
+              "h2": "Convolution, Pooling & Receptive Fields",
+              "body": "A conv layer applies a small filter (kernel) across every spatial position of the input, sharing weights. This gives translation equivariance: a cat is detected whether it sits left or right. Max-pooling down-samples spatially and widens the receptive field — the region of the input that influences a single output neuron. Deeper layers see larger receptive fields and learn higher-level features (edges → textures → objects).",
+              "code": {
+                "label": "Python - Conv2d basics in PyTorch",
+                "src": "import torch\nimport torch.nn as nn\n\n# A single conv layer: 3-channel input → 32 feature maps, 3×3 kernel\nconv = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1)\n# padding=1 keeps spatial dims the same: (H, W) → (H, W)\n\nx = torch.randn(8, 3, 224, 224)  # batch=8, RGB, 224×224\nout = conv(x)                    # → (8, 32, 224, 224)\nprint(out.shape)\n\n# Parameter count: 3×32×3×3 + 32 bias = 896 params (vs 3×32×224×224 for fc!)\nprint('params:', sum(p.numel() for p in conv.parameters()))"
+              }
+            },
+            {
+              "h2": "Building a CNN from Scratch",
+              "body": "A classic CNN stacks conv→BN→ReLU blocks, gradually increasing channels while shrinking spatial dimensions via stride-2 convolutions or pooling. A global average pool collapses the spatial dims before the final linear classifier — making the network input-size agnostic.",
+              "code": {
+                "label": "Python - Minimal CNN for CIFAR-10",
+                "src": "import torch.nn as nn\n\nclass SimpleCNN(nn.Module):\n    def __init__(self, num_classes=10):\n        super().__init__()\n        self.features = nn.Sequential(\n            # Block 1: 3 → 32 channels, 32×32 → 16×16\n            nn.Conv2d(3, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),\n            nn.MaxPool2d(2),              # 32×32 → 16×16\n            # Block 2: 32 → 64 channels, 16×16 → 8×8\n            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(),\n            nn.MaxPool2d(2),              # 16×16 → 8×8\n            # Block 3: 64 → 128 channels, 8×8 → 4×4\n            nn.Conv2d(64, 128, 3, padding=1), nn.BatchNorm2d(128), nn.ReLU(),\n            nn.MaxPool2d(2),              # 8×8 → 4×4\n        )\n        self.classifier = nn.Sequential(\n            nn.AdaptiveAvgPool2d(1),      # (B, 128, 4, 4) → (B, 128, 1, 1)\n            nn.Flatten(),                 # → (B, 128)\n            nn.Dropout(0.5),\n            nn.Linear(128, num_classes)\n        )\n\n    def forward(self, x):\n        return self.classifier(self.features(x))\n\nmodel = SimpleCNN()\nprint(model)\nprint('Total params:', sum(p.numel() for p in model.parameters()))"
+              }
+            },
+            {
+              "h2": "Transfer Learning with ResNet",
+              "body": "Training a deep CNN from scratch needs millions of images. Transfer learning re-uses weights pre-trained on ImageNet (1.2M images, 1000 classes). Freeze the backbone and only train a new head for your task — you can reach high accuracy with just a few hundred labelled samples. Unfreeze later for full fine-tuning.",
+              "code": {
+                "label": "Python - Fine-tune ResNet-50 on custom dataset",
+                "src": "import torch\nimport torch.nn as nn\nfrom torchvision import models, transforms, datasets\nfrom torch.utils.data import DataLoader\n\n# 1. Load pre-trained ResNet-50\nmodel = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)\n\n# 2. Freeze all backbone layers\nfor param in model.parameters():\n    param.requires_grad = False\n\n# 3. Replace the final fc layer for YOUR number of classes\nnum_classes = 5   # e.g. cats, dogs, birds, fish, reptiles\nmodel.fc = nn.Linear(model.fc.in_features, num_classes)  # only this is trained\n\n# 4. Data pipeline with ImageNet normalisation\ntfm = transforms.Compose([\n    transforms.Resize(256), transforms.CenterCrop(224),\n    transforms.ToTensor(),\n    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])\n])\ntrain_ds = datasets.ImageFolder('data/train', transform=tfm)\ntrain_dl = DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=4)\n\n# 5. Train only the new head\noptimizer = torch.optim.Adam(model.fc.parameters(), lr=1e-3)\ncriterion = nn.CrossEntropyLoss()\ndevice    = 'cuda' if torch.cuda.is_available() else 'cpu'\nmodel.to(device)\n\nfor epoch in range(5):\n    for imgs, labels in train_dl:\n        imgs, labels = imgs.to(device), labels.to(device)\n        loss = criterion(model(imgs), labels)\n        optimizer.zero_grad(); loss.backward(); optimizer.step()\n    print(f'Epoch {epoch+1} loss: {loss.item():.4f}')\n\n# 6. Unfreeze for full fine-tuning (optional, use lower lr)\nfor param in model.parameters():\n    param.requires_grad = True\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-5)"
               }
             }
           ]
@@ -944,7 +979,7 @@
           "desc": "Beyond the basic RAG tutorial: chunking strategies, hybrid BM25 + semantic search, cross-encoder re-ranking, context window management, and RAG evaluation with RAGAS.",
           "duration": "50 min",
           "badge": "Advanced",
-          "prev": "distributed-training",
+          "prev": "cnns-vision",
           "next": "agent-systems",
           "sections": [
             {
