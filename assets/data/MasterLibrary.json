@@ -2185,7 +2185,7 @@
           "duration": "35 min",
           "badge": "Advanced",
           "prev": "structured-outputs",
-          "next": null,
+          "next": "mlops-docker-deployment",
           "sections": [
             {
               "h2": "Why Cache LLM Responses",
@@ -2219,6 +2219,51 @@
               "code": {
                 "label": "Python - combined cache skeleton",
                 "src": "import hashlib, json\nimport numpy as np\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# --- exact cache ---\nexact_cache: dict[str, str] = {}\n\n# --- semantic cache ---\nsem_queries: list[str] = []\nsem_answers: list[str] = []\nsem_vectors: list[np.ndarray] = []\nTHRESHOLD = 0.93\n\nstats = {'exact': 0, 'semantic': 0, 'api': 0}\n\ndef embed(text: str) -> np.ndarray:\n    r = client.embeddings.create(model='text-embedding-3-small', input=text)\n    v = np.array(r.data[0].embedding, dtype=np.float32)\n    return v / np.linalg.norm(v)\n\ndef cosine(a: np.ndarray, b: np.ndarray) -> float:\n    return float(np.dot(a, b))\n\ndef ask(query: str) -> str:\n    # 1. Exact match\n    key = hashlib.sha256(query.encode()).hexdigest()\n    if key in exact_cache:\n        stats['exact'] += 1\n        print(f'[EXACT HIT]   {query[:50]}')\n        return exact_cache[key]\n\n    # 2. Semantic match\n    vec = embed(query)\n    for i, sv in enumerate(sem_vectors):\n        if cosine(vec, sv) >= THRESHOLD:\n            stats['semantic'] += 1\n            print(f'[SEMANTIC HIT] {query[:50]} ~ \"{sem_queries[i][:40]}\"')\n            return sem_answers[i]\n\n    # 3. API call\n    stats['api'] += 1\n    print(f'[API]         {query[:50]}')\n    resp = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': query}]\n    )\n    answer = resp.choices[0].message.content\n    exact_cache[key] = answer\n    sem_queries.append(query)\n    sem_answers.append(answer)\n    sem_vectors.append(vec)\n    return answer\n\ntest_qs = [\n    'What is a transformer model?',\n    'What is a transformer model?',\n    'Explain transformer models to me',\n    'What is BERT?',\n    'Can you explain what BERT is?',\n]\nfor q in test_qs:\n    ask(q)\n\ntotal = sum(stats.values())\nprint(f'\\nHit rate: {(stats[\"exact\"]+stats[\"semantic\"])/total*100:.0f}%  (exact={stats[\"exact\"]}, semantic={stats[\"semantic\"]}, api={stats[\"api\"]})')"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mlops-docker-deployment",
+          "title": "MLOps: Containerizing and Deploying ML Models with Docker",
+          "desc": "Package a trained ML model into a Docker container, serve it via FastAPI, and deploy it reliably anywhere — from a laptop to a cloud VM to Kubernetes.",
+          "duration": "40 min",
+          "badge": "Advanced",
+          "prev": "llm-caching",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Docker for ML Deployments",
+              "body": "The classic ML deployment failure: the model works on your machine but crashes on the server because library versions differ. Docker solves this by packaging your model, code, and exact dependencies into an immutable image. A container runs identically everywhere — your laptop, a cloud VM, or a Kubernetes cluster. For ML specifically, Docker eliminates the 'it works in training but not in serving' problem that costs teams days of debugging.",
+              "tip": "Always pin exact versions in requirements.txt (e.g. scikit-learn==1.4.0, not scikit-learn>=1.0). Unpinned deps silently break models when packages release breaking changes.",
+              "code": {
+                "label": "Python - train and save a model",
+                "src": "# train.py — train a model and serialize it\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import load_iris\nimport joblib, os\n\nX, y = load_iris(return_X_y=True)\nmodel = RandomForestClassifier(n_estimators=100, random_state=42)\nmodel.fit(X, y)\n\nos.makedirs('model', exist_ok=True)\njoblib.dump(model, 'model/iris_rf.pkl')\nprint('Model saved to model/iris_rf.pkl')"
+              }
+            },
+            {
+              "h2": "FastAPI Inference Server",
+              "body": "FastAPI is the standard for wrapping ML models as REST APIs. It is async-ready, auto-generates OpenAPI docs, and validates request payloads via Pydantic. The pattern: load the model once at startup, expose a /predict endpoint, return predictions as JSON.",
+              "code": {
+                "label": "Python - FastAPI model server",
+                "src": "# app/main.py\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport joblib, numpy as np\n\napp = FastAPI(title='Iris Classifier API')\n\n# Load model once at startup — not on every request\nmodel = joblib.load('model/iris_rf.pkl')\nCLASSES = ['setosa', 'versicolor', 'virginica']\n\nclass IrisFeatures(BaseModel):\n    sepal_length: float\n    sepal_width: float\n    petal_length: float\n    petal_width: float\n\nclass Prediction(BaseModel):\n    species: str\n    confidence: float\n\n@app.get('/health')\ndef health():\n    return {'status': 'ok'}\n\n@app.post('/predict', response_model=Prediction)\ndef predict(features: IrisFeatures):\n    X = np.array([[features.sepal_length, features.sepal_width,\n                   features.petal_length, features.petal_width]])\n    probs = model.predict_proba(X)[0]\n    idx = int(np.argmax(probs))\n    return Prediction(species=CLASSES[idx], confidence=round(float(probs[idx]), 4))\n\n# Run: uvicorn app.main:app --host 0.0.0.0 --port 8000"
+              }
+            },
+            {
+              "h2": "Writing a Production Dockerfile",
+              "body": "A good ML Dockerfile uses a slim base image, creates a non-root user for security, separates dependency installation from code copying (so Docker cache reuses the layer when only your code changes), and exposes the port. Multi-stage builds keep the final image small by discarding build tools.",
+              "tip": "Install dependencies BEFORE copying your code. Docker layer-caches each RUN step. If requirements.txt hasn't changed, pip install is skipped on rebuild — saving minutes.",
+              "code": {
+                "label": "Dockerfile - production ML server",
+                "src": "# Dockerfile\nFROM python:3.11-slim\n\n# Security: run as non-root\nRUN useradd --create-home appuser\nWORKDIR /home/appuser\n\n# Install deps first (cached layer)\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# Copy app code and model\nCOPY app/ app/\nCOPY model/ model/\n\nUSER appuser\nEXPOSE 8000\n\n# Healthcheck — Docker/K8s uses this to know if the container is ready\nHEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:8000/health || exit 1\n\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n\n# --- requirements.txt ---\n# fastapi==0.111.0\n# uvicorn[standard]==0.29.0\n# scikit-learn==1.4.0\n# joblib==1.4.0\n# numpy==1.26.4\n# pydantic==2.7.0\n\n# --- Build and run ---\n# docker build -t iris-api:v1 .\n# docker run -p 8000:8000 iris-api:v1\n# curl -X POST http://localhost:8000/predict \\\n#   -H 'Content-Type: application/json' \\\n#   -d '{\"sepal_length\":5.1,\"sepal_width\":3.5,\"petal_length\":1.4,\"petal_width\":0.2}'"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Build and containerize a sentiment classifier:\n\n1. Train a `LogisticRegression` model on a toy positive/negative text dataset using `CountVectorizer`.\n2. Save the vectorizer and model together with `joblib.dump({'vec': vectorizer, 'clf': model}, 'model/sentiment.pkl')`.\n3. Write a FastAPI app with a `/predict` endpoint that accepts `{\"text\": \"...\"}` and returns `{\"label\": \"positive\"|\"negative\", \"confidence\": 0.97}`.\n4. Write a `Dockerfile` following the production template above.\n5. Build the image (`docker build -t sentiment-api:v1 .`) and test it with `curl`.\n\nExpected:\n```bash\n$ curl -X POST http://localhost:8000/predict \\\n    -H 'Content-Type: application/json' \\\n    -d '{\"text\": \"This movie was fantastic!\"}'\n{\"label\": \"positive\", \"confidence\": 0.94}\n```",
+              "code": {
+                "label": "Python - sentiment model training skeleton",
+                "src": "# train_sentiment.py\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_extraction.text import CountVectorizer\nimport joblib, os\n\ntexts = [\n    'I love this product', 'absolutely fantastic experience', 'great quality',\n    'best purchase ever', 'highly recommend', 'wonderful service',\n    'terrible quality', 'worst product I have ever bought', 'complete waste of money',\n    'broken on arrival', 'very disappointed', 'do not buy this',\n]\nlabels = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]  # 1=positive, 0=negative\n\nvec = CountVectorizer(ngram_range=(1, 2))\nX = vec.fit_transform(texts)\nclf = LogisticRegression(max_iter=200).fit(X, labels)\n\nos.makedirs('model', exist_ok=True)\njoblib.dump({'vec': vec, 'clf': clf}, 'model/sentiment.pkl')\nprint('Saved to model/sentiment.pkl')\n\n# Quick sanity check\ntest = vec.transform(['amazing product'])\nprob = clf.predict_proba(test)[0]\nprint(f'Test: positive={prob[1]:.2f}, negative={prob[0]:.2f}')"
               }
             }
           ]

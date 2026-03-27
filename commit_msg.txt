@@ -1,1 +1,1 @@
-Add decision trees lesson with pruning and GridSearchCV
+Add MLOps Docker deployment lesson with FastAPI serving
