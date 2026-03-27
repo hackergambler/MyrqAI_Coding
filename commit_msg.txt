@@ -1,1 +1,1 @@
-Update navbar logo markup in two debugging pages
+Fix chat-completions next nav link to embeddings
