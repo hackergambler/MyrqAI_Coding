@@ -1,1 +1,1 @@
-Refactor AdSense injection to use safe DOM element creation
+Fix tutorial card links pointing to correct pages
