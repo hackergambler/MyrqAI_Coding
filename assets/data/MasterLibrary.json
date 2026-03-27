@@ -4598,7 +4598,7 @@
           "duration": "30 min",
           "badge": "Advanced",
           "prev": "llm-quantization-efficient-inference",
-          "next": "mixture-of-experts",
+          "next": "moe-architecture",
           "sections": [
             {
               "h2": "What Are Vision-Language Models?",
@@ -4644,7 +4644,7 @@
           ]
         },
         {
-          "id": "mixture-of-experts",
+          "id": "moe-architecture",
           "title": "Mixture of Experts (MoE) Architecture",
           "desc": "Understand how Mixture of Experts scales LLMs by activating only a subset of parameters per token, enabling massive model capacity at reduced compute cost \u2014 as seen in Mixtral, GPT-4, and Gemini.",
           "duration": "45 min",
@@ -4693,7 +4693,7 @@
           "desc": "Learn how speculative decoding uses a small draft model to generate candidate tokens that a large target model verifies in parallel, achieving 2-3x inference speedup with zero quality loss.",
           "duration": "40 min",
           "badge": "Advanced",
-          "prev": "mixture-of-experts",
+          "prev": "moe-architecture",
           "next": "retrieval-augmented-generation",
           "sections": [
             {

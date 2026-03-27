@@ -1,1 +1,1 @@
-Update Claude course lesson count from 4 to 5
+Fix MoE lesson ID and navigation links
