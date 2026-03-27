@@ -699,7 +699,7 @@
           "duration": "28 min",
           "badge": "Intermediate",
           "prev": "svm-support-vector-machines",
-          "next": "transformer-architecture",
+          "next": "pca-dimensionality-reduction",
           "sections": [
             {
               "h2": "How K-Means Works",
@@ -728,6 +728,43 @@
               }
             }
           ]
+        },
+        {
+          "id": "pca-dimensionality-reduction",
+          "title": "PCA: Dimensionality Reduction for ML",
+          "desc": "Principal Component Analysis compresses high-dimensional data while preserving variance. Learn eigendecomposition, explained variance, and when PCA beats feature selection.",
+          "duration": "30 min",
+          "badge": "Intermediate",
+          "prev": "kmeans-clustering",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "What PCA Actually Does",
+              "body": "PCA finds a new coordinate system where the axes (principal components) point in the directions of maximum variance in your data. The first component captures the most variance, the second captures the next most (orthogonal to the first), and so on. By keeping only the top k components you compress d features into k dimensions with minimal information loss.",
+              "tip": "Always standardize features before PCA. A feature measured in kilometers will dominate one measured in meters — StandardScaler fixes this so PCA captures true variance, not scale artefacts.",
+              "code": {
+                "label": "Python - PCA from scratch using NumPy",
+                "src": "import numpy as np\n\ndef pca_from_scratch(X, n_components):\n    # 1. Center the data (zero mean per feature)\n    X_centered = X - X.mean(axis=0)\n\n    # 2. Covariance matrix: how features vary together\n    cov = np.cov(X_centered, rowvar=False)  # shape (d, d)\n\n    # 3. Eigendecomposition: find directions of max variance\n    eigenvalues, eigenvectors = np.linalg.eigh(cov)\n\n    # 4. Sort by descending eigenvalue (most variance first)\n    idx = np.argsort(eigenvalues)[::-1]\n    eigenvalues = eigenvalues[idx]\n    eigenvectors = eigenvectors[:, idx]\n\n    # 5. Keep top-k eigenvectors as projection matrix\n    W = eigenvectors[:, :n_components]  # shape (d, k)\n\n    # 6. Project data into k-dimensional space\n    X_reduced = X_centered @ W           # shape (n, k)\n\n    explained_var = eigenvalues[:n_components] / eigenvalues.sum()\n    return X_reduced, explained_var\n\nfrom sklearn.datasets import load_iris\nX, y = load_iris(return_X_y=True)\nX_2d, var_ratio = pca_from_scratch(X, n_components=2)\nprint(f'Explained variance per component: {var_ratio.round(3)}')\nprint(f'Total variance retained: {var_ratio.sum():.1%}')"
+              }
+            },
+            {
+              "h2": "Choosing the Number of Components",
+              "body": "Plot cumulative explained variance vs number of components and pick the 'elbow' — the k where adding more components gives diminishing returns. A common heuristic is retaining 95% of variance. Scree plots (eigenvalue vs component index) show the same inflection point visually.",
+              "code": {
+                "label": "Python - sklearn PCA with explained variance analysis",
+                "src": "import numpy as np\nfrom sklearn.decomposition import PCA\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.datasets import load_digits\n\n# High-dimensional example: 64-pixel digit images -> 2D\nX, y = load_digits(return_X_y=True)  # 1797 samples, 64 features\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\n\n# Fit full PCA to inspect all components\npca_full = PCA()\npca_full.fit(X_scaled)\n\ncumulative_var = np.cumsum(pca_full.explained_variance_ratio_)\nk_95 = np.searchsorted(cumulative_var, 0.95) + 1\nk_99 = np.searchsorted(cumulative_var, 0.99) + 1\nprint(f'Components for 95% variance: {k_95} (from 64 features)')\nprint(f'Components for 99% variance: {k_99}')\n\n# Apply compression\npca = PCA(n_components=k_95)\nX_reduced = pca.fit_transform(X_scaled)\nprint(f'Compressed shape: {X_scaled.shape} -> {X_reduced.shape}')\n\n# Reconstruction error\nX_reconstructed = pca.inverse_transform(X_reduced)\nmse = np.mean((X_scaled - X_reconstructed) ** 2)\nprint(f'Reconstruction MSE: {mse:.4f}')"
+              }
+            },
+            {
+              "h2": "PCA as a Pre-processing Step for ML",
+              "body": "PCA is most powerful as a pre-processor: reduce dimensions before feeding data into a classifier. This speeds up training, removes correlated features that confuse linear models, and can improve generalization by cutting noisy low-variance components. Always fit PCA on training data only — never fit on the test set.",
+              "tip": "Use PCA before K-Means to combat the curse of dimensionality. In high-dimensional spaces all distances converge, making clusters meaningless. Reducing to 10–50 components first dramatically improves cluster quality.",
+              "code": {
+                "label": "Python - PCA pipeline with SVM classifier",
+                "src": "import numpy as np\nfrom sklearn.decomposition import PCA\nfrom sklearn.svm import SVC\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.datasets import load_digits\n\nX, y = load_digits(return_X_y=True)\n\n# Baseline: SVM on raw 64-D features\nbaseline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('svm', SVC(kernel='rbf', C=10, gamma='scale'))\n])\nscores_raw = cross_val_score(baseline, X, y, cv=5)\nprint(f'SVM on 64 features:  {scores_raw.mean():.3f} +/- {scores_raw.std():.3f}')\n\n# With PCA: compress to 20 components first\npca_pipeline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('pca', PCA(n_components=20)),          # 64 -> 20 dims\n    ('svm', SVC(kernel='rbf', C=10, gamma='scale'))\n])\nscores_pca = cross_val_score(pca_pipeline, X, y, cv=5)\nprint(f'SVM on 20 PCA dims:  {scores_pca.mean():.3f} +/- {scores_pca.std():.3f}')\nprint(f'Speed gain: ~{(64/20)**2:.1f}x fewer kernel computations')"
+              }
+            }
+          ]
         }
       ]
     },
@@ -746,7 +783,7 @@
           "desc": "Q, K, V matrices, scaled dot-product attention, multi-head attention, positional encoding, and the complete encoder block \u2014 all implemented from scratch in NumPy and PyTorch.",
           "duration": "45 min",
           "badge": "Advanced",
-          "prev": "kmeans-clustering",
+          "prev": "pca-dimensionality-reduction",
           "next": "rlhf-deep-dive",
           "sections": [
             {
