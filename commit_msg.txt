@@ -1,1 +1,1 @@
-Add adversarial training lesson to MasterLibrary
+Add RAG lesson to MasterLibrary

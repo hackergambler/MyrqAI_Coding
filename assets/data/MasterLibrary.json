@@ -4694,7 +4694,7 @@
           "duration": "40 min",
           "badge": "Advanced",
           "prev": "mixture-of-experts",
-          "next": null,
+          "next": "retrieval-augmented-generation",
           "sections": [
             {
               "h2": "The LLM Inference Bottleneck",
@@ -4729,6 +4729,51 @@
             {
               "h2": "Hands-On Exercise",
               "body": "**Exercise: Benchmark speculative decoding speedup**\n\n\n\n**Tasks:**\n1. Measure wall-clock time for standard decoding vs simulated speculative loop.\n2. Plot acceptance rate vs speedup for different values of k.\n3. Read the EAGLE paper abstract and summarise how its draft head differs from a separate model."
+            }
+          ]
+        },
+        {
+          "id": "retrieval-augmented-generation",
+          "title": "Retrieval-Augmented Generation (RAG): Ground LLMs in Real Data",
+          "desc": "Learn how RAG combines a retrieval system with an LLM to answer questions grounded in up-to-date, domain-specific documents, eliminating hallucinations and extending the knowledge cutoff.",
+          "duration": "45 min",
+          "badge": "Advanced",
+          "prev": "speculative-decoding",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why LLMs Hallucinate",
+              "body": "Large language models are trained on a static snapshot of the internet. They have two fundamental limitations:\n\n1. **Knowledge cutoff** \u2014 they cannot know about events after training.\n2. **No access to private data** \u2014 company documents, codebases, or databases are invisible to them.\n\nWhen asked about unknown facts, LLMs *confabulate* \u2014 they generate plausible-sounding but wrong answers.\n\n**Retrieval-Augmented Generation (RAG)** solves both problems by giving the LLM a *retrieval tool*: before generating, the system fetches the most relevant documents from an external store and places them in the prompt as context.",
+              "tip": "RAG is the most widely deployed pattern for production LLM applications because it keeps the model small while making answers accurate."
+            },
+            {
+              "h2": "RAG Architecture",
+              "body": "**Offline (indexing) pipeline:**\n\n```\nDocuments -> Chunking -> Embedding Model -> Vector Store\n```\n\n**Online (query) pipeline:**\n\n```\nUser Query -> Embed Query -> Vector Search -> Top-k Chunks -> LLM Prompt -> Answer\n```\n\nThe two key components are:\n\n- **Retriever** \u2014 a vector similarity search over embedded document chunks (e.g. FAISS, Chroma, Pinecone).\n- **Generator** \u2014 any instruction-following LLM that reads the retrieved context and produces an answer.\n\n**Why chunks?** Embedding an entire document in one vector loses fine-grained information. Splitting into 200-500 token chunks with overlap lets the retriever pinpoint relevant passages.",
+              "tip": "Chunk overlap (e.g. 50 tokens) ensures that sentences split across chunk boundaries are not lost."
+            },
+            {
+              "h2": "Building a Minimal RAG System",
+              "body": "Below is a self-contained RAG pipeline using `sentence-transformers` for embeddings and `faiss-cpu` for retrieval:\n\n```python\nfrom sentence_transformers import SentenceTransformer\nimport faiss, numpy as np\n\n# 1. Documents\ndocs = [\n    \"Paris is the capital of France and home to the Eiffel Tower.\",\n    \"The Eiffel Tower was built in 1889 for the World's Fair.\",\n    \"Berlin is the capital of Germany and a major European hub.\",\n    \"Python was created by Guido van Rossum and released in 1991.\",\n    \"NumPy provides fast multi-dimensional array operations for Python.\",\n]\n\n# 2. Embed documents\nmodel = SentenceTransformer(\"all-MiniLM-L6-v2\")\ndoc_embeddings = model.encode(docs, normalize_embeddings=True)\n\n# 3. Build FAISS index\ndim = doc_embeddings.shape[1]           # 384 for MiniLM\nindex = faiss.IndexFlatIP(dim)          # inner-product == cosine when normalised\nindex.add(doc_embeddings.astype(\"float32\"))\n\n# 4. Retrieve\ndef retrieve(query: str, k: int = 2):\n    q_emb = model.encode([query], normalize_embeddings=True).astype(\"float32\")\n    scores, indices = index.search(q_emb, k)\n    return [(docs[i], float(scores[0][j])) for j, i in enumerate(indices[0])]\n\n# 5. Build prompt\ndef rag_prompt(query: str) -> str:\n    context_chunks = retrieve(query)\n    context = \"\\n\".join(f\"- {chunk}\" for chunk, _ in context_chunks)\n    return (\n        f\"Answer using ONLY the context below.\\n\"\n        f\"Context:\\n{context}\\n\\n\"\n        f\"Question: {query}\\n\"\n        f\"Answer:\"\n    )\n\n# 6. Test\nprint(rag_prompt(\"When was the Eiffel Tower built?\"))\nprint(rag_prompt(\"What is NumPy used for?\"))\n```",
+              "tip": "Use `normalize_embeddings=True` so inner-product search is equivalent to cosine similarity \u2014 no extra normalisation needed at query time."
+            },
+            {
+              "h2": "Step-by-Step Explanation",
+              "body": "**Step 1 \u2014 Embed documents:** Each chunk is converted to a dense vector using a bi-encoder (`all-MiniLM-L6-v2`, 384 dims).\n\n**Step 2 \u2014 Index:** Vectors are stored in FAISS `IndexFlatIP` for exact inner-product search. For millions of documents, switch to `IndexIVFFlat` for approximate but fast lookup.\n\n**Step 3 \u2014 Query embedding:** The user question is embedded with the *same* model, placing it in the same semantic space as the documents.\n\n**Step 4 \u2014 Retrieval:** FAISS returns the top-k most similar chunk vectors. A similarity score > 0.7 typically indicates a strong match.\n\n**Step 5 \u2014 Prompt construction:** Retrieved chunks are injected into the system prompt as grounding context. The LLM is instructed to answer *only* from the provided context.\n\n**Step 6 \u2014 Generation:** Any LLM (GPT-4, Claude, Llama) reads the augmented prompt and produces a grounded answer.",
+              "tip": "Add the instruction 'If the answer is not in the context, say I don't know' to prevent the model from falling back to its parametric memory."
+            },
+            {
+              "h2": "Evaluation Metrics",
+              "body": "| Metric | What it measures | Tool |\n|---|---|---|\n| **Faithfulness** | Answer is supported by retrieved context | RAGAs |\n| **Answer Relevancy** | Answer actually addresses the question | RAGAs |\n| **Context Precision** | Retrieved docs are relevant | RAGAs |\n| **Context Recall** | All relevant docs were retrieved | RAGAs |\n\n```python\n# pip install ragas\nfrom ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy\n\n# dataset: HuggingFace Dataset with columns:\n# question, answer, contexts, ground_truth\nresult = evaluate(dataset, metrics=[faithfulness, answer_relevancy])\nprint(result)  # {faithfulness: 0.92, answer_relevancy: 0.88}\n```",
+              "tip": "RAGAs metrics use an LLM judge internally. Use a cheap model (GPT-3.5) for the judge to keep evaluation costs low."
+            },
+            {
+              "h2": "Advanced Patterns",
+              "body": "**Hybrid search:** Combine BM25 (keyword) with dense retrieval (semantic) using Reciprocal Rank Fusion for better recall.\n\n**Re-ranking:** Use a cross-encoder (e.g. `cross-encoder/ms-marco-MiniLM-L-6-v2`) to re-score the top-k candidates before passing them to the LLM.\n\n**HyDE (Hypothetical Document Embeddings):** Ask the LLM to generate a hypothetical answer first, embed that, and use it as the query vector \u2014 often improves retrieval quality.\n\n**Agentic RAG:** Give the LLM a `retrieve(query)` tool and let it decide when and what to retrieve in a multi-turn loop.\n\n```python\n# HyDE sketch\nhypothetical = llm(f\"Write a passage that answers: {user_query}\")\nresults = retrieve(hypothetical)   # embed the hypothetical, not the question\nfinal_answer = llm(build_prompt(user_query, results))\n```",
+              "tip": "Re-ranking gives the biggest quality improvement for the least engineering effort \u2014 add it before scaling to hybrid search or HyDE."
+            },
+            {
+              "h2": "Hands-On Exercise",
+              "body": "**Exercise: Build a document Q&A system**\n\n```python\nfrom sentence_transformers import SentenceTransformer\nimport faiss, numpy as np\n\nfaqs = [\n    \"Our return policy allows returns within 30 days of purchase.\",\n    \"Shipping is free on orders over $50.\",\n    \"Customer support is available Monday to Friday, 9am-6pm EST.\",\n    \"We accept Visa, MasterCard, AmEx, and PayPal.\",\n    \"Orders are processed within 1-2 business days.\",\n]\n\nmodel = SentenceTransformer(\"all-MiniLM-L6-v2\")\nembeddings = ___  # TODO: encode faqs\nindex = ___       # TODO: build FAISS IndexFlatIP\n\ndef retrieve(query, k=2):\n    pass  # TODO: embed query and search index\n\nqueries = [\n    \"Can I return something I bought last week?\",\n    \"How do I pay for my order?\",\n    \"When will my order ship?\",\n]\nfor q in queries:\n    print(f\"Q: {q}\")\n    print(f\"A: {retrieve(q)}\\n\")\n```\n\n**Bonus challenges:**\n1. Add re-ranking using a cross-encoder model.\n2. Measure retrieval precision: does the top result contain the correct answer for each query?\n3. Connect a real LLM (e.g. via the `anthropic` SDK) for the generation step."
             }
           ]
         }
