@@ -1,1 +1,1 @@
-Add LoRA and QLoRA fine-tuning lesson to MasterLibrary
+Update library URL from `www` to non-www across all HTML pages
