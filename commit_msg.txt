@@ -1,1 +1,1 @@
-Fix incorrect lesson link in Gemini course sidebar
+Fix incorrect tutorial links in local-llms course
