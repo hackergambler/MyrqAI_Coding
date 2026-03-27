@@ -96,8 +96,15 @@ Rules:
 * ✅ Focus on real-world error explanations
 
 ---
+## 🔒 Data Safety Rules
 
+- DO NOT remove or delete existing lessons
+- DO NOT rewrite entire MasterLibrary.json
+- ONLY append new lessons or minimally update links
+- Preserve all existing entries exactly
 ## 📁 Projects System (MANDATORY)
+
+---
 
 Projects must be real-world, hands-on builds.
 
