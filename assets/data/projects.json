@@ -1319,7 +1319,7 @@
     ]
   },
   {
-    "id": "p-llm-eval",
+    "id": "p-llm-benchmarks",
     "tier": 3,
     "title": "LLM Evaluation Harness: MMLU, HumanEval & Custom Benchmarks",
     "difficulty": "Advanced",

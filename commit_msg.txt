@@ -1,1 +1,1 @@
-Fix intermediate tutorial card links to correct pages
+Fix LLM evaluation project ID to correct benchmark slug
