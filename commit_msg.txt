@@ -1,1 +1,1 @@
-Fix RAG tutorial lesson navigation links
+Fix Gemini embeddings next lesson navigation link
