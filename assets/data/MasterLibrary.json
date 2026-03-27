@@ -926,7 +926,7 @@
           "duration": "20 min",
           "badge": "Beginner",
           "prev": "sql-for-ai",
-          "next": null,
+          "next": "web-scraping-for-ai",
           "sections": [
             {
               "h2": "Why Version Control Matters in ML",
@@ -973,6 +973,64 @@
                   "Merge exp/baseline into main with --no-ff, then tag it as v0.1 with a descriptive message.",
                   "Use git log --oneline --graph to visualise the branch history.",
                   "Bonus: install nbstripout and verify that a notebook commit no longer includes output cells."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "web-scraping-for-ai",
+          "title": "Web Scraping for AI: Collecting Data from the Web",
+          "desc": "Learn to collect training data, benchmark datasets, and real-world text using requests, BeautifulSoup, and Playwright. Build ethical scrapers that respect robots.txt and rate limits.",
+          "duration": "22 min",
+          "badge": "Beginner",
+          "prev": "git-version-control",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Web Scraping Matters for AI",
+              "body": "Most real-world AI projects require custom datasets. Public datasets rarely match your exact domain. Web scraping lets you collect product reviews, news articles, forum posts, job listings, and more \u2014 turning the open web into a training corpus. Used responsibly (respecting robots.txt and rate limits), it is one of the most powerful data-collection techniques available.",
+              "tip": "Always check robots.txt before scraping. Use time.sleep() between requests to avoid hammering servers. Many sites also offer official APIs \u2014 prefer those when available.",
+              "code": {
+                "label": "Python - check robots.txt before scraping",
+                "src": "import urllib.robotparser\nimport time\n\ndef can_scrape(base_url: str, path: str, user_agent: str = '*') -> bool:\n    rp = urllib.robotparser.RobotFileParser()\n    rp.set_url(f\"{base_url}/robots.txt\")\n    rp.read()\n    return rp.can_fetch(user_agent, f\"{base_url}{path}\")\n\n# Example usage\nbase = \"https://example.com\"\nif can_scrape(base, \"/articles\"):\n    print(\"Scraping allowed\")\nelse:\n    print(\"Scraping disallowed \u2014 respect the rules!\")"
+              }
+            },
+            {
+              "h2": "Scraping Static Pages with requests + BeautifulSoup",
+              "body": "For HTML pages that don't require JavaScript, `requests` fetches the raw HTML and `BeautifulSoup` parses it. This is the fastest, lightest scraping stack and handles the majority of use cases.",
+              "code": {
+                "label": "Python - scrape article headlines with BeautifulSoup",
+                "src": "import requests\nfrom bs4 import BeautifulSoup\nimport time\nimport csv\n\nHEADERS = {\"User-Agent\": \"AIResearchBot/1.0 (educational project)\"}\n\ndef scrape_headlines(url: str) -> list[dict]:\n    \"\"\"Fetch a news page and extract article headlines + links.\"\"\"\n    response = requests.get(url, headers=HEADERS, timeout=10)\n    response.raise_for_status()  # raise on 4xx/5xx\n\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    articles = []\n\n    for tag in soup.find_all(\"h2\", class_=\"article-title\"):\n        link = tag.find(\"a\")\n        if link:\n            articles.append({\n                \"title\": link.get_text(strip=True),\n                \"url\": link[\"href\"]\n            })\n\n    return articles\n\n# Scrape multiple pages with polite delay\nurls = [\n    \"https://example.com/news?page=1\",\n    \"https://example.com/news?page=2\",\n]\n\nall_articles = []\nfor url in urls:\n    articles = scrape_headlines(url)\n    all_articles.extend(articles)\n    time.sleep(1.5)  # polite delay between requests\n\nprint(f\"Collected {len(all_articles)} articles\")\n\n# Save to CSV for use as training data\nwith open(\"headlines.csv\", \"w\", newline=\"\") as f:\n    writer = csv.DictWriter(f, fieldnames=[\"title\", \"url\"])\n    writer.writeheader()\n    writer.writerows(all_articles)"
+              }
+            },
+            {
+              "h2": "Handling JavaScript-Rendered Pages with Playwright",
+              "body": "Many modern sites render content via JavaScript \u2014 the raw HTML is nearly empty. Playwright controls a real browser (Chromium, Firefox, or WebKit) to render pages fully before extracting data. Use it when requests + BeautifulSoup returns empty or incomplete content.",
+              "code": {
+                "label": "Python - scrape JS-rendered content with Playwright",
+                "src": "# pip install playwright && playwright install chromium\nimport asyncio\nfrom playwright.async_api import async_playwright\n\nasync def scrape_dynamic_reviews(url: str) -> list[str]:\n    \"\"\"Extract reviews from a JavaScript-rendered page.\"\"\"\n    async with async_playwright() as p:\n        browser = await p.chromium.launch(headless=True)\n        page = await browser.new_page()\n\n        # Block images/fonts to speed up scraping\n        await page.route(\"**/*.{png,jpg,jpeg,gif,svg,woff,woff2}\",\n                         lambda r: r.abort())\n\n        await page.goto(url, wait_until=\"networkidle\")\n\n        # Wait for review elements to appear\n        await page.wait_for_selector(\".review-text\", timeout=5000)\n\n        # Extract all review texts\n        reviews = await page.eval_on_selector_all(\n            \".review-text\",\n            \"els => els.map(el => el.innerText.trim())\"\n        )\n\n        await browser.close()\n        return reviews\n\nasync def main():\n    reviews = await scrape_dynamic_reviews(\"https://example.com/product/42\")\n    print(f\"Scraped {len(reviews)} reviews\")\n    for r in reviews[:3]:\n        print(\"-\", r[:80])\n\nasyncio.run(main())"
+              }
+            },
+            {
+              "h2": "Cleaning Scraped Text for AI Training",
+              "body": "Raw scraped text is noisy \u2014 HTML artifacts, whitespace, boilerplate headers/footers, and duplicate content. Before using it as training data, clean and deduplicate it. A simple pipeline handles most cases.",
+              "code": {
+                "label": "Python - clean and deduplicate scraped text",
+                "src": "import re\nfrom collections import OrderedDict\n\ndef clean_text(raw: str) -> str:\n    \"\"\"Remove HTML artifacts, normalize whitespace.\"\"\"\n    # Strip remaining HTML tags (safety net)\n    text = re.sub(r\"<[^>]+>\", \" \", raw)\n    # Collapse multiple spaces/newlines\n    text = re.sub(r\"\\s+\", \" \", text).strip()\n    # Remove non-printable characters\n    text = re.sub(r\"[^\\x20-\\x7E]\", \"\", text)\n    return text\n\ndef deduplicate(texts: list[str], min_length: int = 50) -> list[str]:\n    \"\"\"Remove duplicate and too-short strings.\"\"\"\n    seen = OrderedDict()\n    for t in texts:\n        cleaned = clean_text(t)\n        if len(cleaned) >= min_length and cleaned not in seen:\n            seen[cleaned] = True\n    return list(seen.keys())\n\n# Example pipeline\nraw_texts = [\n    \"  Learn Python for AI.  \",\n    \"<p>Learn <b>Python</b> for AI.</p>\",  # duplicate after cleaning\n    \"Short.\",  # too short\n    \"Natural language processing enables machines to understand human text.\",\n]\n\nclean = deduplicate(raw_texts)\nprint(f\"{len(raw_texts)} raw -> {len(clean)} clean documents\")\nfor doc in clean:\n    print(\" *\", doc)"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Apply what you've learned to build a mini dataset pipeline:",
+              "exercise": {
+                "title": "Build a Mini AI Training Dataset",
+                "steps": [
+                  "Write a can_scrape() function that reads robots.txt for a URL of your choice and prints whether scraping the root path is allowed.",
+                  "Use requests + BeautifulSoup to fetch the Wikipedia main page (https://en.wikipedia.org) and extract all paragraph texts (p tags) into a list.",
+                  "Run your deduplicate() function on the extracted paragraphs, filtering out entries shorter than 80 characters.",
+                  "Save the cleaned paragraphs to a JSONL file (one JSON object per line with a text key) \u2014 a common format for LLM fine-tuning datasets.",
+                  "Bonus: Add a polite 1-second delay and scrape 3 different Wikipedia pages, combining their cleaned paragraphs into one dataset file."
                 ]
               }
             }
