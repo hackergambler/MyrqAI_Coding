@@ -1,1 +1,1 @@
-Add Vision Transformers (ViT) lesson to MasterLibrary
+Add Gradient Descent lesson and expand MasterLibrary content
