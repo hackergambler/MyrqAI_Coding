@@ -1,1 +1,1 @@
-Add model interpretability lesson (Grad-CAM, SHAP, LIME)
+Add speculative decoding lesson to MasterLibrary
