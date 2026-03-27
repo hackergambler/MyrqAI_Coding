@@ -1,1 +1,1 @@
-Fix tutorial card links pointing to correct pages
+Fix broken tutorial card links for RAG and LangChain sections
