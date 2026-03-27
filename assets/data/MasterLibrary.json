@@ -1522,7 +1522,7 @@
           "duration": "40 min",
           "badge": "Intermediate",
           "prev": "knn-classification",
-          "next": "transformer-architecture",
+          "next": "recommender-systems",
           "sections": [
             {
               "h2": "Why Time Series Is Different",
@@ -1565,6 +1565,58 @@
               }
             }
           ]
+        },
+        {
+          "id": "recommender-systems",
+          "title": "Recommender Systems: Collaborative Filtering & Content-Based",
+          "desc": "Build production recommender systems using collaborative filtering, matrix factorization (SVD), and content-based methods with scikit-learn and Surprise.",
+          "duration": "40 min",
+          "badge": "Intermediate",
+          "prev": "time-series-forecasting",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "Two Paradigms: Collaborative vs Content-Based",
+              "body": "Recommenders power Netflix, Spotify, and Amazon. Two core approaches: **Collaborative Filtering (CF)** — 'users who liked X also liked Y' — exploits patterns in the user-item interaction matrix. **Content-Based** — 'items similar to X based on their features' — uses item metadata. In practice, production systems combine both (hybrid). CF requires no item metadata but suffers from cold-start (new users/items). Content-based works immediately but can't surface serendipitous discoveries.",
+              "tip": "Start with collaborative filtering when you have a dense interaction matrix (>1M ratings). Use content-based as a fallback for new items.",
+              "code": {
+                "label": "Python - Build a user-item matrix from raw interactions",
+                "src": "import numpy as np\nimport pandas as pd\nfrom sklearn.metrics.pairwise import cosine_similarity\n\n# Simulated user-movie ratings (0 = not rated)\nratings_data = {\n    'user_id': [1,1,1,2,2,3,3,3,4,4,4,4],\n    'item_id': [1,2,3,1,4,2,3,5,1,2,4,5],\n    'rating':  [5,3,4,4,2,5,4,3,2,4,5,3]\n}\ndf = pd.DataFrame(ratings_data)\n\n# Pivot to user-item matrix (rows=users, cols=items)\nmatrix = df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)\nprint('User-Item Matrix:')\nprint(matrix)\nprint(f'\\nSparsity: {(matrix == 0).sum().sum() / matrix.size:.1%} empty')  # real systems: 99%+ sparse"
+              }
+            },
+            {
+              "h2": "User-Based Collaborative Filtering",
+              "body": "Find users similar to the target user (using cosine similarity or Pearson correlation), then recommend items those similar users liked that the target user hasn't seen. Simple but doesn't scale to millions of users — user-user similarity matrices are O(n²) in memory.",
+              "code": {
+                "label": "Python - User-based CF with cosine similarity",
+                "src": "from sklearn.metrics.pairwise import cosine_similarity\nimport numpy as np\n\ndef user_based_recommendations(matrix, target_user, n_similar=2, n_recs=3):\n    \"\"\"\n    matrix: DataFrame (users x items)\n    target_user: user_id to recommend for\n    \"\"\"\n    # Compute cosine similarity between all users\n    sim_matrix = cosine_similarity(matrix.values)  # (n_users, n_users)\n    sim_df = pd.DataFrame(sim_matrix, index=matrix.index, columns=matrix.index)\n\n    # Get top-N similar users (exclude self)\n    user_sims = sim_df[target_user].drop(target_user).sort_values(ascending=False)\n    top_users = user_sims.head(n_similar).index.tolist()\n    print(f'Users similar to user {target_user}: {top_users}')\n    print(f'Similarity scores: {user_sims[top_users].round(3).tolist()}')\n\n    # Items already rated by target user\n    already_rated = set(matrix.columns[matrix.loc[target_user] > 0])\n\n    # Score unrated items by weighted average of similar users' ratings\n    scores = {}\n    for item in matrix.columns:\n        if item in already_rated:\n            continue\n        weighted_sum = sum(\n            sim_df[target_user][u] * matrix.loc[u, item]\n            for u in top_users if matrix.loc[u, item] > 0\n        )\n        sim_sum = sum(\n            abs(sim_df[target_user][u])\n            for u in top_users if matrix.loc[u, item] > 0\n        )\n        if sim_sum > 0:\n            scores[item] = weighted_sum / sim_sum\n\n    # Return top-N recommendations\n    recs = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:n_recs]\n    return recs\n\nrecs = user_based_recommendations(matrix, target_user=1)\nprint(f'\\nRecommendations for user 1: {recs}')"
+              }
+            },
+            {
+              "h2": "Matrix Factorization with SVD",
+              "body": "Matrix Factorization (MF) is the gold standard for CF. SVD decomposes the user-item matrix R into U × Σ × Vᵀ, learning latent factors (hidden taste dimensions) for users and items. The Surprise library makes this trivial and includes proper cross-validation.",
+              "code": {
+                "label": "Python - SVD Matrix Factorization with Surprise library",
+                "src": "# pip install scikit-surprise\nfrom surprise import SVD, Dataset, Reader, accuracy\nfrom surprise.model_selection import cross_validate, train_test_split\nimport pandas as pd\n\n# Surprise expects: user_id, item_id, rating columns\nratings_data = {\n    'user_id': [1,1,1,2,2,3,3,3,4,4,4,4],\n    'item_id': [1,2,3,1,4,2,3,5,1,2,4,5],\n    'rating':  [5,3,4,4,2,5,4,3,2,4,5,3]\n}\ndf = pd.DataFrame(ratings_data)\n\n# Load into Surprise format\nreader = Reader(rating_scale=(1, 5))\ndataset = Dataset.load_from_df(df[['user_id', 'item_id', 'rating']], reader)\n\n# SVD: learns n_factors latent dimensions (user taste vectors + item vectors)\nsvd = SVD(n_factors=20, n_epochs=50, lr_all=0.005, reg_all=0.02)\n\n# 5-fold cross-validation\ncv_results = cross_validate(svd, dataset, measures=['RMSE', 'MAE'], cv=5, verbose=True)\nprint(f'\\nMean RMSE: {cv_results[\"test_rmse\"].mean():.4f}')\nprint(f'Mean MAE:  {cv_results[\"test_mae\"].mean():.4f}')\n\n# Train on full dataset and predict\ntrainset = dataset.build_full_trainset()\nsvd.fit(trainset)\n\n# Predict: what would user 1 rate item 5?\npred = svd.predict(uid=1, iid=5)\nprint(f'\\nPredicted rating for user 1, item 5: {pred.est:.2f}')"
+              }
+            },
+            {
+              "h2": "Content-Based Filtering with TF-IDF",
+              "body": "Content-based recommendations use item features (genre, description, tags) to find similar items. TF-IDF vectorizes text descriptions; cosine similarity ranks items by feature overlap. Perfect for cold-start: a brand-new item can be recommended immediately based on its metadata alone.",
+              "code": {
+                "label": "Python - Content-based filtering with TF-IDF + cosine similarity",
+                "src": "from sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport pandas as pd\nimport numpy as np\n\n# Item metadata — movies with genre/description tags\nmovies = pd.DataFrame({\n    'title': ['The Matrix', 'Inception', 'Interstellar', 'The Dark Knight',\n              'Avengers', 'Iron Man', 'Forrest Gump', 'Cast Away'],\n    'tags':  [\n        'sci-fi action cyberpunk reality simulation',\n        'sci-fi thriller dreams heist mind-bending',\n        'sci-fi space time travel emotion',\n        'action thriller superhero crime dark',\n        'action superhero team marvel adventure',\n        'action superhero marvel technology billionaire',\n        'drama romance war history running',\n        'drama survival island alone emotional'\n    ]\n})\n\n# TF-IDF: weight rare, discriminative words higher\ntfidf = TfidfVectorizer(stop_words='english')\ntfidf_matrix = tfidf.fit_transform(movies['tags'])  # (n_items, n_vocab)\n\n# Compute pairwise cosine similarity\ncosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)  # (n_items, n_items)\nprint('Content similarity (first 4 movies):')\nprint(pd.DataFrame(cosine_sim[:4, :4].round(2), index=movies['title'][:4], columns=movies['title'][:4]))\n\ndef get_content_recs(title, n=3):\n    idx = movies[movies['title'] == title].index[0]\n    sim_scores = list(enumerate(cosine_sim[idx]))\n    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:n+1]\n    movie_indices = [i[0] for i in sim_scores]\n    return movies['title'].iloc[movie_indices].tolist()\n\nprint(f'\\nBecause you watched \"The Matrix\", try: {get_content_recs(\"The Matrix\")}')\nprint(f'Because you watched \"Forrest Gump\", try: {get_content_recs(\"Forrest Gump\")}')"
+              }
+            },
+            {
+              "h2": "Exercise: Movie Recommender End-to-End",
+              "body": "Build a complete recommender system:\n\n1. Download the **MovieLens 100K** dataset (`from surprise import Dataset; data = Dataset.load_builtin('ml-100k')`).\n2. Train an SVD model with cross-validation, reporting RMSE and MAE.\n3. For a chosen user (e.g., user 196), generate top-10 movie recommendations (filter out already-rated movies).\n4. Implement a content-based fallback using movie genre tags from the `u.item` file.\n5. Bonus: build a simple **hybrid** — blend SVD scores and content similarity scores with a 0.7/0.3 weight.\n\n**Key metrics to report:**\n- RMSE (root mean square error of predicted ratings)\n- Precision@10 (fraction of top-10 recs the user actually rated highly)\n- Coverage (% of items the system can recommend)",
+              "code": {
+                "label": "Python - Top-N recommendation generator with Surprise",
+                "src": "from surprise import SVD, Dataset\nfrom surprise.model_selection import train_test_split\nfrom collections import defaultdict\n\ndef get_top_n_recs(predictions, n=10):\n    \"\"\"Group predictions by user and return top-N per user.\"\"\"\n    top_n = defaultdict(list)\n    for uid, iid, true_r, est, _ in predictions:\n        top_n[uid].append((iid, est))\n    for uid, user_ratings in top_n.items():\n        user_ratings.sort(key=lambda x: x[1], reverse=True)\n        top_n[uid] = user_ratings[:n]\n    return top_n\n\n# Load built-in MovieLens 100K\ndata = Dataset.load_builtin('ml-100k')\ntrainset, testset = train_test_split(data, test_size=0.2, random_state=42)\n\nsvd = SVD(n_factors=50, n_epochs=30)\nsvd.fit(trainset)\n\n# Generate predictions on anti-testset (unrated items per user)\nantitest = trainset.build_anti_testset()\npredictions = svd.test(antitest)\n\ntop_n = get_top_n_recs(predictions, n=10)\n\n# Show top-10 recs for user '196'\nuser = '196'\nprint(f'Top-10 recommendations for user {user}:')\nfor item_id, score in top_n[user]:\n    print(f'  Item {item_id:>4} — predicted rating: {score:.2f}')"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1583,7 +1635,7 @@
           "desc": "Q, K, V matrices, scaled dot-product attention, multi-head attention, positional encoding, and the complete encoder block — all implemented from scratch in NumPy and PyTorch.",
           "duration": "45 min",
           "badge": "Advanced",
-          "prev": "time-series-forecasting",
+          "prev": "recommender-systems",
           "next": "rlhf-deep-dive",
           "sections": [
             {
