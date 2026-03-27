@@ -1,1 +1,1 @@
-Add GraphRAG knowledge graph lesson to MasterLibrary
+Add diffusion models DDPM lesson to MasterLibrary

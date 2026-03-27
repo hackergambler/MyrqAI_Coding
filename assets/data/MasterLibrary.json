@@ -2473,7 +2473,7 @@
           "badge": "Advanced",
           "duration": "45 min",
           "prev": "vision-transformers-vit",
-          "next": "rag-production",
+          "next": "diffusion-models-ddpm",
           "sections": [
             {
               "h2": "What Is Contrastive Learning?",
@@ -2512,6 +2512,61 @@
                 "label": "Python (PyTorch) — exercise starter",
                 "src": "import torch\nfrom torch.utils.data import DataLoader, Dataset\nfrom torchvision import datasets, transforms\nfrom torchvision.models import resnet18\nimport torch.nn.functional as F\n\n# ---- TODO: SimCLR augmentation pipeline ----\nclass SimCLRTransform:\n    \"\"\"Returns two randomly augmented views of the same image.\"\"\"\n    def __init__(self, size=32):\n        color_jitter = transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)\n        self.transform = transforms.Compose([\n            transforms.RandomResizedCrop(size, scale=(0.2, 1.0)),\n            transforms.RandomHorizontalFlip(),\n            transforms.RandomApply([color_jitter], p=0.8),\n            transforms.RandomGrayscale(p=0.2),\n            transforms.ToTensor(),\n            transforms.Normalize((0.4914, 0.4822, 0.4465),\n                                 (0.2023, 0.1994, 0.2010)),\n        ])\n\n    def __call__(self, x):\n        return self.transform(x), self.transform(x)\n\n# ---- TODO: Wrap CIFAR-10 ----\nclass ContrastiveCIFAR10(Dataset):\n    def __init__(self, root='.', train=True):\n        self.base = datasets.CIFAR10(root, train=train, download=True,\n                                     transform=SimCLRTransform(size=32))\n    def __len__(self):  return len(self.base)\n    def __getitem__(self, i): return self.base[i][0]   # (x1, x2), ignore label\n\n# ---- TODO: Training loop ----\n# loader = DataLoader(ContrastiveCIFAR10(), batch_size=256, shuffle=True, num_workers=4)\n# model  = SimCLR(base_encoder=resnet18)   # import SimCLR from lesson\n# opt    = torch.optim.AdamW(model.parameters(), lr=3e-4)\n# for epoch in range(10):\n#     for (x1, x2) in loader:\n#         z1, z2 = model(x1, x2)\n#         loss = nt_xent_loss(z1, z2)\n#         opt.zero_grad(); loss.backward(); opt.step()\n#     print(f'Epoch {epoch+1} loss: {loss.item():.4f}')\n\nprint('Starter ready. Implement training loop and linear probe!')\nprint('Target: >=60% linear probe accuracy on CIFAR-10 in 10 epochs.')"
               }
+            }
+          ]
+        },
+        {
+          "id": "diffusion-models-ddpm",
+          "title": "Diffusion Models: DDPM and Score-Based Generative AI",
+          "desc": "Understand how diffusion models generate images by learning to reverse a gradual noising process. Implement DDPM's forward diffusion and denoising objective in PyTorch.",
+          "duration": "35 min",
+          "badge": "Advanced",
+          "prev": "contrastive-learning",
+          "next": "rag-production",
+          "sections": [
+            {
+              "h2": "How Diffusion Models Work",
+              "body": "Diffusion models learn to generate data by reversing a gradual noising process. The forward process slowly adds Gaussian noise over T timesteps until the data becomes pure noise. A neural network (U-Net) is trained to predict and remove the noise at each step, learning the reverse process.\n\nAt inference, the model starts from pure Gaussian noise and iteratively denoises T times to produce a clean sample. This is why DALL-E 3, Stable Diffusion, and Midjourney all use diffusion as their backbone.",
+              "tip": "Unlike GANs (which train generator vs discriminator), diffusion models train a single denoiser with a simple MSE loss. This makes them far more stable to train.",
+              "code": {
+                "label": "Python - Forward diffusion: adding noise over T steps",
+                "src": "import torch\nimport torch.nn.functional as F\nimport numpy as np\n\ndef get_noise_schedule(T: int = 1000, beta_start: float = 1e-4, beta_end: float = 0.02):\n    \"\"\"Linear noise schedule: controls how fast noise is added.\"\"\"\n    betas = torch.linspace(beta_start, beta_end, T)  # T noise levels\n    alphas = 1.0 - betas\n    alphas_cumprod = torch.cumprod(alphas, dim=0)  # alpha_bar_t\n    return betas, alphas, alphas_cumprod\n\ndef q_sample(x_start: torch.Tensor, t: torch.Tensor, alphas_cumprod: torch.Tensor):\n    \"\"\"\n    Forward process: q(x_t | x_0)\n    Directly sample x_t from x_0 using the closed-form expression.\n    x_t = sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * noise\n    \"\"\"\n    noise = torch.randn_like(x_start)\n    # Gather the alpha_bar values for each item in the batch\n    sqrt_alpha_bar = alphas_cumprod[t].sqrt().view(-1, 1, 1, 1)\n    sqrt_one_minus = (1 - alphas_cumprod[t]).sqrt().view(-1, 1, 1, 1)\n    # Reparameterization: blend clean image with noise\n    x_t = sqrt_alpha_bar * x_start + sqrt_one_minus * noise\n    return x_t, noise  # return both for training\n\nT = 1000\nbetas, alphas, alphas_cumprod = get_noise_schedule(T)\n\n# Simulate: a batch of 4 clean 32x32 RGB images\nx0 = torch.randn(4, 3, 32, 32)           # random 'clean' images\nt_early = torch.tensor([100, 100, 100, 100])   # early timestep (light noise)\nt_late  = torch.tensor([900, 900, 900, 900])   # late timestep (heavy noise)\n\nx_early, _ = q_sample(x0, t_early, alphas_cumprod)\nx_late,  _ = q_sample(x0, t_late,  alphas_cumprod)\n\n# Signal-to-noise ratio drops over time\nprint(f't=100 | signal: {alphas_cumprod[100].item():.3f} | noise: {1-alphas_cumprod[100].item():.3f}')\nprint(f't=900 | signal: {alphas_cumprod[900].item():.3f} | noise: {1-alphas_cumprod[900].item():.3f}')"
+              }
+            },
+            {
+              "h2": "The DDPM Training Objective",
+              "body": "Training a DDPM is surprisingly simple: sample a random timestep t, corrupt the image with the corresponding amount of noise, and train the U-Net to predict the noise that was added. The loss is plain MSE between predicted and actual noise.\n\nThis is called the 'simplified objective' from Ho et al. (2020). The U-Net takes (noisy image, timestep) as inputs and outputs the noise estimate.",
+              "code": {
+                "label": "Python - DDPM training loss and a minimal U-Net denoiser",
+                "src": "import torch\nimport torch.nn as nn\n\nclass SinusoidalTimeEmbedding(nn.Module):\n    \"\"\"Encode scalar timestep t into a vector the U-Net can use.\"\"\"\n    def __init__(self, dim: int):\n        super().__init__()\n        self.dim = dim\n\n    def forward(self, t: torch.Tensor) -> torch.Tensor:\n        half = self.dim // 2\n        freqs = torch.exp(\n            -torch.arange(half, device=t.device) * (torch.log(torch.tensor(10000.0)) / (half - 1))\n        )\n        args = t[:, None].float() * freqs[None]\n        return torch.cat([args.sin(), args.cos()], dim=-1)  # (B, dim)\n\nclass SimpleDenoiser(nn.Module):\n    \"\"\"Tiny U-Net-style denoiser for demonstration (not production scale).\"\"\"\n    def __init__(self, img_channels: int = 3, base_channels: int = 64):\n        super().__init__()\n        self.time_emb = SinusoidalTimeEmbedding(base_channels)\n        self.encoder = nn.Sequential(\n            nn.Conv2d(img_channels, base_channels, 3, padding=1),\n            nn.GroupNorm(8, base_channels), nn.SiLU(),\n            nn.Conv2d(base_channels, base_channels * 2, 3, padding=1, stride=2),\n            nn.GroupNorm(8, base_channels * 2), nn.SiLU(),\n        )\n        self.decoder = nn.Sequential(\n            nn.ConvTranspose2d(base_channels * 2, base_channels, 4, stride=2, padding=1),\n            nn.GroupNorm(8, base_channels), nn.SiLU(),\n            nn.Conv2d(base_channels, img_channels, 3, padding=1),\n        )\n\n    def forward(self, x_t: torch.Tensor, t: torch.Tensor) -> torch.Tensor:\n        t_emb = self.time_emb(t)  # (B, 64)\n        h = self.encoder(x_t)    # (B, 128, H/2, W/2)\n        # Add time embedding (broadcast over spatial dims)\n        h = h + t_emb[:, :h.shape[1], None, None]\n        return self.decoder(h)   # predicted noise, same shape as x_t\n\ndef ddpm_loss(model, x0, t, alphas_cumprod):\n    \"\"\"DDPM simplified objective: predict noise at timestep t.\"\"\"\n    x_t, noise = q_sample(x0, t, alphas_cumprod)   # forward process\n    noise_pred = model(x_t, t)                      # model predicts noise\n    return nn.functional.mse_loss(noise_pred, noise)  # MSE loss\n\n# Sanity check\nmodel = SimpleDenoiser()\nx0 = torch.randn(2, 3, 32, 32)\nt = torch.randint(0, 1000, (2,))\nbetas, _, alphas_cumprod = get_noise_schedule(1000)\nloss = ddpm_loss(model, x0, t, alphas_cumprod)\nprint(f'DDPM loss: {loss.item():.4f}')  # should be ~1.0 for an untrained model"
+              }
+            },
+            {
+              "h2": "DDPM Sampling (Reverse Diffusion)",
+              "body": "Sampling iterates from t=T down to t=0. At each step, the model predicts the noise in x_t, subtracts it to estimate x_0, then re-adds noise at level t-1. This 'predict noise → step back → re-noise' loop is run T times.\n\nDDIM (Denoising Diffusion Implicit Models) is a faster variant that can generate quality images in just 20-50 steps instead of 1000 by using a deterministic update rule.",
+              "code": {
+                "label": "Python - DDPM reverse sampling loop",
+                "src": "import torch\n\n@torch.no_grad()\ndef ddpm_sample(model, shape, T, betas, alphas, alphas_cumprod, device='cpu'):\n    \"\"\"\n    Reverse diffusion: start from noise, iteratively denoise.\n    Returns a clean sample x_0.\n    \"\"\"\n    model.eval()\n    x = torch.randn(shape, device=device)  # start: pure Gaussian noise\n\n    for t_idx in reversed(range(T)):\n        t_batch = torch.full((shape[0],), t_idx, dtype=torch.long, device=device)\n\n        # 1. Predict noise\n        noise_pred = model(x, t_batch)\n\n        # 2. Compute x_{t-1} using DDPM update rule\n        beta_t        = betas[t_idx]\n        alpha_t       = alphas[t_idx]\n        alpha_bar_t   = alphas_cumprod[t_idx]\n        alpha_bar_tm1 = alphas_cumprod[t_idx - 1] if t_idx > 0 else torch.tensor(1.0)\n\n        # Predicted x_0\n        x0_pred = (x - (1 - alpha_bar_t).sqrt() * noise_pred) / alpha_bar_t.sqrt()\n        x0_pred = x0_pred.clamp(-1, 1)  # keep in valid image range\n\n        # Posterior mean (direction toward predicted x_0)\n        coef1 = (alpha_bar_tm1.sqrt() * beta_t) / (1 - alpha_bar_t)\n        coef2 = (alpha_t.sqrt() * (1 - alpha_bar_tm1)) / (1 - alpha_bar_t)\n        mean  = coef1 * x0_pred + coef2 * x\n\n        # 3. Add noise (skip at final step t=0)\n        if t_idx > 0:\n            posterior_var = beta_t * (1 - alpha_bar_tm1) / (1 - alpha_bar_t)\n            x = mean + posterior_var.sqrt() * torch.randn_like(x)\n        else:\n            x = mean  # final step: no noise added\n\n    return x  # shape: (B, C, H, W) — the generated images\n\nprint('Sampling loop defined. Full 1000-step generation on GPU takes ~10 seconds.')\nprint('DDIM can reduce this to 20-50 steps with minimal quality loss.')"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "exercise": {
+                "title": "Noise Schedule Analysis and SNR Curve",
+                "steps": [
+                  "Implement `cosine_noise_schedule(T)` that returns `alphas_cumprod` using the cosine schedule formula: `alpha_bar_t = cos((t/T + 0.008) / 1.008 * pi/2)^2`",
+                  "Compare your cosine schedule vs the linear schedule from the lesson: at t=500, which has higher SNR (more signal retained)?",
+                  "Write `count_noisy_pixels(x_t, threshold=0.5)` that counts pixels where `|x_t| > threshold` — more noisy pixels = more destruction",
+                  "Apply both schedules to the same image at t in [100, 300, 500, 700, 900] and print the noisy pixel count at each step",
+                  "In 1-2 sentences: why does the cosine schedule produce better images than the linear schedule for DDPM?"
+                ],
+                "solution_hint": "Cosine schedule destroys less signal at early timesteps (higher SNR at t=500), giving the model more training signal for fine details. Linear schedule adds too much noise too fast."
+              }
+            },
+            {
+              "h2": "Real-World Applications",
+              "body": "Diffusion models power the most capable generative AI systems today:\n\n- **Stable Diffusion / SDXL**: Open-source image generation. Uses a latent diffusion model (LDM) that runs diffusion in a compressed latent space (8x smaller), making it 8x faster.\n- **DALL-E 3**: OpenAI's image generator. Combines diffusion with CLIP text embeddings for text conditioning.\n- **Sora**: OpenAI's video model. Extends spatial U-Net to 3D (space + time) using DiT (Diffusion Transformers).\n- **Audio generation**: WaveGrad and AudioLDM use diffusion over mel-spectrograms to generate speech and music.\n\nDiffusion models beat GANs on FID score (image quality metric) while being far easier to train. They are now the dominant approach for any high-quality generative task.",
+              "tip": "To apply a pretrained diffusion model to your own images, use the HuggingFace `diffusers` library: `pip install diffusers`. It wraps DDPM, DDIM, and hundreds of pretrained checkpoints behind a clean 3-line API."
             }
           ]
         }
