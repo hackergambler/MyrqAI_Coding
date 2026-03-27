@@ -1,6 +1,6 @@
 name: Autonomous AI Coding Builder
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to start it manually
   issue_comment:
     types: [created]
 
@@ -8,44 +8,26 @@ jobs:
   build:
     if: contains(github.event.comment.body, '@claude build') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 
-
-      - name: Setup Git
-        run: |
-          git config --global user.name "Claude-Bot"
-          git config --global user.email "claude-bot@myrqai.com"
       
       - name: Claude Continuous Worker
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          # This loop runs until Claude creates a file named 'finished.txt'
           until [ -f finished.txt ]; do
-            echo "--- STARTING NEW ITERATION ---"
-            
-            # Using npx directly with --yes to force the install and run
-            # Added '2>&1' to force all hidden errors to show up in your logs
-            yes | npx -y @anthropic-ai/claude-code@latest --dangerously-skip-permissions --print "Read CLAUDE.md. Fix one broken link in index.html. Exit immediately after. If done, create finished.txt." 2>&1 || {
-              echo "!!! ERROR OR LIMIT DETECTED !!!"
+            echo "Claude is working..."
+            npx @anthropic-ai/claude-code --print "Read CLAUDE.md. Fix one broken link or add one missing tutorial from the 4-tier plan. If the entire site is 100% done with NO errors, create finished.txt." || {
+              echo "Rate limit reached or error occurred. Sleeping for 5 minutes..."
               sleep 300
             }
-
-            echo "Checking for changes..."
-            git add .
-            if git commit -m "Claude: Autonomous update"; then
-              git push origin HEAD
-              echo "Successfully pushed changes."
-            else
-              echo "No changes found in this cycle."
-            fi
-            
-            # Small 10-second break to prevent 'Double Triggering'
-            sleep 10
           done
+          
+      - name: Commit Changes
+        run: |
+          git config --global user.name "Claude-Bot"
+          git config --global user.email "claude-bot@myrqai.com"
+          git add .
+          git commit -m "Claude: Autonomous update to AI Coding"
+          git push
