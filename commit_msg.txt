@@ -1,1 +1,1 @@
-Add filter button active state toggle to tutorials page
+Update Claude course lesson count from 4 to 5
