@@ -1,1 +1,1 @@
-Add Python decorators lesson to MasterLibrary content
+Add Python testing lesson and refactor MasterLibrary content
