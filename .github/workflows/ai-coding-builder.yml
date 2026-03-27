@@ -1,33 +1,105 @@
-name: Autonomous AI Coding Builder
+name: Autonomous AI Dev System
+
 on:
-  workflow_dispatch: # Allows you to start it manually
+  workflow_dispatch:
   issue_comment:
     types: [created]
 
+concurrency:
+  group: ai-dev-system
+  cancel-in-progress: true
+
 jobs:
   build:
-    if: contains(github.event.comment.body, '@claude build') || github.event_name == 'workflow_dispatch'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '@claude build') &&
+       github.actor != 'github-actions[bot]')
+
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Claude Continuous Worker
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Initialize Git
+        run: |
+          git config --global user.name "Claude-AI"
+          git config --global user.email "claude-ai@myrqai.com"
+
+      - name: Autonomous Task Loop
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          # This loop runs until Claude creates a file named 'finished.txt'
-          until [ -f finished.txt ]; do
-            echo "Claude is working..."
-            npx @anthropic-ai/claude-code --print "Read CLAUDE.md. Fix one broken link or add one missing tutorial from the 4-tier plan. If the entire site is 100% done with NO errors, create finished.txt." || {
-              echo "Rate limit reached or error occurred. Sleeping for 5 minutes..."
-              sleep 300
-            }
+          MAX_RUNS=10
+          COUNT=0
+
+          echo "🚀 Starting Autonomous AI Dev System..."
+
+          while [ ! -f finished.txt ] && [ $COUNT -lt $MAX_RUNS ]; do
+            echo "=================================="
+            echo "🤖 Task Iteration #$COUNT"
+            echo "=================================="
+
+            # Step 1: Perform ONE task
+            npx @anthropic-ai/claude-code --print \
+            "Read CLAUDE.md and current project.
+            Do EXACTLY ONE small improvement:
+            - fix a bug OR
+            - add a lesson OR
+            - improve UI OR
+            - optimize code
+
+            STRICT RULES:
+            - Only ONE task
+            - Keep changes minimal and clean
+            - Do not break anything
+
+            If project is fully complete:
+            create finished.txt"
+
+            EXIT_CODE=$?
+
+            # Step 2: Generate commit message using Claude
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "🧠 Generating commit message..."
+
+              npx @anthropic-ai/claude-code --print \
+              "Analyze the git diff and write a SHORT professional commit message (max 10 words). Output only the message." > commit_msg.txt
+
+              COMMIT_MSG=$(cat commit_msg.txt | head -n 1)
+
+              echo "📌 Commit message: $COMMIT_MSG"
+
+              # Step 3: Commit changes
+              git add .
+              git commit -m "$COMMIT_MSG"
+              git push
+            else
+              echo "⚠️ No changes made"
+            fi
+
+            COUNT=$((COUNT+1))
+
+            # Step 4: Safe delay (prevents rate limits)
+            echo "⏳ Waiting 30 seconds..."
+            sleep 30
+
+            # Step 5: Cooldown on error
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "❌ Rate limit or error detected. Cooling down..."
+              sleep 120
+            fi
           done
-          
-      - name: Commit Changes
-        run: |
-          git config --global user.name "Claude-Bot"
-          git config --global user.email "claude-bot@myrqai.com"
-          git add .
-          git commit -m "Claude: Autonomous update to AI Coding"
-          git push
+
+          if [ -f finished.txt ]; then
+            echo "✅ Project fully completed by AI!"
+          else
+            echo "🛑 Stopped after max iterations (safe exit)"
+          fi
