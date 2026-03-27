@@ -1,1 +1,1 @@
-Update sidebar to use new MasterLibrary tracks structure
+Add RNNs & LSTMs lesson to MasterLibrary

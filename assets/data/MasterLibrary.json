@@ -970,7 +970,7 @@
           "duration": "45 min",
           "badge": "Intermediate",
           "prev": "distributed-training",
-          "next": "rag-production",
+          "next": "rnns-lstms",
           "sections": [
             {
               "h2": "Convolution, Pooling & Receptive Fields",
@@ -997,6 +997,42 @@
               }
             }
           ]
+        },
+        {
+          "id": "rnns-lstms",
+          "title": "RNNs & LSTMs for Sequential Data",
+          "desc": "Understand recurrent neural networks, the vanishing gradient problem, and how LSTMs solve it with gates. Build a character-level language model and a time-series forecaster in PyTorch.",
+          "duration": "40 min",
+          "badge": "Intermediate",
+          "prev": "cnns-vision",
+          "next": "rag-production",
+          "sections": [
+            {
+              "h2": "The Vanishing Gradient Problem in RNNs",
+              "body": "A vanilla RNN processes sequences by maintaining a hidden state h_t = tanh(W_h * h_{t-1} + W_x * x_t). Backpropagation through time (BPTT) multiplies gradients through every timestep. For long sequences (100+ steps), gradients shrink exponentially — the network forgets early context entirely. This is why RNNs fail on tasks requiring long-range dependencies.",
+              "tip": "The vanishing gradient problem is why LSTMs and GRUs were invented. For sequences longer than ~20 steps, always prefer LSTM or GRU over a vanilla RNN.",
+              "code": {
+                "label": "Python (PyTorch) - vanilla RNN vs LSTM gradient flow",
+                "src": "import torch\nimport torch.nn as nn\n\n# Vanilla RNN — gradients vanish over long sequences\nrnn = nn.RNN(input_size=32, hidden_size=64, batch_first=True)\n\n# LSTM — gates control gradient flow, avoiding vanishing gradients\nlstm = nn.LSTM(input_size=32, hidden_size=64, batch_first=True)\n\nbatch, seq_len, features = 4, 100, 32\nx = torch.randn(batch, seq_len, features)\n\n# RNN output: (batch, seq, hidden), hidden: (1, batch, hidden)\nrnn_out, rnn_h = rnn(x)\nprint(f'RNN  output: {rnn_out.shape}')  # [4, 100, 64]\nprint(f'RNN  hidden: {rnn_h.shape}')   # [1, 4, 64]\n\n# LSTM output: same shape, but also returns cell state c_t\nlstm_out, (lstm_h, lstm_c) = lstm(x)\nprint(f'LSTM output: {lstm_out.shape}')  # [4, 100, 64]\nprint(f'LSTM hidden: {lstm_h.shape}')   # [1, 4, 64]\nprint(f'LSTM cell:   {lstm_c.shape}')   # [1, 4, 64]  ← the long-term memory"
+              }
+            },
+            {
+              "h2": "LSTM Gates: The Memory Architecture",
+              "body": "An LSTM cell has three gates — forget (what to erase from cell state), input (what new info to write), and output (what to expose as hidden state). The cell state c_t acts as a 'conveyor belt' that carries information across many timesteps with only additive updates, preventing gradient vanishing.",
+              "code": {
+                "label": "Python - LSTM cell from scratch (NumPy)",
+                "src": "import numpy as np\n\nclass LSTMCell:\n    \"\"\"Single LSTM cell step — matches nn.LSTMCell exactly.\"\"\"\n    def __init__(self, input_size, hidden_size):\n        scale = np.sqrt(1 / hidden_size)\n        # Combined weight matrix for efficiency: [forget, input, gate, output]\n        self.W = np.random.uniform(-scale, scale, (4 * hidden_size, input_size + hidden_size))\n        self.b = np.zeros(4 * hidden_size)\n        self.h = hidden_size\n\n    def sigmoid(self, x): return 1 / (1 + np.exp(-np.clip(x, -500, 500)))\n\n    def forward(self, x, h_prev, c_prev):\n        \"\"\"\n        x:      (input_size,)   current input\n        h_prev: (hidden_size,)  previous hidden state\n        c_prev: (hidden_size,)  previous cell state\n        \"\"\"\n        combined = np.concatenate([x, h_prev])     # concat input + hidden\n        gates = self.W @ combined + self.b          # (4*hidden,)\n\n        f = self.sigmoid(gates[:self.h])            # forget gate — what to erase\n        i = self.sigmoid(gates[self.h:2*self.h])    # input gate  — what to update\n        g = np.tanh(gates[2*self.h:3*self.h])       # candidate cell values\n        o = self.sigmoid(gates[3*self.h:])          # output gate — what to expose\n\n        c_new = f * c_prev + i * g                  # update cell state (additive!)\n        h_new = o * np.tanh(c_new)                  # compute new hidden state\n        return h_new, c_new\n\n# Run one step\ncell = LSTMCell(input_size=8, hidden_size=16)\nh, c = np.zeros(16), np.zeros(16)\nfor t in range(50):  # process 50 timesteps\n    x_t = np.random.randn(8)\n    h, c = cell.forward(x_t, h, c)\nprint(f'Hidden norm after 50 steps: {np.linalg.norm(h):.3f}')  # stays healthy!"
+              }
+            },
+            {
+              "h2": "Time-Series Forecasting with LSTM",
+              "body": "LSTMs excel at univariate and multivariate time-series: stock prices, sensor readings, weather. The key design choices are sequence length (lookback window), whether to use many-to-one (predict one step) or many-to-many (predict a sequence), and whether to stack multiple LSTM layers.",
+              "code": {
+                "label": "Python (PyTorch) - LSTM time-series forecaster",
+                "src": "import torch\nimport torch.nn as nn\nimport numpy as np\n\nclass LSTMForecaster(nn.Module):\n    \"\"\"\n    Many-to-one LSTM: takes a window of past values,\n    predicts the next value.\n    \"\"\"\n    def __init__(self, input_size=1, hidden_size=64, num_layers=2, dropout=0.2):\n        super().__init__()\n        self.lstm = nn.LSTM(\n            input_size, hidden_size, num_layers,\n            batch_first=True,\n            dropout=dropout if num_layers > 1 else 0\n        )\n        self.head = nn.Linear(hidden_size, 1)\n\n    def forward(self, x):                   # x: (batch, seq_len, features)\n        out, _ = self.lstm(x)               # (batch, seq_len, hidden)\n        last   = out[:, -1, :]              # take last timestep only\n        return self.head(last).squeeze(-1)  # (batch,)\n\n# Generate synthetic sine wave data\nt = np.linspace(0, 100, 1000)\ndata = np.sin(t) + 0.1 * np.random.randn(1000)\n\n# Create sliding window dataset\nSEQ_LEN = 30\nX = torch.tensor(\n    np.stack([data[i:i+SEQ_LEN] for i in range(len(data)-SEQ_LEN-1)], axis=0),\n    dtype=torch.float32\n).unsqueeze(-1)  # (samples, seq_len, 1)\ny = torch.tensor(data[SEQ_LEN+1:], dtype=torch.float32)\n\nmodel     = LSTMForecaster()\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\ncriterion = nn.MSELoss()\n\nfor epoch in range(20):\n    pred = model(X)\n    loss = criterion(pred, y)\n    optimizer.zero_grad(); loss.backward(); optimizer.step()\n    if (epoch + 1) % 5 == 0:\n        print(f'Epoch {epoch+1:2d} | MSE: {loss.item():.5f}')"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1015,7 +1051,7 @@
           "desc": "Beyond the basic RAG tutorial: chunking strategies, hybrid BM25 + semantic search, cross-encoder re-ranking, context window management, and RAG evaluation with RAGAS.",
           "duration": "50 min",
           "badge": "Advanced",
-          "prev": "cnns-vision",
+          "prev": "rnns-lstms",
           "next": "agent-systems",
           "sections": [
             {
