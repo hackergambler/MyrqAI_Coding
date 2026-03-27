@@ -234,10 +234,15 @@ const Renderer={
     const c=document.getElementById(cid);if(!c)return;
     const secs=c.querySelectorAll('.lesson-content');if(secs.length<2)return;
     const ad=document.createElement('div');ad.style.cssText='margin:1.5rem 0;text-align:center';
-    ad.innerHTML=`<ins class="adsbygoogle" style="display:block"
-      data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto"
-      data-ad-format="auto" data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle=window.adsbygoogle||[]).push({});<\/script>`;
+    const ins=document.createElement('ins');
+    ins.className='adsbygoogle';ins.style.display='block';
+    ins.dataset.adClient='ca-pub-8668540803235423';
+    ins.dataset.adSlot='auto';ins.dataset.adFormat='auto';
+    ins.dataset.fullWidthResponsive='true';
+    ad.appendChild(ins);
+    const s=document.createElement('script');
+    s.textContent='(adsbygoogle=window.adsbygoogle||[]).push({});';
+    ad.appendChild(s);
     secs[1].after(ad);}
 };
 
