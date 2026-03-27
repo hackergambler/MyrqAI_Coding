@@ -1,1 +1,1 @@
-Fix expert tutorial card links to correct pages
+Add `type=project` query param to project card links
