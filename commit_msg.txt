@@ -1,1 +1,1 @@
-Add MLOps Docker deployment lesson with FastAPI serving
+Add new lessons and update MasterLibrary content
