@@ -1,1 +1,1 @@
-Update library URL from `www` to non-www across all HTML pages
+Remove `www` subdomain from all site URLs
