@@ -1,1 +1,1 @@
-Fix mobile nav menu dropdown styles and positioning
+Fix intermediate tutorial learning path links
