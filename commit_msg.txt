@@ -1,1 +1,1 @@
-Fix broken tutorial card links for RAG and LangChain sections
+Fix incorrect RAG evaluation lesson link in courses page.
