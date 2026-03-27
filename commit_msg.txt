@@ -1,1 +1,1 @@
-Remove `www` subdomain from all site URLs
+Add RAG hybrid search lesson link and clear commit_msg.txt

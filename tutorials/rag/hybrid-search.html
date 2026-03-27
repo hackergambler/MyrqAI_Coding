@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Search — BM25 + Vector Search for RAG | AI Coding Academy</title>
+    <meta name="description" content="Combine BM25 keyword search with dense vector retrieval for better RAG accuracy. Learn ensemble retrieval, reciprocal rank fusion, and when to use each approach.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .lesson-container { max-width: 900px; margin: 0 auto; padding: calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl); }
+        .lesson-header { margin-bottom: var(--space-3xl); }
+        .lesson-meta { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+        .lesson-meta-item { display: flex; align-items: center; gap: var(--space-xs); font-size: 0.9rem; color: var(--text-muted); }
+        .lesson-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); margin-bottom: var(--space-lg); line-height: 1.2; }
+        .lesson-description { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.7; }
+        .lesson-content { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-2xl); margin-bottom: var(--space-2xl); }
+        .lesson-content h2 { font-family: var(--font-heading); font-size: 1.5rem; margin: var(--space-2xl) 0 var(--space-lg); color: var(--accent-primary); }
+        .lesson-content h2:first-child { margin-top: 0; }
+        .lesson-content h3 { font-family: var(--font-heading); font-size: 1.2rem; margin: var(--space-xl) 0 var(--space-md); color: var(--accent-secondary); }
+        .lesson-content h4 { font-family: var(--font-heading); font-size: 1rem; margin: var(--space-lg) 0 var(--space-sm); color: var(--text-primary); }
+        .lesson-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); }
+        .lesson-content ul, .lesson-content ol { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); padding-left: var(--space-xl); }
+        .lesson-content li { margin-bottom: var(--space-sm); }
+        .lesson-content code { background: rgba(0,255,170,0.1); color: var(--accent-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; overflow-x: auto; position: relative; }
+        .code-block-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center; }
+        .code-block-label .copy-btn { cursor: pointer; color: var(--accent-primary); border: 1px solid var(--accent-primary); background: transparent; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.65; color: #e6edf3; white-space: pre; }
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .tip-box { background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .tip-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-primary); margin-bottom: var(--space-sm); }
+        .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .warn-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-warning); margin-bottom: var(--space-sm); }
+        .info-box { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .info-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .tip-box p, .warn-box p, .info-box p { margin: 0; color: var(--text-secondary); line-height: 1.7; }
+        .toc { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-2xl); }
+        .toc h3 { font-family: var(--font-heading); color: var(--accent-primary); margin-bottom: var(--space-md); }
+        .toc ol { padding-left: var(--space-xl); color: var(--text-secondary); }
+        .toc li { margin-bottom: var(--space-xs); }
+        .toc a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+        .lesson-nav { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); }
+        .lesson-nav a { flex: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; transition: var(--transition-base); }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); }
+        .lesson-nav .next { text-align: right; }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin: var(--space-lg) 0; }
+        .compare-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-md); padding: var(--space-lg); }
+        .compare-card h4 { margin-bottom: var(--space-sm); }
+        .compare-card ul { margin: 0; padding-left: var(--space-lg); }
+        .compare-card.keyword h4 { color: var(--accent-warning); }
+        .compare-card.vector h4 { color: var(--accent-primary); }
+        @media (max-width: 768px) { .lesson-nav { flex-direction: column; } .lesson-nav .next { text-align: left; } .compare-grid { grid-template-columns: 1fr; } }
+    </style>
+</head><body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+                <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+            <ul class="nav-menu">
+                <li><a href="../../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search..."><kbd>⌘K</kbd></div>
+                <a href="../../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+    <div class="lesson-container">
+        <div class="breadcrumb">
+            <a href="../../index.html">Home</a><span class="separator">/</span>
+            <a href="../index.html">Tutorials</a><span class="separator">/</span>
+            <a href="../../courses/rag.html">RAG</a><span class="separator">/</span>
+            <span>Hybrid Search</span>
+        </div>
+        <header class="lesson-header">
+            <div class="lesson-meta">
+                <span class="badge badge-intermediate">Intermediate</span>
+                <span class="lesson-meta-item">⏱️ 30 min</span>
+            </div>
+            <h1 class="lesson-title">Hybrid Search: BM25 + Vector Retrieval</h1>
+            <p class="lesson-description">Pure vector search misses exact keyword matches. Pure keyword search misses semantic meaning. Hybrid search combines both for significantly better RAG retrieval accuracy.</p>
+        </header>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="toc">
+            <h3>In This Lesson</h3>
+            <ol>
+                <li><a href="#why-hybrid">Why Pure Vector Search Falls Short</a></li>
+                <li><a href="#bm25">BM25 Keyword Search</a></li>
+                <li><a href="#ensemble">EnsembleRetriever in LangChain</a></li>
+                <li><a href="#rrf">Reciprocal Rank Fusion</a></li>
+                <li><a href="#pinecone">Hybrid Search with Pinecone</a></li>
+                <li><a href="#exercise">Hands-on Exercise</a></li>
+            </ol>
+        </nav>
+
+        <div class="lesson-content">
+            <h2 id="why-hybrid">Why Pure Vector Search Falls Short</h2>
+            <p>Vector search excels at semantic similarity — "car" finds "automobile". But it struggles with exact matches: product codes, error messages, names, and rare technical terms. A user searching for <code>TypeError: 'NoneType' object is not iterable</code> gets better results from keyword search than from an embedding model that may have never seen that exact phrase.</p>
+            <div class="compare-grid">
+                <div class="compare-card keyword">
+                    <h4>BM25 Keyword Search</h4>
+                    <ul>
+                        <li>Great for exact terms, codes, names</li>
+                        <li>No GPU required, fast and cheap</li>
+                        <li>Misses synonyms and paraphrases</li>
+                        <li>Sensitive to typos</li>
+                    </ul>
+                </div>
+                <div class="compare-card vector">
+                    <h4>Dense Vector Search</h4>
+                    <ul>
+                        <li>Understands semantic meaning</li>
+                        <li>Works across languages</li>
+                        <li>Misses rare exact strings</li>
+                        <li>Requires embeddings (cost + latency)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="tip-box"><div class="tip-box-title">💡 When to use hybrid</div><p>Use hybrid search whenever your corpus contains technical content, product identifiers, or user queries that mix natural language with exact strings. In practice, hybrid almost always beats either approach alone.</p></div>
+
+            <h2 id="bm25">BM25 Keyword Search</h2>
+            <p>BM25 (Best Match 25) is the standard TF-IDF variant used in Elasticsearch and most search engines. In Python, the <code>rank_bm25</code> library gives you a standalone retriever.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — BM25 retriever setup</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># pip install rank_bm25 langchain-community</span>
+<span class="kw">from</span> langchain_community.retrievers <span class="kw">import</span> BM25Retriever
+<span class="kw">from</span> langchain_core.documents <span class="kw">import</span> Document
+
+<span class="cm"># Your chunked documents (from text splitting step)</span>
+docs = [
+    Document(page_content=<span class="st">"Python raises TypeError when None is iterable"</span>),
+    Document(page_content=<span class="st">"Neural networks learn representations via backprop"</span>),
+    Document(page_content=<span class="st">"BM25 ranks documents by term frequency and inverse document frequency"</span>),
+    Document(page_content=<span class="st">"Vector embeddings capture semantic similarity between sentences"</span>),
+]
+
+<span class="cm"># Build BM25 index from documents</span>
+bm25_retriever = BM25Retriever.from_documents(docs)
+bm25_retriever.k = <span class="nu">3</span>  <span class="cm"># return top 3 results</span>
+
+results = bm25_retriever.invoke(<span class="st">"TypeError None"</span>)
+<span class="kw">for</span> r <span class="kw">in</span> results:
+    <span class="kw">print</span>(r.page_content)</pre>
+</div>
+
+            <h2 id="ensemble">EnsembleRetriever in LangChain</h2>
+            <p><code>EnsembleRetriever</code> merges results from multiple retrievers using <strong>Reciprocal Rank Fusion (RRF)</strong>. You set a weight per retriever — typically 0.5/0.5, but tune towards keyword (0.3/0.7) for technical docs or towards vector (0.7/0.3) for conversational queries.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — hybrid retriever with EnsembleRetriever</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># pip install langchain langchain-openai langchain-community faiss-cpu rank_bm25</span>
+<span class="kw">from</span> langchain_community.retrievers <span class="kw">import</span> BM25Retriever
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain.retrievers <span class="kw">import</span> EnsembleRetriever
+<span class="kw">from</span> langchain_core.documents <span class="kw">import</span> Document
+<span class="kw">import</span> os
+
+<span class="cm"># Sample corpus</span>
+docs = [
+    Document(page_content=<span class="st">"LangChain is a framework for building LLM applications"</span>),
+    Document(page_content=<span class="st">"FAISS enables fast approximate nearest-neighbor vector search"</span>),
+    Document(page_content=<span class="st">"BM25 uses term frequency to rank documents by keyword relevance"</span>),
+    Document(page_content=<span class="st">"Retrieval-Augmented Generation grounds LLM answers in documents"</span>),
+    Document(page_content=<span class="st">"OpenAI embeddings convert text into dense vector representations"</span>),
+]
+
+<span class="cm"># 1. Build BM25 retriever</span>
+bm25 = BM25Retriever.from_documents(docs)
+bm25.k = <span class="nu">3</span>
+
+<span class="cm"># 2. Build FAISS vector retriever</span>
+embeddings = OpenAIEmbeddings(api_key=os.environ[<span class="st">"OPENAI_API_KEY"</span>])
+vectorstore = FAISS.from_documents(docs, embeddings)
+faiss_retriever = vectorstore.as_retriever(search_kwargs={<span class="st">"k"</span>: <span class="nu">3</span>})
+
+<span class="cm"># 3. Combine with equal weights (0.5 each, must sum to 1.0)</span>
+hybrid = EnsembleRetriever(
+    retrievers=[bm25, faiss_retriever],
+    weights=[<span class="nu">0.5</span>, <span class="nu">0.5</span>]
+)
+
+<span class="cm"># Query the hybrid retriever</span>
+results = hybrid.invoke(<span class="st">"how does keyword search rank documents"</span>)
+<span class="kw">print</span>(<span class="st">f"Got {len(results)} results:"</span>)
+<span class="kw">for</span> i, r <span class="kw">in</span> enumerate(results, <span class="nu">1</span>):
+    <span class="kw">print</span>(<span class="st">f"  {i}. {r.page_content[:80]}"</span>)</pre>
+</div>
+            <div class="info-box"><div class="info-box-title">ℹ️ Weight tuning</div><p>Start at <code>[0.5, 0.5]</code>. If users search with exact product IDs or error codes → increase BM25 weight to 0.6–0.7. If queries are natural language questions → increase vector weight. Evaluate with a test set of real queries.</p></div>
+
+            <h2 id="rrf">Reciprocal Rank Fusion (RRF)</h2>
+            <p>RRF is the algorithm that merges ranked lists from each retriever. For each document, its RRF score is the sum of <code>1 / (k + rank)</code> across all lists, where k=60 by default. This smoothly blends rankings without needing normalized scores.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — manual RRF implementation</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">from</span> collections <span class="kw">import</span> defaultdict
+
+<span class="kw">def</span> <span class="fn">reciprocal_rank_fusion</span>(ranked_lists: list[list], k: int = <span class="nu">60</span>) -> list:
+    <span class="st">"""Merge multiple ranked lists using Reciprocal Rank Fusion."""</span>
+    scores = defaultdict(float)
+    doc_map = {}
+
+    <span class="kw">for</span> ranked <span class="kw">in</span> ranked_lists:
+        <span class="kw">for</span> rank, doc <span class="kw">in</span> enumerate(ranked, start=<span class="nu">1</span>):
+            doc_id = doc.page_content  <span class="cm"># use content as key</span>
+            scores[doc_id] <span class="op">+=</span> <span class="nu">1.0</span> / (k + rank)
+            doc_map[doc_id] = doc
+
+    <span class="cm"># Sort by descending RRF score</span>
+    sorted_ids = sorted(scores, key=<span class="kw">lambda</span> x: scores[x], reverse=<span class="kw">True</span>)
+    <span class="kw">return</span> [doc_map[doc_id] <span class="kw">for</span> doc_id <span class="kw">in</span> sorted_ids]
+
+<span class="cm"># Example: merge results from BM25 and FAISS</span>
+bm25_results = bm25.invoke(<span class="st">"keyword search ranking"</span>)
+faiss_results = faiss_retriever.invoke(<span class="st">"keyword search ranking"</span>)
+fused = reciprocal_rank_fusion([bm25_results, faiss_results])
+<span class="kw">print</span>(<span class="st">"Fused top result:"</span>, fused[<span class="nu">0</span>].page_content)</pre>
+</div>
+
+            <h2 id="pinecone">Hybrid Search with Pinecone</h2>
+            <p>Pinecone's serverless index supports hybrid search natively — you send both a dense vector and a sparse BM25 vector in one API call, and Pinecone handles the fusion server-side.</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — Pinecone hybrid search</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># pip install pinecone-client pinecone-text langchain-pinecone</span>
+<span class="kw">from</span> pinecone_text.sparse <span class="kw">import</span> BM25Encoder
+<span class="kw">from</span> pinecone <span class="kw">import</span> Pinecone, ServerlessSpec
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">import</span> os
+
+pc = Pinecone(api_key=os.environ[<span class="st">"PINECONE_API_KEY"</span>])
+
+<span class="cm"># Create a dotproduct index (required for hybrid)</span>
+index_name = <span class="st">"hybrid-rag"</span>
+<span class="kw">if</span> index_name <span class="kw">not</span> <span class="kw">in</span> [i.name <span class="kw">for</span> i <span class="kw">in</span> pc.list_indexes()]:
+    pc.create_index(
+        name=index_name,
+        dimension=<span class="nu">1536</span>,
+        metric=<span class="st">"dotproduct"</span>,  <span class="cm"># must be dotproduct for hybrid</span>
+        spec=ServerlessSpec(cloud=<span class="st">"aws"</span>, region=<span class="st">"us-east-1"</span>)
+    )
+
+index = pc.Index(index_name)
+embeddings = OpenAIEmbeddings(api_key=os.environ[<span class="st">"OPENAI_API_KEY"</span>])
+bm25_encoder = BM25Encoder().default()  <span class="cm"># pre-trained on MS MARCO</span>
+
+corpus = [<span class="st">"RAG grounds LLM responses in retrieved documents"</span>,
+          <span class="st">"BM25 ranks by term frequency and document frequency"</span>]
+
+<span class="cm"># Fit BM25 on your corpus</span>
+bm25_encoder.fit(corpus)
+
+<span class="cm"># Upsert dense + sparse vectors</span>
+<span class="kw">for</span> i, text <span class="kw">in</span> enumerate(corpus):
+    dense = embeddings.embed_query(text)
+    sparse = bm25_encoder.encode_documents([text])[<span class="nu">0</span>]
+    index.upsert(vectors=[{
+        <span class="st">"id"</span>: str(i),
+        <span class="st">"values"</span>: dense,
+        <span class="st">"sparse_values"</span>: sparse,
+        <span class="st">"metadata"</span>: {<span class="st">"text"</span>: text}
+    }])
+
+<span class="cm"># Query with both dense and sparse vectors</span>
+query = <span class="st">"how does keyword relevance work"</span>
+dense_q = embeddings.embed_query(query)
+sparse_q = bm25_encoder.encode_queries([query])[<span class="nu">0</span>]
+
+results = index.query(
+    vector=dense_q,
+    sparse_vector=sparse_q,
+    top_k=<span class="nu">3</span>,
+    alpha=<span class="nu">0.5</span>,  <span class="cm"># 0=pure keyword, 1=pure vector</span>
+    include_metadata=<span class="kw">True</span>
+)
+<span class="kw">for</span> match <span class="kw">in</span> results[<span class="st">"matches"</span>]:
+    <span class="kw">print</span>(<span class="st">f"Score {match['score']:.3f}: {match['metadata']['text']}"</span>)</pre>
+</div>
+            <div class="warn-box"><div class="warn-box-title">⚠️ Pinecone Requirement</div><p>Hybrid search requires a <code>dotproduct</code> metric index. Cosine or Euclidean indexes do not support sparse vectors. You cannot change a metric after index creation — plan ahead.</p></div>
+
+            <h2 id="exercise">Hands-on Exercise</h2>
+            <p>Build a hybrid retriever over a small technical FAQ and compare results against BM25-only and vector-only retrieval:</p>
+<div class="code-block">
+<div class="code-block-label"><span>Python — exercise: compare retrieval strategies</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># Exercise: build three retrievers and evaluate on test queries</span>
+<span class="kw">from</span> langchain_community.retrievers <span class="kw">import</span> BM25Retriever
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> FAISS
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> langchain.retrievers <span class="kw">import</span> EnsembleRetriever
+<span class="kw">from</span> langchain_core.documents <span class="kw">import</span> Document
+<span class="kw">import</span> os
+
+corpus = [
+    Document(page_content=<span class="st">"ValueError is raised when a function receives an argument of wrong value"</span>),
+    Document(page_content=<span class="st">"AttributeError occurs when an attribute reference or assignment fails"</span>),
+    Document(page_content=<span class="st">"TypeError is raised when an operation is applied to an object of wrong type"</span>),
+    Document(page_content=<span class="st">"ImportError is raised when an import statement fails to find the module"</span>),
+    Document(page_content=<span class="st">"KeyError occurs when a dictionary key is not found"</span>),
+    Document(page_content=<span class="st">"IndexError is raised when a sequence subscript is out of range"</span>),
+]
+
+test_queries = [
+    <span class="st">"TypeError wrong type"</span>,        <span class="cm"># favours BM25</span>
+    <span class="st">"problem accessing object field"</span>, <span class="cm"># favours vector</span>
+    <span class="st">"KeyError dictionary missing key"</span>, <span class="cm"># both work</span>
+]
+
+<span class="cm"># Build retrievers</span>
+bm25 = BM25Retriever.from_documents(corpus); bm25.k = <span class="nu">2</span>
+vs = FAISS.from_documents(corpus, OpenAIEmbeddings(api_key=os.environ[<span class="st">"OPENAI_API_KEY"</span>]))
+vec = vs.as_retriever(search_kwargs={<span class="st">"k"</span>: <span class="nu">2</span>})
+hybrid = EnsembleRetriever(retrievers=[bm25, vec], weights=[<span class="nu">0.5</span>, <span class="nu">0.5</span>])
+
+<span class="kw">for</span> q <span class="kw">in</span> test_queries:
+    <span class="kw">print</span>(<span class="st">f"\nQuery: {q}"</span>)
+    <span class="kw">print</span>(<span class="st">"  BM25:   "</span>, bm25.invoke(q)[<span class="nu">0</span>].page_content[:<span class="nu">50</span>])
+    <span class="kw">print</span>(<span class="st">"  Vector: "</span>, vec.invoke(q)[<span class="nu">0</span>].page_content[:<span class="nu">50</span>])
+    <span class="kw">print</span>(<span class="st">"  Hybrid: "</span>, hybrid.invoke(q)[<span class="nu">0</span>].page_content[:<span class="nu">50</span>])</pre>
+</div>
+            <p><strong>Expected outcome:</strong> for the first query ("TypeError wrong type"), BM25 and hybrid should outperform pure vector. For "problem accessing object field" (paraphrase of AttributeError), vector should rank AttributeError higher than BM25 does.</p>
+
+            <h3>Real-world use case</h3>
+            <p>A customer support RAG system for a software product uses hybrid search. Exact error codes (<code>ERR_SSL_PROTOCOL_ERROR</code>) are caught by BM25; natural-language questions like "why does my connection keep dropping?" are caught by vector similarity. Hybrid retrieval reduces "no relevant document found" cases by 30–40% compared to vector-only in production benchmarks.</p>
+        </div>
+
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="lesson-nav">
+            <a href="text-splitting.html" class="prev">
+                <div class="lesson-nav-label">← Previous</div>
+                <div class="lesson-nav-title">Text Splitting</div>
+            </a>
+            <a href="rag-evaluation.html" class="next">
+                <div class="lesson-nav-label">Next →</div>
+                <div class="lesson-nav-title">RAG Evaluation</div>
+            </a>
+        </nav>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul><li><a href="../../tutorials/index.html">All Tutorials</a></li><li><a href="../../courses/index.html">Courses</a></li><li><a href="../../projects/index.html">Projects</a></li><li><a href="../../debugging/index.html">Debugging</a></li></ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://ailadder.myrqai.com" target="_blank">AI Ladder</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li><li><a href="https://myrqai.com/admin/contact" target="_blank">Contact Us</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/donation-widget.js" defer></script>
+    <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pre = this.closest('.code-block').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                this.textContent = '✓ Copied';
+                setTimeout(() => this.textContent = 'Copy', 1500);
+            });
+        });
+    });
+    </script>
+</body>
+</html>
