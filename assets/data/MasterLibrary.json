@@ -1079,7 +1079,7 @@
           "duration": "40 min",
           "badge": "Intermediate",
           "prev": "cnns-vision",
-          "next": "rag-production",
+          "next": "gans-fundamentals",
           "sections": [
             {
               "h2": "The Vanishing Gradient Problem in RNNs",
@@ -1107,6 +1107,42 @@
               }
             }
           ]
+        },
+        {
+          "id": "gans-fundamentals",
+          "title": "GANs: Generative Adversarial Networks from Scratch",
+          "desc": "Understand the GAN game: generator vs discriminator, training instability, mode collapse, and modern fixes. Implement a DCGAN for image generation in PyTorch and a conditional GAN for class-guided synthesis.",
+          "duration": "45 min",
+          "badge": "Advanced",
+          "prev": "rnns-lstms",
+          "next": "rag-production",
+          "sections": [
+            {
+              "h2": "The Adversarial Training Game",
+              "body": "A GAN consists of two neural networks locked in a minimax game. The Generator G(z) maps random noise z to a fake sample. The Discriminator D(x) predicts whether a sample is real (1) or fake (0). G tries to fool D; D tries to catch G. At Nash equilibrium, G produces samples indistinguishable from real data and D outputs 0.5 everywhere.\n\nThe loss: D maximizes log D(x) + log(1 - D(G(z))), while G minimizes log(1 - D(G(z))) — or equivalently maximizes log D(G(z)) for better gradients early in training.",
+              "tip": "Always use the non-saturating loss for G (maximize log D(G(z)) instead of minimize log(1-D(G(z)))). The original form saturates early when D is strong, giving near-zero gradients to G.",
+              "code": {
+                "label": "Python (PyTorch) - minimal GAN training loop",
+                "src": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# ── Architecture ────────────────────────────────────────────\nclass Generator(nn.Module):\n    def __init__(self, latent_dim=100, img_dim=784):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(latent_dim, 256), nn.LeakyReLU(0.2),\n            nn.Linear(256, 512),        nn.LeakyReLU(0.2),\n            nn.Linear(512, img_dim),    nn.Tanh()   # output in [-1, 1]\n        )\n    def forward(self, z): return self.net(z)\n\nclass Discriminator(nn.Module):\n    def __init__(self, img_dim=784):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(img_dim, 512),  nn.LeakyReLU(0.2), nn.Dropout(0.3),\n            nn.Linear(512, 256),      nn.LeakyReLU(0.2), nn.Dropout(0.3),\n            nn.Linear(256, 1),        nn.Sigmoid()\n        )\n    def forward(self, x): return self.net(x)\n\nLATENT = 100\nG = Generator(LATENT); D = Discriminator()\nopt_G = optim.Adam(G.parameters(), lr=2e-4, betas=(0.5, 0.999))\nopt_D = optim.Adam(D.parameters(), lr=2e-4, betas=(0.5, 0.999))\nbce = nn.BCELoss()\n\ndef train_step(real_imgs):\n    batch = real_imgs.size(0)\n    real = torch.ones(batch, 1);  fake_label = torch.zeros(batch, 1)\n\n    # ── Train Discriminator ──────────────────────────────────\n    z = torch.randn(batch, LATENT)\n    fake_imgs = G(z).detach()          # detach: don't backprop into G yet\n    loss_D = bce(D(real_imgs), real) + bce(D(fake_imgs), fake_label)\n    opt_D.zero_grad(); loss_D.backward(); opt_D.step()\n\n    # ── Train Generator (non-saturating loss) ───────────────\n    z = torch.randn(batch, LATENT)\n    fake_imgs = G(z)\n    loss_G = bce(D(fake_imgs), real)   # G wants D to output 1 (real)\n    opt_G.zero_grad(); loss_G.backward(); opt_G.step()\n\n    return loss_D.item(), loss_G.item()\n\nprint('GAN training step defined. loss_D and loss_G should converge together.')"
+              }
+            },
+            {
+              "h2": "DCGAN: Deep Convolutional GAN",
+              "body": "Radford et al. (2015) stabilized GAN training with architectural guidelines: replace pooling with strided convolutions (D) and transposed convolutions (G), use BatchNorm in both networks (except D input and G output), use LeakyReLU in D and ReLU in G, and no fully-connected hidden layers.\n\nDCGAN generates 64×64 images from 100-dimensional noise and remains the standard baseline for image generation experiments.",
+              "code": {
+                "label": "Python (PyTorch) - DCGAN generator and discriminator",
+                "src": "import torch.nn as nn\n\ndef weights_init(m):\n    \"\"\"DCGAN weight initialization from the original paper.\"\"\"\n    classname = m.__class__.__name__\n    if 'Conv' in classname:\n        nn.init.normal_(m.weight.data, 0.0, 0.02)\n    elif 'BatchNorm' in classname:\n        nn.init.normal_(m.weight.data, 1.0, 0.02)\n        nn.init.constant_(m.bias.data, 0)\n\nclass DCGenerator(nn.Module):\n    \"\"\"Maps 100-d noise → 3×64×64 image via transposed convolutions.\"\"\"\n    def __init__(self, latent_dim=100, ngf=64):\n        super().__init__()\n        self.net = nn.Sequential(\n            # input: (latent_dim) → (ngf*8) × 4 × 4\n            nn.ConvTranspose2d(latent_dim, ngf*8, 4, 1, 0, bias=False),\n            nn.BatchNorm2d(ngf*8), nn.ReLU(True),\n            # → (ngf*4) × 8 × 8\n            nn.ConvTranspose2d(ngf*8, ngf*4, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf*4), nn.ReLU(True),\n            # → (ngf*2) × 16 × 16\n            nn.ConvTranspose2d(ngf*4, ngf*2, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf*2), nn.ReLU(True),\n            # → (ngf) × 32 × 32\n            nn.ConvTranspose2d(ngf*2, ngf, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf), nn.ReLU(True),\n            # → 3 × 64 × 64\n            nn.ConvTranspose2d(ngf, 3, 4, 2, 1, bias=False),\n            nn.Tanh()  # output in [-1, 1]\n        )\n    def forward(self, z): return self.net(z.view(-1, 100, 1, 1))\n\nclass DCDiscriminator(nn.Module):\n    \"\"\"Maps 3×64×64 image → real/fake probability.\"\"\"\n    def __init__(self, ndf=64):\n        super().__init__()\n        self.net = nn.Sequential(\n            # no BatchNorm on input layer\n            nn.Conv2d(3, ndf, 4, 2, 1, bias=False), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf, ndf*2, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ndf*2), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*2, ndf*4, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ndf*4), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*4, ndf*8, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ndf*8), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*8, 1, 4, 1, 0, bias=False),\n            nn.Sigmoid()\n        )\n    def forward(self, x): return self.net(x).view(-1, 1).squeeze(1)\n\nG = DCGenerator(); D = DCDiscriminator()\nG.apply(weights_init); D.apply(weights_init)\nprint(f'G params: {sum(p.numel() for p in G.parameters()):,}')\nprint(f'D params: {sum(p.numel() for p in D.parameters()):,}')"
+              }
+            },
+            {
+              "h2": "Training Instability: Mode Collapse and How to Fix It",
+              "body": "Mode collapse is the most common GAN failure: the generator finds a small set of outputs that consistently fool the discriminator and stops exploring the full data distribution. Symptoms: generated images all look the same, loss_D drops near zero while loss_G oscillates wildly.\n\nKey fixes: (1) Minibatch discrimination — feed statistics across the batch to D so it can detect when all samples are identical. (2) Spectral normalization on D's weights to enforce Lipschitz continuity. (3) Use WGAN-GP (Wasserstein loss + gradient penalty) which provides a more stable training signal.",
+              "code": {
+                "label": "Python (PyTorch) - WGAN-GP gradient penalty",
+                "src": "import torch\n\ndef gradient_penalty(D, real, fake, device='cpu', lambda_gp=10.0):\n    \"\"\"\n    WGAN-GP gradient penalty.\n    Enforces ||grad D(x_hat)||_2 = 1 for interpolated samples.\n    \"\"\"\n    batch = real.size(0)\n    alpha = torch.rand(batch, 1, 1, 1, device=device)  # random interpolation weight\n    x_hat = (alpha * real + (1 - alpha) * fake).requires_grad_(True)\n\n    d_hat = D(x_hat)\n    grads = torch.autograd.grad(\n        outputs=d_hat,\n        inputs=x_hat,\n        grad_outputs=torch.ones_like(d_hat),\n        create_graph=True,\n        retain_graph=True,\n    )[0]\n\n    # Penalty: (||gradient||_2 - 1)^2\n    grad_norm = grads.view(batch, -1).norm(2, dim=1)\n    penalty = lambda_gp * ((grad_norm - 1) ** 2).mean()\n    return penalty\n\n# WGAN-GP training loop (critic updated 5x per generator step)\ndef wgan_gp_step(D, G, real_imgs, opt_D, opt_G, device, n_critic=5):\n    batch = real_imgs.size(0)\n    # Train critic n_critic times per generator step\n    for _ in range(n_critic):\n        z = torch.randn(batch, 100, device=device)\n        fake = G(z).detach()\n        loss_D = -D(real_imgs).mean() + D(fake).mean() + gradient_penalty(D, real_imgs, fake, device)\n        opt_D.zero_grad(); loss_D.backward(); opt_D.step()\n\n    # Train generator once\n    z = torch.randn(batch, 100, device=device)\n    loss_G = -D(G(z)).mean()   # Wasserstein: maximize D output for fakes\n    opt_G.zero_grad(); loss_G.backward(); opt_G.step()\n\n    return loss_D.item(), loss_G.item()\n\nprint('WGAN-GP defined. Use this instead of vanilla GAN for stable training.')"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1125,7 +1161,7 @@
           "desc": "Beyond the basic RAG tutorial: chunking strategies, hybrid BM25 + semantic search, cross-encoder re-ranking, context window management, and RAG evaluation with RAGAS.",
           "duration": "50 min",
           "badge": "Advanced",
-          "prev": "rnns-lstms",
+          "prev": "gans-fundamentals",
           "next": "agent-systems",
           "sections": [
             {

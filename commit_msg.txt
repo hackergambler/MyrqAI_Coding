@@ -1,1 +1,1 @@
-Add ContentEngine.js script to tutorials index
+Add GANs fundamentals lesson with DCGAN and WGAN-GP
