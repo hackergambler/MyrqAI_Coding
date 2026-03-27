@@ -3380,6 +3380,45 @@
               "tip": "PyG's `MessagePassing` base class lets you implement any GNN variant by defining `message()`, `aggregate()`, and `update()` methods. This covers GCN, GAT, GraphSAGE, GIN, and more with the same interface."
             }
           ]
+        },
+        {
+          "id": "mixture-of-experts",
+          "title": "Mixture of Experts (MoE): Sparse Routing for Scalable LLMs",
+          "desc": "Expert layers, top-k routing with a learned gating network, load-balancing loss, and why MoE lets models scale to trillions of parameters without a proportional compute increase -- implemented in PyTorch.",
+          "duration": "40 min",
+          "badge": "Advanced",
+          "prev": "graph-neural-networks",
+          "next": null,
+          "sections": [
+            {
+              "h2": "What is a Mixture of Experts?",
+              "body": "A Mixture of Experts (MoE) layer replaces a single dense Feed-Forward Network (FFN) with N independent expert FFNs and a lightweight gating network. For each token, the router activates only the top-k experts (typically k=1 or k=2), so the total activated parameters per token stay constant even as you add more experts. This is the key idea behind Mixtral-8x7B, GPT-4, and Switch Transformer: parameter count scales without proportional FLOP cost.",
+              "code": {
+                "label": "Python (PyTorch) - MoE layer with top-2 routing",
+                "src": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Expert(nn.Module):\n    \"\"\"One FFN expert (identical architecture, independent weights)\"\"\"\n    def __init__(self, d_model: int, d_ff: int):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(d_model, d_ff),\n            nn.GELU(),\n            nn.Linear(d_ff, d_model),\n        )\n    def forward(self, x):  # x: (tokens, d_model)\n        return self.net(x)\n\n\nclass MoELayer(nn.Module):\n    \"\"\"\n    Sparse Mixture of Experts layer.\n    Each token is routed to top_k experts.\n    Args:\n        num_experts: total expert count (e.g. 8)\n        top_k:       experts activated per token (e.g. 2)\n    \"\"\"\n    def __init__(self, d_model=512, d_ff=2048, num_experts=8, top_k=2):\n        super().__init__()\n        self.num_experts = num_experts\n        self.top_k = top_k\n        # Gating network: projects token -> logit per expert\n        self.gate = nn.Linear(d_model, num_experts, bias=False)\n        self.experts = nn.ModuleList(\n            [Expert(d_model, d_ff) for _ in range(num_experts)]\n        )\n\n    def forward(self, x):  # x: (batch, seq, d_model)\n        B, S, D = x.shape\n        x_flat = x.view(-1, D)  # (B*S, D) -- route every token independently\n\n        # --- Step 1: compute routing weights ---\n        gate_logits = self.gate(x_flat)          # (tokens, num_experts)\n        topk_vals, topk_idx = torch.topk(gate_logits, self.top_k, dim=-1)\n        # Softmax ONLY over the top-k selected experts\n        topk_weights = F.softmax(topk_vals, dim=-1)  # (tokens, top_k)\n\n        # --- Step 2: dispatch each token to its chosen experts ---\n        output = torch.zeros_like(x_flat)\n        for k in range(self.top_k):\n            expert_ids = topk_idx[:, k]          # which expert each token uses\n            weights    = topk_weights[:, k:k+1]  # (tokens, 1)\n            for e in range(self.num_experts):\n                mask = (expert_ids == e)\n                if mask.any():\n                    output[mask] += weights[mask] * self.experts[e](x_flat[mask])\n\n        return output.view(B, S, D), gate_logits\n\n# Quick sanity check\nmoe = MoELayer(d_model=512, d_ff=2048, num_experts=8, top_k=2)\nbatch = torch.randn(2, 16, 512)\nout, logits = moe(batch)\nprint(f'Input : {batch.shape}')   # torch.Size([2, 16, 512])\nprint(f'Output: {out.shape}')     # torch.Size([2, 16, 512])\nprint(f'Gate  : {logits.shape}')  # torch.Size([32, 8])"
+              }
+            },
+            {
+              "h2": "Load-Balancing Auxiliary Loss",
+              "body": "Without regularization, routing collapses: the gate learns to always send tokens to the same 1-2 experts (the 'rich get richer' problem), wasting all other experts. The auxiliary load-balancing loss penalizes uneven expert utilization. Switch Transformer uses: L_aux = alpha * num_experts * sum(f_i * p_i), where f_i is the fraction of tokens routed to expert i, and p_i is the mean routing probability for expert i.",
+              "code": {
+                "label": "Python (PyTorch) - auxiliary load-balancing loss",
+                "src": "def load_balance_loss(gate_logits, num_experts, top_k):\n    \"\"\"\n    Switch Transformer auxiliary loss to ensure even expert utilization.\n    gate_logits: (num_tokens, num_experts)\n    Returns: scalar loss (add to main loss scaled by alpha ~0.01)\n    \"\"\"\n    topk_idx = torch.topk(gate_logits, top_k, dim=-1).indices\n    one_hot = torch.zeros_like(gate_logits)\n    one_hot.scatter_(-1, topk_idx, 1.0)\n    f = one_hot.mean(dim=0)                        # fraction of tokens per expert\n    p = F.softmax(gate_logits, dim=-1).mean(dim=0) # mean routing probability\n    return num_experts * (f * p).sum()\n\nimport torch\nimport torch.nn.functional as F\n\nalpha = 0.01\nmoe = MoELayer(d_model=512, d_ff=2048, num_experts=8, top_k=2)\nbatch = torch.randn(2, 16, 512, requires_grad=True)\nout, gate_logits = moe(batch)\n\nmain_loss = out.mean()\naux_loss  = load_balance_loss(gate_logits, num_experts=8, top_k=2)\ntotal_loss = main_loss + alpha * aux_loss\ntotal_loss.backward()\nprint(f'Main loss : {main_loss.item():.4f}')\nprint(f'Aux  loss : {aux_loss.item():.4f}')\nprint(f'Total loss: {total_loss.item():.4f}')"
+              }
+            },
+            {
+              "h2": "Hands-on Exercise",
+              "body": "Build and experiment with the MoE layer:\n\n1. Modify MoELayer to support top_k=1 (Switch Transformer style). How does training stability change?\n2. Add a counter inside the forward loop to track how many tokens each expert receives per batch. Is it balanced?\n3. Replace the Expert FFN with a SwiGLU activation (as in LLaMA): output = (W1*x * sigmoid(beta*W1*x)) @ W2.\n4. Set alpha=0 (no aux loss) and train for 100 steps on random data. Then set alpha=0.1 and repeat. Compare expert utilization.",
+              "code": {
+                "label": "Python - exercise starter: expert utilization tracker",
+                "src": "import torch\nimport torch.nn.functional as F\n\ndef count_expert_usage(gate_logits, top_k=2):\n    \"\"\"Return how many tokens each expert received.\"\"\"\n    topk_idx = torch.topk(gate_logits, top_k, dim=-1).indices\n    counts = torch.bincount(topk_idx.flatten(), minlength=gate_logits.size(-1))\n    return counts\n\ntorch.manual_seed(0)\nnum_experts = 8\ngate = torch.nn.Linear(512, num_experts, bias=False)\ntokens = torch.randn(1000, 512)\n\nwith torch.no_grad():\n    logits = gate(tokens)\n\ncounts = count_expert_usage(logits, top_k=2)\nprint('Expert usage (tokens routed):')\nfor i, c in enumerate(counts):\n    bar = '#' * (c.item() // 10)\n    print(f'  Expert {i}: {c.item():4d} {bar}')\n\n# Ideal: ~250 each (1000 tokens * top_k=2 / 8 experts)\nprint(f'Ideal per expert: {1000 * 2 // num_experts}')"
+              }
+            },
+            {
+              "h2": "Real-World Use Cases",
+              "body": "MoE is used in production at the largest scale:\n\n- Mixtral-8x7B (Mistral AI): 8 experts, top-2 routing. 46.7B total params but only 12.9B active per token -- matches LLaMA-2 70B quality at ~6x lower inference FLOP cost.\n- Switch Transformer (Google): top-1 routing (k=1), scaled to 1.6T parameters with 2048 experts.\n- GPT-4 (OpenAI, widely speculated): MoE architecture with ~8 experts per layer.\n- Gemini 1.5 (Google): sparse MoE enables the 1M+ context window by reducing per-token compute.\n\nKey trade-offs: MoE adds communication overhead in distributed training (all-to-all dispatch), requires careful load balancing, and has higher memory footprint. In inference serving, expert caching and expert parallelism across GPUs are active research areas."
+            }
+          ]
         }
       ]
     },
