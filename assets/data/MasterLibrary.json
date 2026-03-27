@@ -1120,7 +1120,7 @@
           "duration": "35 min",
           "badge": "Intermediate",
           "prev": "linear-logistic-regression",
-          "next": "transformer-architecture",
+          "next": "decision-trees",
           "sections": [
             {
               "h2": "What Is Anomaly Detection?",
@@ -1158,6 +1158,57 @@
               "tip": "Set contamination to match your domain knowledge (e.g., fraud rates are ~0.1\u20132%). Avoid using 0.5 \u2014 that treats half your data as anomalies."
             }
           ]
+        },
+        {
+          "id": "decision-trees",
+          "title": "Decision Trees: Interpretable Models from Scratch",
+          "desc": "Master decision tree induction, splitting criteria (Gini, entropy), pruning strategies, and build production-ready trees with scikit-learn.",
+          "duration": "30 min",
+          "badge": "Intermediate",
+          "prev": "anomaly-detection",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "How Decision Trees Split Data",
+              "body": "A decision tree recursively partitions the feature space by asking binary questions (e.g. \"age > 30?\"). At each node it selects the feature and threshold that best separates the classes. Two popular criteria: Gini impurity (used by sklearn default) measures the probability of misclassifying a randomly picked sample; Information Gain (entropy-based) measures how much a split reduces uncertainty. Lower impurity after a split = better split.",
+              "code": {
+                "label": "Python - Gini impurity and information gain explained",
+                "src": "import numpy as np\n\ndef gini(y):\n    classes, counts = np.unique(y, return_counts=True)\n    probs = counts / counts.sum()\n    return 1 - np.sum(probs ** 2)\n\ndef entropy(y):\n    classes, counts = np.unique(y, return_counts=True)\n    probs = counts / counts.sum()\n    return -np.sum(probs * np.log2(probs + 1e-12))\n\ndef information_gain(y_parent, y_left, y_right):\n    n = len(y_parent)\n    w_l = len(y_left) / n\n    w_r = len(y_right) / n\n    return entropy(y_parent) - (w_l * entropy(y_left) + w_r * entropy(y_right))\n\ny = np.array([0, 0, 1, 1, 1, 0, 1, 0])\nprint(f'Gini: {gini(y):.4f}')        # 0.5 = maximum impurity\nprint(f'Entropy: {entropy(y):.4f}')  # ~1.0 = maximum entropy\n\ny_left  = np.array([0, 0, 0])\ny_right = np.array([1, 1, 1, 1, 0])\nprint(f'Info Gain: {information_gain(y, y_left, y_right):.4f}')"
+              }
+            },
+            {
+              "h2": "Training and Visualizing with scikit-learn",
+              "body": "sklearn's DecisionTreeClassifier handles all the recursion internally. Key hyperparameters: `max_depth` limits tree depth (combats overfitting), `min_samples_split` sets the minimum samples required to split a node, `min_samples_leaf` sets the minimum samples per leaf. Always visualize your tree \u2014 it's the main interpretability advantage over black-box models.",
+              "code": {
+                "label": "Python - Train, evaluate, and visualize a Decision Tree",
+                "src": "from sklearn.datasets import load_breast_cancer\nfrom sklearn.tree import DecisionTreeClassifier, plot_tree, export_text\nfrom sklearn.model_selection import train_test_split, cross_val_score\nfrom sklearn.metrics import classification_report\nimport matplotlib.pyplot as plt\n\nX, y = load_breast_cancer(return_X_y=True)\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\n\n# Baseline: unpruned tree (likely to overfit)\ndt_full = DecisionTreeClassifier(random_state=42)\ndt_full.fit(X_train, y_train)\nprint(f'Full tree depth: {dt_full.get_depth()}')\nprint(f'Full tree test acc: {dt_full.score(X_test, y_test):.4f}')\n\n# Pruned tree\ndt = DecisionTreeClassifier(\n    max_depth=4,\n    min_samples_split=10,\n    min_samples_leaf=5,\n    criterion='gini',\n    random_state=42\n)\ndt.fit(X_train, y_train)\ncv_scores = cross_val_score(dt, X_train, y_train, cv=5, scoring='accuracy')\nprint(f'Pruned CV accuracy: {cv_scores.mean():.4f} +/- {cv_scores.std():.4f}')\nprint(f'Test accuracy: {dt.score(X_test, y_test):.4f}')\nprint(classification_report(y_test, dt.predict(X_test)))\n\n# Human-readable rules\nprint(export_text(dt, feature_names=load_breast_cancer().feature_names.tolist()))\n\n# Visualize tree\nfig, ax = plt.subplots(figsize=(20, 8))\nplot_tree(dt, feature_names=load_breast_cancer().feature_names,\n          class_names=['malignant', 'benign'], filled=True, ax=ax)\nplt.tight_layout()\nplt.savefig('decision_tree.png', dpi=150)"
+              }
+            },
+            {
+              "h2": "Pruning: Fighting Overfitting",
+              "body": "An unpruned tree memorizes training data \u2014 it can achieve 100% train accuracy but generalize poorly. Two strategies: Pre-pruning stops growth early via `max_depth`, `min_samples_leaf`. Post-pruning (cost-complexity pruning) trains a full tree then removes nodes that don't improve generalization. Use cross-validation to find the best `ccp_alpha` (complexity parameter).",
+              "code": {
+                "label": "Python - Cost-complexity pruning with cross-validation",
+                "src": "from sklearn.tree import DecisionTreeClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.datasets import load_breast_cancer\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nX, y = load_breast_cancer(return_X_y=True)\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\n\n# Get the pruning path\ndt = DecisionTreeClassifier(random_state=42)\npath = dt.cost_complexity_pruning_path(X_train, y_train)\nccp_alphas = path.ccp_alphas[:-1]  # remove the trivial root-only tree\n\ntrain_scores, test_scores = [], []\nfor alpha in ccp_alphas:\n    clf = DecisionTreeClassifier(ccp_alpha=alpha, random_state=42)\n    clf.fit(X_train, y_train)\n    train_scores.append(clf.score(X_train, y_train))\n    test_scores.append(clf.score(X_test, y_test))\n\nbest_idx = np.argmax(test_scores)\nbest_alpha = ccp_alphas[best_idx]\nprint(f'Best ccp_alpha: {best_alpha:.6f}  test acc: {test_scores[best_idx]:.4f}')\n\nplt.figure(figsize=(10, 5))\nplt.plot(ccp_alphas, train_scores, marker='o', label='train')\nplt.plot(ccp_alphas, test_scores,  marker='o', label='test')\nplt.axvline(best_alpha, color='r', linestyle='--', label=f'best alpha={best_alpha:.5f}')\nplt.xlabel('ccp_alpha')\nplt.ylabel('accuracy')\nplt.legend()\nplt.title('Pruning path: train vs test accuracy')\nplt.savefig('pruning_path.png', dpi=150)"
+              }
+            },
+            {
+              "h2": "Exercise: Customer Churn Classifier",
+              "body": "Build a pruned Decision Tree to predict telecom customer churn. Compare Gini vs entropy criteria, tune `max_depth` with GridSearchCV, and export the top-3 decision rules as human-readable text.",
+              "code": {
+                "label": "Python - Exercise: churn prediction with Decision Tree",
+                "src": "import pandas as pd\nimport numpy as np\nfrom sklearn.tree import DecisionTreeClassifier, export_text\nfrom sklearn.model_selection import GridSearchCV, train_test_split\nfrom sklearn.preprocessing import LabelEncoder\nfrom sklearn.metrics import roc_auc_score\n\n# Simulate churn dataset\nnp.random.seed(42)\nn = 1000\ndf = pd.DataFrame({\n    'tenure_months':   np.random.randint(1, 72, n),\n    'monthly_charges': np.round(np.random.uniform(20, 120, n), 2),\n    'num_products':    np.random.randint(1, 5, n),\n    'support_calls':   np.random.randint(0, 10, n),\n    'contract_type':   np.random.choice(['month-to-month', 'one_year', 'two_year'], n),\n})\ndf['churn'] = (\n    (df['support_calls'] > 5) |\n    (df['tenure_months'] < 6) |\n    (df['monthly_charges'] > 100)\n).astype(int)\n\nle = LabelEncoder()\ndf['contract_type'] = le.fit_transform(df['contract_type'])\n\nX = df.drop('churn', axis=1)\ny = df['churn']\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nparam_grid = {\n    'max_depth':        [3, 4, 5, 6, None],\n    'criterion':        ['gini', 'entropy'],\n    'min_samples_leaf': [5, 10, 20],\n}\ngs = GridSearchCV(\n    DecisionTreeClassifier(random_state=42),\n    param_grid, cv=5, scoring='roc_auc', n_jobs=-1\n)\ngs.fit(X_train, y_train)\n\nbest = gs.best_estimator_\nprint('Best params:', gs.best_params_)\nprint(f'Test AUC: {roc_auc_score(y_test, best.predict_proba(X_test)[:,1]):.4f}')\nprint(export_text(best, feature_names=list(X.columns)))"
+              }
+            },
+            {
+              "h2": "Real-World Use Case: Interpretable Medical Diagnosis",
+              "body": "Decision Trees are widely used in healthcare because clinicians can inspect and validate the rules directly. A tree predicting ICU readmission can be audited rule-by-rule \u2014 something impossible with a neural network. Key production considerations: retrain regularly to avoid distribution shift; log `feature_importances_` to detect input data quality degradation; keep `max_depth <= 5` so rules stay human-readable.",
+              "code": {
+                "label": "Python - Feature importance and model card for medical tree",
+                "src": "import pandas as pd\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.datasets import load_breast_cancer\nfrom sklearn.model_selection import train_test_split\n\ndata = load_breast_cancer()\nX_train, X_test, y_train, y_test = train_test_split(\n    data.data, data.target, test_size=0.2, random_state=42\n)\n\ndt = DecisionTreeClassifier(max_depth=4, min_samples_leaf=10, random_state=42)\ndt.fit(X_train, y_train)\n\nimportances = pd.Series(dt.feature_importances_, index=data.feature_names)\ntop5 = importances.sort_values(ascending=False).head(5)\nprint('Top 5 features:')\nprint(top5.to_string())\nprint()\nprint('Model card')\nprint(f'  Algorithm : DecisionTreeClassifier')\nprint(f'  Max depth : {dt.get_depth()}')\nprint(f'  Num leaves: {dt.get_n_leaves()}')\nprint(f'  Train acc : {dt.score(X_train, y_train):.4f}')\nprint(f'  Test  acc : {dt.score(X_test, y_test):.4f}')"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1176,7 +1227,7 @@
           "desc": "Q, K, V matrices, scaled dot-product attention, multi-head attention, positional encoding, and the complete encoder block \u2014 all implemented from scratch in NumPy and PyTorch.",
           "duration": "45 min",
           "badge": "Advanced",
-          "prev": "linear-logistic-regression",
+          "prev": "decision-trees",
           "next": "rlhf-deep-dive",
           "sections": [
             {
