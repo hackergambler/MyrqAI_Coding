@@ -1,1 +1,1 @@
-Fix Claude tutorial lesson navigation order
+Add Vision lesson to Claude course sidebar and navigation

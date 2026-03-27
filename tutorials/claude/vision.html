@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Vision — Image Analysis & Multimodal AI | AI Coding Academy</title>
+    <meta name="description" content="Learn Claude's vision capabilities: analyze images, extract text via OCR, compare visuals, and build multimodal apps with the Anthropic API.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .lesson-container { max-width: 900px; margin: 0 auto; padding: calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl); }
+        .lesson-header { margin-bottom: var(--space-3xl); }
+        .lesson-meta { display: flex; gap: var(--space-lg); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+        .lesson-meta-item { display: flex; align-items: center; gap: var(--space-xs); font-size: 0.9rem; color: var(--text-muted); }
+        .lesson-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); margin-bottom: var(--space-lg); line-height: 1.2; }
+        .lesson-description { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.7; }
+        .lesson-content { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-2xl); margin-bottom: var(--space-2xl); }
+        .lesson-content h2 { font-family: var(--font-heading); font-size: 1.5rem; margin: var(--space-2xl) 0 var(--space-lg); color: var(--accent-primary); }
+        .lesson-content h2:first-child { margin-top: 0; }
+        .lesson-content h3 { font-family: var(--font-heading); font-size: 1.2rem; margin: var(--space-xl) 0 var(--space-md); color: var(--accent-secondary); }
+        .lesson-content h4 { font-family: var(--font-heading); font-size: 1rem; margin: var(--space-lg) 0 var(--space-sm); color: var(--text-primary); }
+        .lesson-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); }
+        .lesson-content ul, .lesson-content ol { color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-lg); padding-left: var(--space-xl); }
+        .lesson-content li { margin-bottom: var(--space-sm); }
+        .lesson-content code { background: rgba(0,255,170,0.1); color: var(--accent-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; overflow-x: auto; position: relative; }
+        .code-block-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center; }
+        .code-block-label .copy-btn { cursor: pointer; color: var(--accent-primary); border: 1px solid var(--accent-primary); background: transparent; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.65; color: #e6edf3; white-space: pre; }
+        .cm { color: #8b949e; }
+        .kw { color: #ff7b72; }
+        .st { color: #a5d6ff; }
+        .fn { color: #d2a8ff; }
+        .nu { color: #79c0ff; }
+        .cl { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .tip-box { background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .tip-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-primary); margin-bottom: var(--space-sm); }
+        .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .warn-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-warning); margin-bottom: var(--space-sm); }
+        .info-box { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); border-radius: var(--radius-md); padding: var(--space-lg); margin: var(--space-lg) 0; }
+        .info-box-title { font-family: var(--font-heading); font-weight: 600; color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .tip-box p, .warn-box p, .info-box p { margin: 0; color: var(--text-secondary); line-height: 1.7; }
+        .toc { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-2xl); }
+        .toc h3 { font-family: var(--font-heading); color: var(--accent-primary); margin-bottom: var(--space-md); }
+        .toc ol { padding-left: var(--space-xl); color: var(--text-secondary); }
+        .toc li { margin-bottom: var(--space-xs); }
+        .toc a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+        .lesson-nav { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); }
+        .lesson-nav a { flex: 1; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: var(--space-lg); text-decoration: none; transition: var(--transition-base); }
+        .lesson-nav a:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .lesson-nav-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-xs); }
+        .lesson-nav-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); }
+        .lesson-nav .next { text-align: right; }
+        .example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin: var(--space-lg) 0; }
+        .example-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-md); padding: var(--space-lg); }
+        .example-card h4 { color: var(--accent-secondary); margin-bottom: var(--space-sm); }
+        .example-card p { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+        @media (max-width: 768px) { .lesson-nav { flex-direction: column; } .lesson-nav .next { text-align: left; } .example-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-links">
+                <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+                <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
+            </div>
+            <div class="top-bar-right">Part of MYRQAI Network</div>
+        </div>
+    </div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+            <ul class="nav-menu">
+                <li><a href="../../tutorials/index.html" class="nav-link active">Tutorials</a></li>
+                <li><a href="../../courses/index.html" class="nav-link">Courses</a></li>
+                <li><a href="../../debugging/index.html" class="nav-link">Debugging</a></li>
+                <li><a href="../../projects/index.html" class="nav-link">Projects</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="../../tutorials/index.html" class="btn btn-primary">Start Free</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="lesson-container">
+        <div class="breadcrumb">
+            <a href="../../index.html">Home</a><span class="separator">/</span>
+            <a href="../index.html">Tutorials</a><span class="separator">/</span>
+            <a href="../../courses/claude.html">Claude API</a><span class="separator">/</span>
+            <span>Vision</span>
+        </div>
+
+        <div class="lesson-header">
+            <div class="lesson-meta">
+                <span class="lesson-meta-item">Lesson 2.2</span>
+                <span class="lesson-meta-item">25 min</span>
+                <span class="lesson-meta-item">Intermediate</span>
+            </div>
+            <h1 class="lesson-title">Claude Vision: Image Analysis & Multimodal AI</h1>
+            <p class="lesson-description">Send images alongside text to Claude, extract structured data via OCR, compare visuals, and build real-world multimodal pipelines using the Anthropic API.</p>
+        </div>
+
+        <!-- AdSense -->
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <div class="toc">
+            <h3>In This Lesson</h3>
+            <ol>
+                <li><a href="#overview">How Claude Vision Works</a></li>
+                <li><a href="#url">Sending an Image via URL</a></li>
+                <li><a href="#base64">Sending an Image via Base64</a></li>
+                <li><a href="#ocr">OCR: Extracting Text from Images</a></li>
+                <li><a href="#multi-image">Multi-Image Comparisons</a></li>
+                <li><a href="#structured">Extracting Structured Data</a></li>
+                <li><a href="#exercise">Hands-on Exercise</a></li>
+                <li><a href="#realworld">Real-World Use Cases</a></li>
+            </ol>
+        </div>
+
+        <div class="lesson-content" id="overview">
+            <h2>How Claude Vision Works</h2>
+            <p>Claude's vision capability lets you include images directly in the <code>messages</code> array. Claude understands both the image content and any accompanying text, enabling rich multimodal reasoning.</p>
+            <p>Images can be passed in two ways:</p>
+            <ul>
+                <li><strong>URL source</strong> — Claude fetches and reads the image from a public URL.</li>
+                <li><strong>Base64 source</strong> — You encode the image bytes directly in the request payload, ideal for local files or private images.</li>
+            </ul>
+            <p>Supported formats: <code>image/jpeg</code>, <code>image/png</code>, <code>image/gif</code>, <code>image/webp</code>. Maximum image size is 5 MB per image, with up to 20 images per request.</p>
+
+            <div class="info-box">
+                <div class="info-box-title">Which Models Support Vision?</div>
+                <p>All Claude 3+ models (Haiku, Sonnet, Opus) and Claude 3.5/3.7 variants support image input. Always use <code>claude-sonnet-4-6</code> or later for best accuracy on complex visual reasoning tasks.</p>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="url">
+            <h2>Sending an Image via URL</h2>
+            <p>The simplest approach — pass a publicly accessible image URL in the <code>source</code> block:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+response <span class="op">=</span> client.messages.<span class="fn">create</span>(
+    model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+    max_tokens<span class="op">=</span><span class="nu">1024</span>,
+    messages<span class="op">=</span>[
+        {
+            <span class="st">"role"</span>: <span class="st">"user"</span>,
+            <span class="st">"content"</span>: [
+                {
+                    <span class="st">"type"</span>: <span class="st">"image"</span>,
+                    <span class="st">"source"</span>: {
+                        <span class="st">"type"</span>: <span class="st">"url"</span>,
+                        <span class="st">"url"</span>: <span class="st">"https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png"</span>,
+                    },
+                },
+                {
+                    <span class="st">"type"</span>: <span class="st">"text"</span>,
+                    <span class="st">"text"</span>: <span class="st">"Describe what you see in this image."</span>
+                }
+            ],
+        }
+    ],
+)
+
+<span class="fn">print</span>(response.content[<span class="nu">0</span>].text)</pre>
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-box-title">Tip</div>
+                <p>Always place the image block <em>before</em> the text block in the content array so Claude reads the image in context when it processes your question.</p>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="base64">
+            <h2>Sending an Image via Base64</h2>
+            <p>For local or private images, encode the file as base64 and include it in the request:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+<span class="cm"># Load and encode a local image</span>
+image_path <span class="op">=</span> Path(<span class="st">"screenshot.png"</span>)
+image_data <span class="op">=</span> base64.<span class="fn">standard_b64encode</span>(image_path.<span class="fn">read_bytes</span>()).<span class="fn">decode</span>(<span class="st">"utf-8"</span>)
+
+response <span class="op">=</span> client.messages.<span class="fn">create</span>(
+    model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+    max_tokens<span class="op">=</span><span class="nu">1024</span>,
+    messages<span class="op">=</span>[
+        {
+            <span class="st">"role"</span>: <span class="st">"user"</span>,
+            <span class="st">"content"</span>: [
+                {
+                    <span class="st">"type"</span>: <span class="st">"image"</span>,
+                    <span class="st">"source"</span>: {
+                        <span class="st">"type"</span>: <span class="st">"base64"</span>,
+                        <span class="st">"media_type"</span>: <span class="st">"image/png"</span>,
+                        <span class="st">"data"</span>: image_data,
+                    },
+                },
+                {
+                    <span class="st">"type"</span>: <span class="st">"text"</span>,
+                    <span class="st">"text"</span>: <span class="st">"What UI elements are visible in this screenshot?"</span>
+                }
+            ],
+        }
+    ],
+)
+
+<span class="fn">print</span>(response.content[<span class="nu">0</span>].text)</pre>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="ocr">
+            <h2>OCR: Extracting Text from Images</h2>
+            <p>Claude can read text embedded in images — receipts, documents, screenshots, whiteboards — with high accuracy. Ask it to extract text precisely:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+<span class="kw">def</span> <span class="fn">extract_text_from_image</span>(image_path: str) <span class="op">-></span> str:
+    <span class="kw">with</span> <span class="fn">open</span>(image_path, <span class="st">"rb"</span>) <span class="kw">as</span> f:
+        image_data <span class="op">=</span> base64.<span class="fn">standard_b64encode</span>(f.<span class="fn">read</span>()).<span class="fn">decode</span>(<span class="st">"utf-8"</span>)
+
+    <span class="cm"># Detect media type from extension</span>
+    ext <span class="op">=</span> image_path.<span class="fn">rsplit</span>(<span class="st">"."</span>, <span class="nu">1</span>)[<span class="op">-</span><span class="nu">1</span>].<span class="fn">lower</span>()
+    media_types <span class="op">=</span> {<span class="st">"jpg"</span>: <span class="st">"image/jpeg"</span>, <span class="st">"jpeg"</span>: <span class="st">"image/jpeg"</span>, <span class="st">"png"</span>: <span class="st">"image/png"</span>, <span class="st">"webp"</span>: <span class="st">"image/webp"</span>}
+    media_type <span class="op">=</span> media_types.<span class="fn">get</span>(ext, <span class="st">"image/jpeg"</span>)
+
+    response <span class="op">=</span> client.messages.<span class="fn">create</span>(
+        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+        max_tokens<span class="op">=</span><span class="nu">2048</span>,
+        messages<span class="op">=</span>[{
+            <span class="st">"role"</span>: <span class="st">"user"</span>,
+            <span class="st">"content"</span>: [
+                {<span class="st">"type"</span>: <span class="st">"image"</span>, <span class="st">"source"</span>: {<span class="st">"type"</span>: <span class="st">"base64"</span>, <span class="st">"media_type"</span>: media_type, <span class="st">"data"</span>: image_data}},
+                {<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: <span class="st">"Extract all text from this image exactly as it appears. Preserve line breaks and formatting."</span>}
+            ]
+        }]
+    )
+    <span class="kw">return</span> response.content[<span class="nu">0</span>].text
+
+<span class="cm"># Usage</span>
+text <span class="op">=</span> <span class="fn">extract_text_from_image</span>(<span class="st">"receipt.jpg"</span>)
+<span class="fn">print</span>(text)</pre>
+            </div>
+        </div>
+
+        <!-- AdSense mid-lesson -->
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <div class="lesson-content" id="multi-image">
+            <h2>Multi-Image Comparisons</h2>
+            <p>Pass multiple images in a single message to have Claude compare, contrast, or analyze them together:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+<span class="kw">def</span> <span class="fn">load_image</span>(path: str) <span class="op">-></span> dict:
+    <span class="kw">with</span> <span class="fn">open</span>(path, <span class="st">"rb"</span>) <span class="kw">as</span> f:
+        data <span class="op">=</span> base64.<span class="fn">standard_b64encode</span>(f.<span class="fn">read</span>()).<span class="fn">decode</span>()
+    <span class="kw">return</span> {
+        <span class="st">"type"</span>: <span class="st">"image"</span>,
+        <span class="st">"source"</span>: {<span class="st">"type"</span>: <span class="st">"base64"</span>, <span class="st">"media_type"</span>: <span class="st">"image/png"</span>, <span class="st">"data"</span>: data}
+    }
+
+<span class="cm"># Compare two UI mockups</span>
+response <span class="op">=</span> client.messages.<span class="fn">create</span>(
+    model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+    max_tokens<span class="op">=</span><span class="nu">1024</span>,
+    messages<span class="op">=</span>[{
+        <span class="st">"role"</span>: <span class="st">"user"</span>,
+        <span class="st">"content"</span>: [
+            <span class="fn">load_image</span>(<span class="st">"mockup_v1.png"</span>),
+            <span class="fn">load_image</span>(<span class="st">"mockup_v2.png"</span>),
+            {
+                <span class="st">"type"</span>: <span class="st">"text"</span>,
+                <span class="st">"text"</span>: <span class="st">"Compare these two UI mockups. What changed between v1 and v2? Which version has better UX and why?"</span>
+            }
+        ]
+    }]
+)
+
+<span class="fn">print</span>(response.content[<span class="nu">0</span>].text)</pre>
+            </div>
+
+            <div class="warn-box">
+                <div class="warn-box-title">Cost Awareness</div>
+                <p>Each image uses tokens based on its dimensions. A 1092×1092 image costs roughly 1,590 input tokens. For high-volume pipelines, use smaller or resized images to reduce costs.</p>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="structured">
+            <h2>Extracting Structured Data from Images</h2>
+            <p>Combine vision with a system prompt to extract structured JSON from images — great for parsing receipts, invoices, forms, or charts:</p>
+
+            <div class="code-block">
+                <div class="code-block-label">python<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+<span class="kw">import</span> json
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+<span class="kw">def</span> <span class="fn">parse_receipt</span>(image_path: str) <span class="op">-></span> dict:
+    <span class="kw">with</span> <span class="fn">open</span>(image_path, <span class="st">"rb"</span>) <span class="kw">as</span> f:
+        image_data <span class="op">=</span> base64.<span class="fn">standard_b64encode</span>(f.<span class="fn">read</span>()).<span class="fn">decode</span>()
+
+    response <span class="op">=</span> client.messages.<span class="fn">create</span>(
+        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+        max_tokens<span class="op">=</span><span class="nu">1024</span>,
+        system<span class="op">=</span><span class="st">"""You are a receipt parser. Extract data as JSON only.
+Return a JSON object with keys: store_name, date, items (list of {name, price}), subtotal, tax, total.
+Do not include any text outside the JSON object."""</span>,
+        messages<span class="op">=</span>[{
+            <span class="st">"role"</span>: <span class="st">"user"</span>,
+            <span class="st">"content"</span>: [
+                {<span class="st">"type"</span>: <span class="st">"image"</span>, <span class="st">"source"</span>: {<span class="st">"type"</span>: <span class="st">"base64"</span>, <span class="st">"media_type"</span>: <span class="st">"image/jpeg"</span>, <span class="st">"data"</span>: image_data}},
+                {<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: <span class="st">"Parse this receipt."</span>}
+            ]
+        }]
+    )
+
+    raw <span class="op">=</span> response.content[<span class="nu">0</span>].text.<span class="fn">strip</span>()
+    <span class="kw">return</span> json.<span class="fn">loads</span>(raw)
+
+<span class="cm"># Usage</span>
+receipt <span class="op">=</span> <span class="fn">parse_receipt</span>(<span class="st">"receipt.jpg"</span>)
+<span class="fn">print</span>(<span class="fn">f</span><span class="st">"Total: ${receipt['total']}"</span>)
+<span class="kw">for</span> item <span class="kw">in</span> receipt[<span class="st">"items"</span>]:
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">"  {item['name']}: ${item['price']}"</span>)</pre>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="exercise">
+            <h2>Hands-on Exercise</h2>
+            <p>Build a <strong>screenshot accessibility auditor</strong>. Given a UI screenshot, use Claude to identify potential accessibility issues (missing alt text areas, low contrast sections, small tap targets) and return them as a structured list.</p>
+
+            <h3>Requirements</h3>
+            <ol>
+                <li>Accept a local PNG/JPG screenshot via command-line argument.</li>
+                <li>Send it to Claude with a prompt instructing it to audit for WCAG accessibility issues.</li>
+                <li>Print each issue with: issue type, location description, and suggested fix.</li>
+                <li>Add a <code>--json</code> flag that outputs the full result as JSON instead of plain text.</li>
+            </ol>
+
+            <h3>Starter Code</h3>
+            <div class="code-block">
+                <div class="code-block-label">python — accessibility_auditor.py<button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText)">copy</button></div>
+                <pre><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+<span class="kw">import</span> argparse
+<span class="kw">import</span> json
+
+client <span class="op">=</span> anthropic.<span class="cl">Anthropic</span>()
+
+SYSTEM <span class="op">=</span> <span class="st">"""You are a WCAG 2.1 accessibility auditor.
+Analyze the provided UI screenshot and identify accessibility issues.
+Return a JSON array of issues, each with:
+  - type: one of [contrast, tap_target, missing_label, keyboard_nav, other]
+  - location: human-readable description of where the issue is
+  - fix: a short, actionable fix suggestion
+Return only the JSON array, no other text."""</span>
+
+<span class="kw">def</span> <span class="fn">audit</span>(image_path: str) <span class="op">-></span> list:
+    <span class="kw">with</span> <span class="fn">open</span>(image_path, <span class="st">"rb"</span>) <span class="kw">as</span> f:
+        data <span class="op">=</span> base64.<span class="fn">standard_b64encode</span>(f.<span class="fn">read</span>()).<span class="fn">decode</span>()
+    ext <span class="op">=</span> image_path.<span class="fn">rsplit</span>(<span class="st">"."</span>, <span class="nu">1</span>)[<span class="op">-</span><span class="nu">1</span>].<span class="fn">lower</span>()
+    media_type <span class="op">=</span> <span class="st">"image/png"</span> <span class="kw">if</span> ext <span class="op">==</span> <span class="st">"png"</span> <span class="kw">else</span> <span class="st">"image/jpeg"</span>
+
+    resp <span class="op">=</span> client.messages.<span class="fn">create</span>(
+        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,
+        max_tokens<span class="op">=</span><span class="nu">1024</span>,
+        system<span class="op">=</span>SYSTEM,
+        messages<span class="op">=</span>[{
+            <span class="st">"role"</span>: <span class="st">"user"</span>,
+            <span class="st">"content"</span>: [
+                {<span class="st">"type"</span>: <span class="st">"image"</span>, <span class="st">"source"</span>: {<span class="st">"type"</span>: <span class="st">"base64"</span>, <span class="st">"media_type"</span>: media_type, <span class="st">"data"</span>: data}},
+                {<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: <span class="st">"Audit this UI screenshot for accessibility issues."</span>}
+            ]
+        }]
+    )
+    <span class="kw">return</span> json.<span class="fn">loads</span>(resp.content[<span class="nu">0</span>].text)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    parser <span class="op">=</span> argparse.<span class="cl">ArgumentParser</span>(description<span class="op">=</span><span class="st">"Audit a UI screenshot for accessibility issues"</span>)
+    parser.<span class="fn">add_argument</span>(<span class="st">"image"</span>, help<span class="op">=</span><span class="st">"Path to screenshot (PNG or JPG)"</span>)
+    parser.<span class="fn">add_argument</span>(<span class="st">"--json"</span>, action<span class="op">=</span><span class="st">"store_true"</span>, help<span class="op">=</span><span class="st">"Output as JSON"</span>)
+    args <span class="op">=</span> parser.<span class="fn">parse_args</span>()
+
+    issues <span class="op">=</span> <span class="fn">audit</span>(args.image)
+
+    <span class="kw">if</span> args.json:
+        <span class="fn">print</span>(json.<span class="fn">dumps</span>(issues, indent<span class="op">=</span><span class="nu">2</span>))
+    <span class="kw">else</span>:
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">"Found {len(issues)} accessibility issue(s):\n"</span>)
+        <span class="kw">for</span> i, issue <span class="kw">in</span> <span class="fn">enumerate</span>(issues, <span class="nu">1</span>):
+            <span class="fn">print</span>(<span class="fn">f</span><span class="st">"{i}. [{issue['type'].upper()}] {issue['location']}"</span>)
+            <span class="fn">print</span>(<span class="fn">f</span><span class="st">"   Fix: {issue['fix']}\n"</span>)
+
+<span class="kw">if</span> __name__ <span class="op">==</span> <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</pre>
+            </div>
+        </div>
+
+        <div class="lesson-content" id="realworld">
+            <h2>Real-World Use Cases</h2>
+            <div class="example-grid">
+                <div class="example-card">
+                    <h4>Document Intelligence</h4>
+                    <p>Parse invoices, contracts, and forms — extract line items, dates, and totals into structured records automatically.</p>
+                </div>
+                <div class="example-card">
+                    <h4>UI QA Automation</h4>
+                    <p>Screenshot your app after deployments and have Claude flag regressions, layout breaks, or missing elements.</p>
+                </div>
+                <div class="example-card">
+                    <h4>Content Moderation</h4>
+                    <p>Detect inappropriate images, verify image-text alignment, or flag visual policy violations at scale.</p>
+                </div>
+                <div class="example-card">
+                    <h4>Diagram Analysis</h4>
+                    <p>Extract data from charts, flowcharts, or architecture diagrams to power downstream summarization or Q&amp;A.</p>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-box-title">Performance Tip</div>
+                <p>For repeated analysis of the same base image with different questions, use <a href="prompt-caching.html" style="color:var(--accent-primary)">prompt caching</a> to cache the image block. This cuts cost by up to 90% and reduces latency significantly.</p>
+            </div>
+        </div>
+
+        <!-- AdSense end of content -->
+        <div class="adsense-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8668540803235423" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+
+        <nav class="lesson-nav">
+            <a href="prompt-caching.html" class="prev">
+                <div class="lesson-nav-label">← Previous</div>
+                <div class="lesson-nav-title">Prompt Caching</div>
+            </a>
+            <a href="../../tutorials/langchain/getting-started.html" class="next">
+                <div class="lesson-nav-label">Next →</div>
+                <div class="lesson-nav-title">LangChain Getting Started</div>
+            </a>
+        </nav>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+                    <p>The most comprehensive AI coding learning platform.</p>
+                </div>
+                <div class="footer-column"><h4>Learn</h4><ul><li><a href="../../tutorials/index.html">All Tutorials</a></li><li><a href="../../courses/index.html">Courses</a></li><li><a href="../../projects/index.html">Projects</a></li><li><a href="../../debugging/index.html">Debugging</a></li></ul></div>
+                <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://ailadder.myrqai.com" target="_blank">AI Ladder</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+                <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li><li><a href="https://myrqai.com/admin/contact" target="_blank">Contact Us</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color: var(--accent-primary);">MYRQAI</a>. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
