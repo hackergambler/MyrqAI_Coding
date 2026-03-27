@@ -1,1 +1,1 @@
-Fix intermediate tutorial learning path links
+Fix intermediate tutorial card links to correct pages
