@@ -1,1 +1,1 @@
-Fix advanced tutorial links to point to correct agent pages
+Fix project card links to point to correct project pages
