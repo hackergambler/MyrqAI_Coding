@@ -1,1 +1,1 @@
-Add RAG lesson to MasterLibrary
+Add LoRA and QLoRA fine-tuning lesson to MasterLibrary

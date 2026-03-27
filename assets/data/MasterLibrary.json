@@ -4739,7 +4739,7 @@
           "duration": "45 min",
           "badge": "Advanced",
           "prev": "speculative-decoding",
-          "next": null,
+          "next": "lora-qlora-finetuning",
           "sections": [
             {
               "h2": "Why LLMs Hallucinate",
@@ -4774,6 +4774,51 @@
             {
               "h2": "Hands-On Exercise",
               "body": "**Exercise: Build a document Q&A system**\n\n```python\nfrom sentence_transformers import SentenceTransformer\nimport faiss, numpy as np\n\nfaqs = [\n    \"Our return policy allows returns within 30 days of purchase.\",\n    \"Shipping is free on orders over $50.\",\n    \"Customer support is available Monday to Friday, 9am-6pm EST.\",\n    \"We accept Visa, MasterCard, AmEx, and PayPal.\",\n    \"Orders are processed within 1-2 business days.\",\n]\n\nmodel = SentenceTransformer(\"all-MiniLM-L6-v2\")\nembeddings = ___  # TODO: encode faqs\nindex = ___       # TODO: build FAISS IndexFlatIP\n\ndef retrieve(query, k=2):\n    pass  # TODO: embed query and search index\n\nqueries = [\n    \"Can I return something I bought last week?\",\n    \"How do I pay for my order?\",\n    \"When will my order ship?\",\n]\nfor q in queries:\n    print(f\"Q: {q}\")\n    print(f\"A: {retrieve(q)}\\n\")\n```\n\n**Bonus challenges:**\n1. Add re-ranking using a cross-encoder model.\n2. Measure retrieval precision: does the top result contain the correct answer for each query?\n3. Connect a real LLM (e.g. via the `anthropic` SDK) for the generation step."
+            }
+          ]
+        },
+        {
+          "id": "lora-qlora-finetuning",
+          "title": "LoRA and QLoRA: Efficient LLM Fine-Tuning",
+          "desc": "Learn how Low-Rank Adaptation (LoRA) and its quantized variant QLoRA let you fine-tune billion-parameter models on a single GPU by updating only a tiny fraction of parameters.",
+          "duration": "50 min",
+          "badge": "Advanced",
+          "prev": "retrieval-augmented-generation",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Full Fine-Tuning Is Expensive",
+              "body": "Fine-tuning a 7-billion-parameter model requires storing:\n\n- Model weights (~14 GB in fp16)\n- Optimizer states (Adam keeps 2 momentum tensors per parameter \u2192 ~42 GB extra)\n- Gradients (~14 GB)\n\nTotal: **~70 GB of GPU memory** \u2014 far more than a single consumer GPU.\n\n**Parameter-Efficient Fine-Tuning (PEFT)** methods solve this by freezing most of the model and only training a small adapter layer. **LoRA** is the most popular PEFT technique.",
+              "tip": "LoRA was introduced by Hu et al. (2021) and is now standard for fine-tuning open-source LLMs like Llama, Mistral, and Falcon."
+            },
+            {
+              "h2": "How LoRA Works",
+              "body": "LoRA decomposes each weight update matrix \u0394W into two low-rank matrices:\n\n\n\nWhere:\n-  is the frozen pre-trained weight (e.g. shape 4096\u00d74096)\n-  is a trainable matrix of shape \n-  is a trainable matrix of shape \n-  is the **rank** (typically 4\u201364)\n\nWith , a 4096\u00d74096 weight matrix requires only  trainable parameters instead of  \u2014 a **128\u00d7 reduction**.\n\n**At inference time**, the adapter is merged back: . Zero overhead.",
+              "tip": "Rank r controls the expressiveness of the adapter. Higher r = more capacity but more memory. r=16 is a good default."
+            },
+            {
+              "h2": "QLoRA: Quantize the Base, Train the Adapter",
+              "body": "QLoRA (Dettmers et al., 2023) combines LoRA with **4-bit quantization** of the base model:\n\n1. Load the base model in **NF4** (Normal Float 4-bit) format \u2192 4\u00d7 memory reduction\n2. Use **double quantization** to compress the quantization constants themselves\n3. Apply **paged optimizers** to handle memory spikes during backprop\n4. Train only the LoRA adapter in fp16/bf16\n\nResult: fine-tune a **65B model on a single 48 GB GPU**, or a **7B model on a 10 GB consumer GPU**.",
+              "tip": "QLoRA is implemented in the  +  +  stack. The  library wraps it all for supervised fine-tuning."
+            },
+            {
+              "h2": "Hands-On: Fine-Tune a Small Model with LoRA",
+              "body": "Install dependencies:\n\n\n\n",
+              "tip": " shows how few parameters LoRA actually trains \u2014 usually under 1% of the total model."
+            },
+            {
+              "h2": "Step-by-Step Explanation",
+              "body": "**Line-by-line breakdown:**\n\n1. **** \u2014 rank 16 gives a good quality/cost trade-off.  scales gradients; a common heuristic is .\n\n2. **** \u2014 we inject adapters into the attention query and value projection matrices. Adding , , and MLP layers improves quality but costs more memory.\n\n3. **** \u2014 freezes all original weights and wraps specified layers with LoRA adapters. Only adapter weights receive gradients.\n\n4. **** \u2014 simulates a larger batch size (4 \u00d7 4 = effective batch 16) without requiring extra GPU memory.\n\n5. **** \u2014 saves only the adapter weights (~3 MB for a 350M model), not the full 700 MB base model."
+            },
+            {
+              "h2": "Exercise: Merge Adapter Back into Base Model",
+              "body": "**Task:** Load the saved LoRA adapter and merge it into the base model weights for zero-latency inference.\n\n\n\n**Challenge:** Modify the script to use QLoRA by adding:\n-  to \n-  with \n-  before applying LoRA",
+              "tip": " produces a standard HuggingFace model with no PEFT dependency \u2014 safe to deploy anywhere."
+            },
+            {
+              "h2": "Real-World Use Cases",
+              "body": "| Use Case | Base Model | LoRA Target |\n|---|---|---|\n| Customer support chatbot | Llama-3-8B | Conversation logs |\n| Code completion for proprietary APIs | DeepSeek-Coder-7B | Internal codebase |\n| Medical Q&A | Mistral-7B | PubMed abstracts |\n| Multilingual translation | NLLB-200 | Low-resource language pairs |\n\n**When NOT to use LoRA:**\n- If the task is very different from pre-training (prefer full fine-tune or domain-adaptive pre-training)\n- If you need maximum accuracy on a small dataset (LoRA may underfit)\n- Real-time latency-critical inference before merging adapters",
+              "tip": "Tools like Axolotl, LLaMA-Factory, and Unsloth wrap LoRA/QLoRA into easy config-driven pipelines for production use."
             }
           ]
         }
