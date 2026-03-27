@@ -1,1 +1,1 @@
-Add Graph Neural Networks lesson to MasterLibrary
+Add LLM quantization lesson (GGUF, AWQ, GPTQ)

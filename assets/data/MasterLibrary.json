@@ -4210,7 +4210,7 @@
           "duration": "50 min",
           "badge": "Advanced",
           "prev": "rlhf-reward-modeling",
-          "next": null,
+          "next": "llm-quantization-efficient-inference",
           "sections": [
             {
               "h2": "What is Constitutional AI?",
@@ -4248,6 +4248,68 @@
                 "label": "Python - exercise starter",
                 "src": "from anthropic import Anthropic\n\nclient = Anthropic()\n\n# 1. Define constitution\nCONSTITUTION = [\n    # TODO: add 3 principles\n]\n\n# 2. SL-CAI loop\ndef critique_and_revise(prompt: str, response: str, principle: str) -> str:\n    # TODO: call the model to critique then revise\n    pass\n\ntest_prompt   = \"How do I persuade someone to do something they don't want to do?\"\ninitial_resp  = \"\"\"Persuasion relies on understanding the other person's values ...\"\"\"\n\nfor principle in CONSTITUTION:\n    critique_text = critique_and_revise(test_prompt, initial_resp, principle)\n    # TODO: print critique and revised response\n\n# 3. RLAIF labelling\npairs = [\n    # TODO: add 5 (prompt, response_a, response_b) tuples\n]\n\nfor pair in pairs:\n    # TODO: call ai_preference and print result\n    pass\n\n# 5. Bonus: position bias check\ndef check_position_bias(prompt, a, b):\n    label_ab = None  # TODO: label with A first\n    label_ba = None  # TODO: label with B first (i.e., swap order)\n    flipped  = (label_ab == \"A\") != (label_ba == \"B\")  # same winner?\n    return flipped\n\nflip_count = sum(check_position_bias(p[\"prompt\"], p[\"response_a\"], p[\"response_b\"]) for p in pairs)\nprint(f\"Position bias flip rate: {flip_count}/{len(pairs)}\")"
               }
+            }
+          ]
+        },
+        {
+          "id": "llm-quantization-efficient-inference",
+          "title": "LLM Quantization: Efficient Inference with GGUF, AWQ, and GPTQ",
+          "desc": "Learn how to compress large language models using post-training quantization techniques (GPTQ, AWQ, GGUF) to run billion-parameter models on consumer hardware with minimal accuracy loss.",
+          "duration": "55 min",
+          "badge": "Advanced",
+          "prev": "constitutional-ai-rlaif",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why Quantization Matters",
+              "body": "A 7B-parameter model in 32-bit float (FP32) requires ~28 GB of VRAM — well beyond most consumer GPUs. **Quantization** reduces the numeric precision of weights (e.g., from 16-bit to 4-bit integers), shrinking memory usage by 4-8x with surprisingly little quality loss.\n\nKey benefit: a 7B model quantized to 4-bit fits in ~4 GB, enabling local inference on a laptop GPU or even CPU.",
+              "tip": "Quantization affects weights, not architecture. The model topology (layers, attention heads) stays identical."
+            },
+            {
+              "h2": "Quantization Formats at a Glance",
+              "body": "| Format | Bits | Backend | Best For |\n|--------|------|---------|----------|\n| **GPTQ** | 4/8 | GPU (ExLlama) | Fast GPU inference, fine-tuning prep |\n| **AWQ** | 4 | GPU (vLLM, TGI) | Activation-aware, lower perplexity |\n| **GGUF** | 2-8 | CPU/GPU (llama.cpp) | Local offline inference, edge devices |\n| **BitsAndBytes** | 4/8 | HuggingFace | Quick prototyping, QLoRA fine-tuning |\n\n**GPTQ** (Generative Pre-trained Transformer Quantization) uses second-order gradient information (Hessian) to minimise per-layer reconstruction error.\n\n**AWQ** (Activation-Aware Weights Quantization) identifies the 1% of weights that matter most (high-activation channels) and protects them from rounding, achieving better quality than GPTQ at the same bit-width.\n\n**GGUF** is a binary format used by *llama.cpp* — it bundles weights, tokenizer, and metadata in a single file and supports mixed-precision (different layers at different bit-widths).",
+              "code": {
+                "label": "Python - Load a GPTQ model with HuggingFace (4-bit)",
+                "src": "# pip install transformers auto-gptq accelerate\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nimport torch\n\nMODEL_ID = \"TheBloke/Mistral-7B-Instruct-v0.2-GPTQ\"  # 4-bit GPTQ on HuggingFace Hub\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL_ID)\nmodel = AutoModelForCausalLM.from_pretrained(\n    MODEL_ID,\n    device_map=\"auto\",   # automatically places layers across available GPUs/CPU\n    torch_dtype=torch.float16,\n)\n\nprompt = \"Explain attention mechanisms in two sentences.\"\ninputs = tokenizer(prompt, return_tensors=\"pt\").to(model.device)\n\nwith torch.no_grad():\n    output_ids = model.generate(**inputs, max_new_tokens=128, temperature=0.7, do_sample=True)\n\nprint(tokenizer.decode(output_ids[0], skip_special_tokens=True))"
+              }
+            },
+            {
+              "h2": "BitsAndBytes: Instant 4-bit with QLoRA",
+              "body": "The *bitsandbytes* library integrates directly with HuggingFace and needs no pre-quantized checkpoint — it quantizes on the fly at load time. This is the standard setup for **QLoRA** (Quantized Low-Rank Adaptation), allowing fine-tuning of a 7B model on a single 16 GB GPU.",
+              "code": {
+                "label": "Python - Load any model in 4-bit (bitsandbytes NF4)",
+                "src": "# pip install transformers bitsandbytes accelerate\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig\nimport torch\n\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_use_double_quant=True,   # nested quantization for extra memory savings\n    bnb_4bit_quant_type=\"nf4\",        # NormalFloat4 — best for normally distributed weights\n    bnb_4bit_compute_dtype=torch.bfloat16,\n)\n\nMODEL_ID = \"meta-llama/Meta-Llama-3-8B-Instruct\"  # requires HF token\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL_ID)\nmodel = AutoModelForCausalLM.from_pretrained(\n    MODEL_ID,\n    quantization_config=bnb_config,\n    device_map=\"auto\",\n)\n\nprint(f\"Model loaded. Memory footprint: {model.get_memory_footprint() / 1e9:.2f} GB\")\n\n# --- Measure per-layer bit-width ---\nfor name, module in model.named_modules():\n    if hasattr(module, \"weight\") and hasattr(module.weight, \"quant_type\"):\n        print(f\"{name}: {module.weight.quant_type}\")\n        break"
+              },
+              "tip": "NF4 (NormalFloat4) is designed for weights that follow a normal distribution — which most transformer weights do. It outperforms standard INT4 by ~0.3 perplexity points."
+            },
+            {
+              "h2": "Running GGUF Models with llama.cpp",
+              "body": "GGUF is the go-to format for **CPU inference** and is supported by tools like Ollama, LM Studio, and llama.cpp. You download a single  file and run it without Python dependencies.",
+              "code": {
+                "label": "Shell + Python - Download and run a GGUF model",
+                "src": "# ---- Shell: install llama.cpp Python bindings ----\n# pip install llama-cpp-python\n\n# Download a 4-bit GGUF model (example — adjust URL to your chosen model)\n# wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf\n\nfrom llama_cpp import Llama\n\n# Load model (n_gpu_layers=-1 offloads all layers to GPU if available)\nllm = Llama(\n    model_path=\"mistral-7b-instruct-v0.2.Q4_K_M.gguf\",\n    n_ctx=4096,         # context window\n    n_gpu_layers=-1,    # 0 = CPU only\n    verbose=False,\n)\n\nresponse = llm.create_chat_completion(\n    messages=[\n        {\"role\": \"system\", \"content\": \"You are a helpful AI assistant.\"},\n        {\"role\": \"user\",   \"content\": \"What is the difference between AWQ and GPTQ quantization?\"}\n    ],\n    max_tokens=256,\n    temperature=0.7,\n)\nprint(response[\"choices\"][0][\"message\"][\"content\"])"
+              }
+            },
+            {
+              "h2": "Quantization-Aware vs Post-Training Quantization",
+              "body": "There are two high-level strategies:\n\n**Post-Training Quantization (PTQ)** — applied *after* training with no additional fine-tuning. Fast and cheap; GPTQ and AWQ both fall here. Quality degrades slightly at very low bit-widths (2-3 bit).\n\n**Quantization-Aware Training (QAT)** — the model is trained or fine-tuned with simulated quantization noise, so it learns to be robust to reduced precision. Produces better quality but requires additional compute.\n\nFor most practitioners, PTQ with GPTQ/AWQ at 4-bit is the sweet spot: minimal quality loss, no retraining, immediate deployment."
+            },
+            {
+              "h2": "Benchmarking: Perplexity vs Memory",
+              "body": "Perplexity (lower = better) is the standard quality metric for language models. Here are typical results for a 7B model on the WikiText-2 benchmark:\n\n| Precision | VRAM Usage | Perplexity (WikiText-2) |\n|-----------|-----------|-------------------------|\n| FP16 | ~14 GB | 5.25 |\n| GPTQ 8-bit | ~7 GB | 5.27 |\n| AWQ 4-bit | ~4 GB | 5.31 |\n| GPTQ 4-bit | ~4 GB | 5.36 |\n| GGUF Q4_K_M | ~4 GB | 5.33 |\n| GPTQ 3-bit | ~3 GB | 5.82 |\n\nKey takeaway: **4-bit quantization loses < 0.1 perplexity points** (< 2% quality degradation) while halving memory vs FP16.",
+              "code": {
+                "label": "Python - Measure model memory footprint before and after quantization",
+                "src": "import torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\n\nMODEL = \"facebook/opt-1.3b\"  # small enough to run without a GPU\n\ndef load_and_measure(quantization_config=None, label=\"FP32\"):\n    model = AutoModelForCausalLM.from_pretrained(\n        MODEL,\n        quantization_config=quantization_config,\n        device_map=\"auto\",\n        torch_dtype=torch.float16 if quantization_config is None else None,\n    )\n    params = sum(p.numel() for p in model.parameters())\n    mem_gb = model.get_memory_footprint() / 1e9\n    print(f\"{label:15s} | params: {params/1e6:.1f}M | memory: {mem_gb:.2f} GB\")\n    return model\n\n# FP16 baseline\nload_and_measure(label=\"FP16\")\n\n# 4-bit NF4\nbnb4 = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type=\"nf4\",\n                           bnb_4bit_compute_dtype=torch.float16)\nload_and_measure(bnb4, label=\"BnB 4-bit\")\n\n# 8-bit\nbnb8 = BitsAndBytesConfig(load_in_8bit=True)\nload_and_measure(bnb8, label=\"BnB 8-bit\")"
+              }
+            },
+            {
+              "h2": "Hands-On Exercise",
+              "body": "**Exercise: Compare inference speed and quality at different bit-widths**\n\n1. Install , , and .\n2. Load  in FP16, 8-bit, and 4-bit (NF4).\n3. For each configuration, run the same prompt 5 times and measure:\n   - Average tokens-per-second (use  module).\n   - Qualitative output coherence.\n4. Record the memory footprint using .\n5. **Bonus**: Try  with  vs  and compare memory.\n\n**Expected outcome**: 4-bit NF4 uses ~50% the memory of FP16 with comparable text quality on simple prompts.",
+              "tip": "On CPU-only machines, use  in llama-cpp-python to match your core count for best performance."
+            },
+            {
+              "h2": "Real-World Use Cases",
+              "body": "- **Edge deployment**: Running a 7B assistant model on a laptop or Raspberry Pi 5 via GGUF/llama.cpp.\n- **RAG on a budget**: Hosting a quantized 13B retrieval-augmented model on a single A10G (24 GB) instead of two A100s.\n- **QLoRA fine-tuning**: Loading a 70B model in 4-bit + LoRA adapters to fine-tune on a single 80 GB A100 (would otherwise require 4x A100s in FP16).\n- **Cost reduction**: Serving 4-bit models through vLLM cuts GPU memory in half, doubling the number of concurrent users per server."
             }
           ]
         }
