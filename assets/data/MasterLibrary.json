@@ -607,7 +607,7 @@
           "duration": "35 min",
           "badge": "Intermediate",
           "prev": "monitoring-drift",
-          "next": "transformer-architecture",
+          "next": "random-forests",
           "sections": [
             {
               "h2": "How Gradient Boosting Works",
@@ -624,6 +624,34 @@
               "code": {
                 "label": "Python - SHAP explainability for XGBoost",
                 "src": "import shap\nimport matplotlib.pyplot as plt\n\n# Tree SHAP is exact and fast for tree-based models\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test[:500])\n\n# Global: which features matter most overall?\nshap.summary_plot(shap_values, X_test[:500], show=False)\nplt.title('SHAP Feature Importance (global)')\nplt.tight_layout()\nplt.savefig('shap_summary.png', dpi=150)\n\n# Local: why did the model predict this specific row?\nrow_idx = 0\nprint(f'Prediction: {model.predict_proba(X_test[[row_idx]])[:,1][0]:.3f}')\nprint('\\nTop 5 feature contributions for this prediction:')\nfeature_contribs = list(zip(range(20), shap_values[row_idx]))\nfeature_contribs.sort(key=lambda x: abs(x[1]), reverse=True)\nfor feat_idx, contrib in feature_contribs[:5]:\n    direction = '+' if contrib > 0 else '-'\n    print(f'  feature_{feat_idx:02d}: {direction}{abs(contrib):.4f}')"
+              }
+            }
+          ]
+        },
+        {
+          "id": "random-forests",
+          "title": "Random Forests: Ensemble Learning for Robust Predictions",
+          "desc": "Build intuition for bagging, feature randomness, and out-of-bag evaluation. Random forests are the workhorse of tabular ML — reliable, interpretable, and resistant to overfitting.",
+          "duration": "30 min",
+          "badge": "Intermediate",
+          "prev": "xgboost-gradient-boosting",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "How Random Forests Work",
+              "body": "A random forest trains hundreds of decision trees, each on a random bootstrap sample of the data with a random subset of features at each split. Predictions are aggregated by majority vote (classification) or mean (regression). The two sources of randomness — row sampling (bagging) and feature sampling — are what make the ensemble robust: individual trees overfit, but they overfit in different directions, so errors cancel out.",
+              "tip": "max_features='sqrt' (the default for classification) is usually optimal. For regression, try max_features=1.0 (all features) or 0.33. The key hyperparameter is n_estimators — more trees never hurt accuracy, only training time.",
+              "code": {
+                "label": "Python - Random Forest with OOB evaluation and feature importance",
+                "src": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import roc_auc_score\nimport numpy as np\n\nX, y = make_classification(\n    n_samples=10_000, n_features=20, n_informative=10,\n    n_redundant=5, random_state=42\n)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nrf = RandomForestClassifier(\n    n_estimators=500,         # more trees = more stable, never worse\n    max_features='sqrt',      # sqrt(n_features) candidates per split\n    max_depth=None,           # grow full trees — bagging prevents overfitting\n    min_samples_leaf=2,       # require >=2 samples in leaf nodes\n    oob_score=True,           # free validation using out-of-bag samples\n    n_jobs=-1,                # use all CPU cores\n    random_state=42,\n)\nrf.fit(X_train, y_train)\n\nprint(f'OOB accuracy (free!): {rf.oob_score_:.4f}')  # no holdout needed\nprint(f'Test AUC:             {roc_auc_score(y_test, rf.predict_proba(X_test)[:,1]):.4f}')\n\n# Feature importance (mean decrease in impurity)\nimportances = rf.feature_importances_\nranked = np.argsort(importances)[::-1]\nprint('\\nTop 5 features by impurity importance:')\nfor i in range(5):\n    print(f'  feature_{ranked[i]:02d}: {importances[ranked[i]]:.4f}')"
+              }
+            },
+            {
+              "h2": "Bias-Variance Tradeoff in Ensembles",
+              "body": "A single decision tree has low bias (it can fit any pattern) but high variance (it memorizes training noise). Bagging reduces variance without changing bias: averaging many high-variance, low-bias models gives you a low-variance, low-bias model. This is why deep trees (no max_depth) work well in forests — the overfitting is averaged away.",
+              "code": {
+                "label": "Python - visualizing bias-variance tradeoff across tree depths",
+                "src": "from sklearn.tree import DecisionTreeClassifier\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import cross_val_score\nimport numpy as np\n\n# Compare single trees vs forest at different depths\ndepths = [2, 4, 8, 16, None]\nresults = []\n\nfor depth in depths:\n    tree = DecisionTreeClassifier(max_depth=depth, random_state=42)\n    forest = RandomForestClassifier(n_estimators=100, max_depth=depth,\n                                     n_jobs=-1, random_state=42)\n\n    tree_scores = cross_val_score(tree, X_train, y_train, cv=5, scoring='roc_auc')\n    forest_scores = cross_val_score(forest, X_train, y_train, cv=5, scoring='roc_auc')\n\n    depth_label = str(depth) if depth else 'None'\n    results.append({\n        'depth': depth_label,\n        'tree_mean': tree_scores.mean(),\n        'tree_std': tree_scores.std(),\n        'forest_mean': forest_scores.mean(),\n        'forest_std': forest_scores.std(),\n    })\n\nprint(f'{'Depth':<8} {'Tree AUC':<20} {'Forest AUC':<20}')\nprint('-' * 50)\nfor r in results:\n    print(f\"{r['depth']:<8} {r['tree_mean']:.4f} ± {r['tree_std']:.4f}   \"\n          f\"{r['forest_mean']:.4f} ± {r['forest_std']:.4f}\")\n# Forest variance (std) stays low even at max_depth=None"
               }
             }
           ]

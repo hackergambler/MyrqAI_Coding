@@ -1,1 +1,1 @@
-Add Pandas for AI lesson to MasterLibrary
+Add Random Forests lesson to MasterLibrary
