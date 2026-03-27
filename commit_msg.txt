@@ -1,1 +1,1 @@
-Add calculus for ML lesson with gradient descent
+Add new lessons and expand MasterLibrary content
