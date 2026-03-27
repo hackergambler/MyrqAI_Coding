@@ -1,1 +1,1 @@
-Add async Python lesson and update MasterLibrary content
+Add Python decorators lesson to MasterLibrary content
