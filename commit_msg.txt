@@ -1,1 +1,1 @@
-Add Python testing lesson and refactor MasterLibrary content
+Add new lessons and update MasterLibrary content
