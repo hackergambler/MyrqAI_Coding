@@ -1,1 +1,1 @@
-Add GANs and expand MasterLibrary lesson content
+Add calculus for ML lesson with gradient descent

@@ -448,6 +448,57 @@
           },
           "useCase": "Google uses dot-product similarity over billions of embeddings for Search. OpenAI embeddings (text-embedding-3-large) live in 3072-dimensional space. Every time you call a vector database like Pinecone or Qdrant, it runs this exact math at massive scale.",
           "difficulty": "Beginner"
+        },
+        {
+          "id": "calculus-for-ml",
+          "title": "Calculus for ML: Derivatives, Chain Rule and Gradient Descent",
+          "desc": "The calculus behind backpropagation: derivatives, partial derivatives, the chain rule, and gradient descent — explained through working NumPy code.",
+          "duration": "35 min",
+          "badge": "Beginner",
+          "prev": "linear-algebra-ml",
+          "next": "sklearn-pipelines",
+          "sections": [
+            {
+              "h2": "Derivatives: Measuring How Functions Change",
+              "body": "A derivative tells you the slope of a function at any point — how much the output changes per unit change in the input. In ML, we compute derivatives of the loss function with respect to each weight to know which direction to adjust it. If the derivative is positive, the function is increasing; if negative, it's decreasing.",
+              "tip": "Think of a derivative as the 'steepness' of a hill at a specific spot. Gradient descent walks downhill by moving opposite to the slope.",
+              "code": {
+                "label": "Python (NumPy) - numerical derivatives",
+                "src": "import numpy as np\n\n# Numerical derivative: (f(x+h) - f(x)) / h\ndef derivative(f, x, h=1e-5):\n    return (f(x + h) - f(x)) / h\n\n# Example: f(x) = x^2  →  f'(x) = 2x\ndef f(x): return x ** 2\n\nx = 3.0\nderiv = derivative(f, x)\nprint(f'f(x)  = x^2     at x=3: {f(x)}')\nprint(f'f\\'(x) = 2x      at x=3: {deriv:.6f}')  # should be ~6.0\nprint(f'exact:          2*3  = {2*3}')\n\n# Practical: derivative of cross-entropy loss w.r.t. prediction\ndef cross_entropy(y_pred, y_true):\n    eps = 1e-9  # numerical stability\n    return -(y_true * np.log(y_pred + eps) + (1 - y_true) * np.log(1 - y_pred + eps))\n\ny_pred, y_true = 0.7, 1.0\ngrad = derivative(lambda p: cross_entropy(p, y_true), y_pred)\nprint(f'\\nCross-entropy gradient at pred=0.7, true=1.0: {grad:.4f}')\n# Analytical: -1/y_pred = -1/0.7 ≈ -1.4286"
+              }
+            },
+            {
+              "h2": "The Chain Rule: How Backpropagation Works",
+              "body": "Neural networks are compositions of functions: output = f3(f2(f1(x))). The chain rule says the derivative of a composition is the product of each layer's derivative. Backpropagation is just the chain rule applied layer by layer, from loss back to the first weight.",
+              "code": {
+                "label": "Python (NumPy) - chain rule in a 2-layer network",
+                "src": "import numpy as np\n\n# Mini 2-layer network: loss = MSE(ReLU(x @ W1) @ W2, y)\n# We'll manually compute gradients via the chain rule\n\nnp.random.seed(42)\nX = np.array([[2.0, 3.0]])\ny = np.array([[1.0]])\nW1 = np.random.randn(2, 4) * 0.1\nW2 = np.random.randn(4, 1) * 0.1\n\n# ----- Forward pass -----\nZ1 = X @ W1                       # (1,4) pre-activation\nA1 = np.maximum(0, Z1)             # ReLU activation\nZ2 = A1 @ W2                       # (1,1) output\nloss = 0.5 * np.mean((Z2 - y) ** 2)\n\n# ----- Backward pass (chain rule) -----\n# dL/dZ2\ndZ2 = (Z2 - y) / X.shape[0]       # MSE gradient\n\n# dL/dW2 = A1.T @ dZ2  (chain: dL/dZ2 * dZ2/dW2)\ndW2 = A1.T @ dZ2\n\n# dL/dA1 = dZ2 @ W2.T\ndA1 = dZ2 @ W2.T\n\n# dL/dZ1: ReLU gradient (0 where Z1<0, 1 where Z1>=0)\ndZ1 = dA1 * (Z1 > 0).astype(float)\n\n# dL/dW1 = X.T @ dZ1\ndW1 = X.T @ dZ1\n\nprint(f'Loss:  {loss:.6f}')\nprint(f'dW1 shape: {dW1.shape}, dW2 shape: {dW2.shape}')\nprint(f'Max |dW1|: {np.abs(dW1).max():.6f}')"
+              }
+            },
+            {
+              "h2": "Gradient Descent: Iteratively Minimizing Loss",
+              "body": "Gradient descent updates each parameter by subtracting the gradient scaled by a learning rate: w = w - lr * dL/dw. Repeat for many iterations and the loss decreases. This is the optimizer at the heart of every neural network, from logistic regression to GPT.",
+              "code": {
+                "label": "Python (NumPy) - gradient descent on a parabola",
+                "src": "import numpy as np\n\n# Minimize f(x) = (x - 3)^2 using gradient descent\n# Minimum is at x=3, f(3)=0\n# Gradient: f'(x) = 2*(x-3)\n\ndef f(x):        return (x - 3) ** 2\ndef grad_f(x):   return 2 * (x - 3)\n\nlr = 0.1\nx = 0.0  # start far from minimum\n\nprint('Gradient descent on f(x) = (x-3)^2')\nprint(f'{'Step':>5}  {'x':>10}  {'f(x)':>10}  {'grad':>10}')\nfor step in range(20):\n    g = grad_f(x)\n    x = x - lr * g          # the core update rule\n    if step % 4 == 0:\n        print(f'{step:>5}  {x:>10.6f}  {f(x):>10.6f}  {g:>10.6f}')\n\nprint(f'\\nFinal x = {x:.6f}  (true minimum: 3.0)')\n\n# Stochastic vs batch: in deep learning, gradients are averaged\n# over a mini-batch rather than the full dataset — same principle."
+              }
+            }
+          ],
+          "exercise": {
+            "title": "Implement Gradient Descent for Linear Regression",
+            "body": "Using only NumPy (no sklearn), train a linear regression model on a simple dataset using gradient descent.",
+            "steps": [
+              "Generate 50 data points: X = np.linspace(0, 10, 50), y = 2*X + 1 + np.random.randn(50)*0.5",
+              "Initialize weights: w=0.0, b=0.0",
+              "For 500 iterations: compute predictions (y_pred = w*X + b), compute MSE loss, compute gradients dw = mean(2*(y_pred - y)*X) and db = mean(2*(y_pred - y))",
+              "Update: w -= lr * dw, b -= lr * db using learning rate lr=0.01",
+              "Print the loss every 100 steps",
+              "At the end, print the learned w and b — they should be close to 2.0 and 1.0"
+            ],
+            "hint": "MSE loss = mean((y_pred - y)^2). Gradient of MSE w.r.t. w is 2 * mean((y_pred - y) * X). If loss is exploding, reduce the learning rate."
+          },
+          "useCase": "Every neural network — from a tiny logistic regression to GPT-4 — trains using backpropagation, which is just the chain rule applied at scale. PyTorch's autograd engine automatically computes these derivatives for any computational graph, which is why you don't need to derive gradients by hand in practice. But understanding the math makes debugging much easier.",
+          "difficulty": "Beginner"
         }
       ]
     },
