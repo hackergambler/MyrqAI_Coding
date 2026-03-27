@@ -1,1 +1,1 @@
-Fix LLM evaluation project ID to correct benchmark slug
+Add debugging lab link to debugging index page
