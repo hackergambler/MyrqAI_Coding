@@ -4344,7 +4344,7 @@
           "duration": "55 min",
           "badge": "Advanced",
           "prev": "constitutional-ai-rlaif",
-          "next": null,
+          "next": "multimodal-vision-models",
           "sections": [
             {
               "h2": "Why Quantization Matters",
@@ -4396,6 +4396,58 @@
             {
               "h2": "Real-World Use Cases",
               "body": "- **Edge deployment**: Running a 7B assistant model on a laptop or Raspberry Pi 5 via GGUF/llama.cpp.\n- **RAG on a budget**: Hosting a quantized 13B retrieval-augmented model on a single A10G (24 GB) instead of two A100s.\n- **QLoRA fine-tuning**: Loading a 70B model in 4-bit + LoRA adapters to fine-tune on a single 80 GB A100 (would otherwise require 4x A100s in FP16).\n- **Cost reduction**: Serving 4-bit models through vLLM cuts GPU memory in half, doubling the number of concurrent users per server."
+            }
+          ]
+        },
+        {
+          "id": "multimodal-vision-models",
+          "title": "Multimodal AI: Vision-Language Models in Production",
+          "desc": "Learn to build applications with vision-language models (VLMs) like GPT-4o, Claude 3, and LLaVA. Covers image understanding, OCR pipelines, and multi-image reasoning.",
+          "duration": "30 min",
+          "badge": "Advanced",
+          "prev": "llm-quantization-efficient-inference",
+          "next": null,
+          "sections": [
+            {
+              "h2": "What Are Vision-Language Models?",
+              "body": "Vision-Language Models (VLMs) accept both images and text as input and produce text output. They combine a vision encoder (e.g. a ViT or CLIP model) with a large language model decoder, bridging the semantic gap between pixels and tokens.\n\nKey VLMs in 2024-25:\n- **GPT-4o** \u2014 OpenAI's omni model; handles images, audio, and text natively.\n- **Claude 3 Opus/Sonnet/Haiku** \u2014 Anthropic's models with built-in vision.\n- **Gemini 1.5 Pro** \u2014 Google's long-context multimodal model (up to 1M tokens + video).\n- **LLaVA / LLaVA-NeXT** \u2014 Open-source VLMs you can self-host.\n- **Qwen-VL** \u2014 Strong open-weight vision model from Alibaba.",
+              "tip": "For production OCR and document parsing, GPT-4o and Claude 3 Sonnet outperform specialised tools on messy real-world scans \u2014 and they reason about content, not just extract characters."
+            },
+            {
+              "h2": "Sending Images to a VLM",
+              "body": "Most VLM APIs follow the OpenAI multimodal message format: the `content` field becomes a list containing text blocks and image blocks. Images can be sent as a public URL or as a base64-encoded data URI.",
+              "code": {
+                "label": "Python - Image understanding with the OpenAI API",
+                "src": "import base64\nimport httpx\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# --- Option A: image from URL ---\ndef describe_image_url(image_url: str) -> str:\n    response = client.chat.completions.create(\n        model=\"gpt-4o\",\n        messages=[\n            {\n                \"role\": \"user\",\n                \"content\": [\n                    {\"type\": \"text\", \"text\": \"Describe this image in detail.\"},\n                    {\"type\": \"image_url\", \"image_url\": {\"url\": image_url}},\n                ],\n            }\n        ],\n        max_tokens=512,\n    )\n    return response.choices[0].message.content\n\n# --- Option B: local file as base64 ---\ndef describe_local_image(path: str) -> str:\n    with open(path, \"rb\") as f:\n        b64 = base64.b64encode(f.read()).decode()\n    data_uri = f\"data:image/png;base64,{b64}\"\n    response = client.chat.completions.create(\n        model=\"gpt-4o\",\n        messages=[\n            {\n                \"role\": \"user\",\n                \"content\": [\n                    {\"type\": \"text\", \"text\": \"What text and objects appear in this image?\"},\n                    {\"type\": \"image_url\", \"image_url\": {\"url\": data_uri}},\n                ],\n            }\n        ],\n        max_tokens=512,\n    )\n    return response.choices[0].message.content\n\nif __name__ == \"__main__\":\n    result = describe_image_url(\"https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png\")\n    print(result)"
+              }
+            },
+            {
+              "h2": "Step-by-Step Explanation",
+              "body": "1. **`content` as a list** \u2014 When using multimodal input, `content` is a list of typed blocks rather than a plain string.\n2. **`type: image_url`** \u2014 Signals that the block is an image. The `url` field accepts `https://` URLs or `data:image/...;base64,...` URIs.\n3. **Detail level** \u2014 You can add `\"detail\": \"low\"` (85 tokens, fast) or `\"detail\": \"high\"` (up to 1,105 tokens, better for dense documents). Default is `\"auto\"`.\n4. **Multiple images** \u2014 Add more `image_url` blocks to the same content list; the model reasons across all of them."
+            },
+            {
+              "h2": "Multi-Image Reasoning",
+              "body": "VLMs can compare, diff, or reason across several images in a single prompt \u2014 useful for before/after analysis, UI bug reports, or document page stitching.",
+              "code": {
+                "label": "Python - Compare two images",
+                "src": "def compare_images(url_a: str, url_b: str) -> str:\n    response = client.chat.completions.create(\n        model=\"gpt-4o\",\n        messages=[\n            {\n                \"role\": \"user\",\n                \"content\": [\n                    {\"type\": \"text\", \"text\": \"Image A:\"},\n                    {\"type\": \"image_url\", \"image_url\": {\"url\": url_a, \"detail\": \"high\"}},\n                    {\"type\": \"text\", \"text\": \"Image B:\"},\n                    {\"type\": \"image_url\", \"image_url\": {\"url\": url_b, \"detail\": \"high\"}},\n                    {\"type\": \"text\", \"text\": \"List every visual difference between Image A and Image B.\"},\n                ],\n            }\n        ],\n        max_tokens=1024,\n    )\n    return response.choices[0].message.content"
+              }
+            },
+            {
+              "h2": "Structured OCR Pipeline",
+              "body": "For document intelligence (invoices, receipts, forms) you can combine vision with structured output to extract typed data reliably.",
+              "code": {
+                "label": "Python - Invoice OCR with Pydantic structured output",
+                "src": "from pydantic import BaseModel\nfrom openai import OpenAI\nimport base64\n\nclient = OpenAI()\n\nclass InvoiceData(BaseModel):\n    vendor: str\n    invoice_number: str\n    date: str\n    total_amount: float\n    line_items: list[str]\n\ndef extract_invoice(image_path: str) -> InvoiceData:\n    with open(image_path, \"rb\") as f:\n        b64 = base64.b64encode(f.read()).decode()\n    data_uri = f\"data:image/jpeg;base64,{b64}\"\n\n    response = client.beta.chat.completions.parse(\n        model=\"gpt-4o\",\n        messages=[\n            {\n                \"role\": \"user\",\n                \"content\": [\n                    {\"type\": \"text\", \"text\": \"Extract the invoice fields from this image.\"},\n                    {\"type\": \"image_url\", \"image_url\": {\"url\": data_uri}},\n                ],\n            }\n        ],\n        response_format=InvoiceData,\n    )\n    return response.choices[0].message.parsed\n\n# Usage:\n# invoice = extract_invoice(\"receipt.jpg\")\n# print(invoice.vendor, invoice.total_amount)"
+              }
+            },
+            {
+              "h2": "Hands-On Exercise",
+              "body": "**Exercise**: Build a screenshot analyser that:\n1. Accepts a local PNG screenshot path as a CLI argument.\n2. Sends it to GPT-4o (or Claude 3 Sonnet via the Anthropic SDK).\n3. Returns a JSON report with: `page_type` (e.g. 'e-commerce product page'), `main_cta` (primary call-to-action text), `accessibility_issues` (list of any obvious issues), and `suggested_improvements` (list of 3 UX suggestions).\n\nBonus: add `--model` flag to switch between `gpt-4o` and `claude-3-5-sonnet-20241022`.\n\n```python\n# Starter skeleton\nimport argparse, json, base64\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef analyse_screenshot(path: str) -> dict:\n    # TODO: load image, build multimodal message, parse JSON response\n    ...\n\nif __name__ == \"__main__\":\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"image\")\n    args = parser.parse_args()\n    print(json.dumps(analyse_screenshot(args.image), indent=2))\n```"
+            },
+            {
+              "h2": "Real-World Use Cases",
+              "body": "- **Document intelligence**: Extracting line items, totals, and vendor names from scanned invoices or receipts at scale.\n- **Accessibility auditing**: Automatically flagging missing alt text, low-contrast UI, or confusing layouts from screenshots.\n- **E-commerce**: Auto-generating product descriptions and alt text from product photos.\n- **Medical imaging assistance**: Describing X-rays or pathology slides to aid radiologist triage (requires domain-specific fine-tuned models for production use).\n- **Code-from-screenshot**: Reproducing UI components from a Figma screenshot or hand-drawn wireframe."
             }
           ]
         }

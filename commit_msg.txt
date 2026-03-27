@@ -1,1 +1,1 @@
-Add U-Net image segmentation lesson to MasterLibrary
+Add multimodal vision-language models lesson to MasterLibrary
