@@ -2182,6 +2182,68 @@
               }
             }
           ]
+        },
+        {
+          "id": "dbscan-clustering",
+          "title": "DBSCAN: Density-Based Clustering for Arbitrary Shapes",
+          "desc": "Master DBSCAN — the clustering algorithm that discovers arbitrary-shaped clusters and flags outliers automatically. Learn epsilon, min_samples tuning and when to use DBSCAN over K-Means.",
+          "duration": "30 min",
+          "badge": "Intermediate",
+          "prev": "ensemble-stacking",
+          "next": null,
+          "sections": [
+            {
+              "h2": "Why K-Means Fails on Non-Globular Clusters",
+              "body": "K-Means assumes clusters are convex and roughly equal in size. Give it a crescent, ring, or elongated shape and it carves the data into wrong groups. DBSCAN (Density-Based Spatial Clustering of Applications with Noise) has no such assumption — it finds clusters as dense regions separated by low-density areas, no matter the shape.",
+              "tip": "DBSCAN also labels outliers automatically. Any point that doesn't belong to any dense region gets label -1. This makes it a built-in anomaly detector.",
+              "code": {
+                "label": "Python (scikit-learn) - DBSCAN vs K-Means on non-globular data",
+                "src": "from sklearn.datasets import make_moons\nfrom sklearn.cluster import DBSCAN, KMeans\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Two-moons: classic non-globular benchmark\nX, _ = make_moons(n_samples=300, noise=0.05, random_state=42)\n\nkmeans = KMeans(n_clusters=2, random_state=42)\ndbscan = DBSCAN(eps=0.2, min_samples=5)\n\nkm_labels = kmeans.fit_predict(X)\ndb_labels  = dbscan.fit_predict(X)\n\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))\nax1.scatter(X[:, 0], X[:, 1], c=km_labels, cmap='viridis', s=20)\nax1.set_title('K-Means (fails on moons)')\nax2.scatter(X[:, 0], X[:, 1], c=db_labels, cmap='viridis', s=20)\nax2.set_title('DBSCAN (correctly separates moons)')\nplt.tight_layout()\nplt.savefig('dbscan_vs_kmeans.png', dpi=120)\nprint(f'DBSCAN found {len(set(db_labels)) - (1 if -1 in db_labels else 0)} clusters')\nprint(f'Noise points: {(db_labels == -1).sum()}')"
+              }
+            },
+            {
+              "h2": "The Two Hyperparameters: epsilon and min_samples",
+              "body": "DBSCAN has exactly two parameters:\n\n**epsilon (eps)**: the maximum distance between two points to be considered neighbours. Think of it as the radius of a circle drawn around each point.\n\n**min_samples**: the minimum number of points (including the point itself) inside the epsilon-radius circle for a point to be a *core point*.\n\nPoints are classified as:\n- **Core points**: have >= min_samples neighbours within eps\n- **Border points**: within eps of a core point but have fewer than min_samples neighbours themselves\n- **Noise/outliers**: not within eps of any core point",
+              "tip": "A good starting rule: set min_samples = 2 × n_features. Then find epsilon using the k-distance graph — plot sorted distances to the k-th nearest neighbour and look for the 'elbow'.",
+              "code": {
+                "label": "Python - k-distance graph to choose epsilon",
+                "src": "from sklearn.datasets import make_blobs\nfrom sklearn.neighbors import NearestNeighbors\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nX, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.6, random_state=42)\n\nk = 5  # min_samples - 1\nnbrs = NearestNeighbors(n_neighbors=k).fit(X)\ndistances, _ = nbrs.kneighbors(X)\n\n# Distance to k-th nearest neighbour for each point\nk_distances = np.sort(distances[:, -1])[::-1]  # sort descending\n\nplt.figure(figsize=(8, 4))\nplt.plot(k_distances)\nplt.xlabel('Points (sorted by distance)')\nplt.ylabel(f'Distance to {k}th nearest neighbour')\nplt.title('k-Distance Graph — look for the elbow')\nplt.axhline(y=0.5, color='red', linestyle='--', label='candidate eps=0.5')\nplt.legend()\nplt.savefig('kdistance_graph.png', dpi=120)\n# The elbow point suggests a good epsilon value"
+              }
+            },
+            {
+              "h2": "Fitting DBSCAN and Interpreting Results",
+              "body": "Unlike K-Means, DBSCAN does not require specifying the number of clusters. The algorithm determines it from the data density. After fitting, `labels_` contains the cluster IDs (0, 1, 2, …) and -1 for noise points. Use `components_` to retrieve only the core points.",
+              "code": {
+                "label": "Python (scikit-learn) - Full DBSCAN workflow with evaluation",
+                "src": "from sklearn.datasets import make_blobs\nfrom sklearn.cluster import DBSCAN\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import silhouette_score\nimport numpy as np\n\n# Generate data with outliers\nX, y_true = make_blobs(n_samples=400, centers=4, cluster_std=0.5, random_state=42)\n# Add some noise\nnoise = np.random.uniform(-8, 8, size=(30, 2))\nX = np.vstack([X, noise])\n\n# Scale features (DBSCAN is distance-based — scaling matters!)\nX_scaled = StandardScaler().fit_transform(X)\n\ndb = DBSCAN(eps=0.4, min_samples=5)\nlabels = db.fit_predict(X_scaled)\n\nn_clusters = len(set(labels)) - (1 if -1 in labels else 0)\nn_noise     = (labels == -1).sum()\n\nprint(f'Clusters found : {n_clusters}')\nprint(f'Noise points   : {n_noise} ({100*n_noise/len(labels):.1f}%)')\n\n# Silhouette score on non-noise points only\nmask = labels != -1\nif mask.sum() > 1:\n    sil = silhouette_score(X_scaled[mask], labels[mask])\n    print(f'Silhouette     : {sil:.3f}  (higher is better, max 1.0)')"
+              }
+            },
+            {
+              "h2": "Tuning DBSCAN with Grid Search",
+              "body": "Since DBSCAN has only two parameters, a simple grid search over (eps, min_samples) pairs using the silhouette score as the objective is fast and effective. Avoid silhouette when all points are noise — always check that at least two clusters exist before computing it.",
+              "code": {
+                "label": "Python - Grid search for DBSCAN hyperparameters",
+                "src": "from sklearn.datasets import make_blobs\nfrom sklearn.cluster import DBSCAN\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import silhouette_score\nimport numpy as np\nimport pandas as pd\n\nX, _ = make_blobs(n_samples=500, centers=5, cluster_std=0.5, random_state=42)\nX_scaled = StandardScaler().fit_transform(X)\n\nresults = []\nfor eps in [0.2, 0.3, 0.4, 0.5, 0.6]:\n    for min_s in [3, 5, 7, 10]:\n        labels = DBSCAN(eps=eps, min_samples=min_s).fit_predict(X_scaled)\n        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)\n        n_noise     = (labels == -1).sum()\n        mask = labels != -1\n        sil = silhouette_score(X_scaled[mask], labels[mask]) if n_clusters >= 2 and mask.sum() > 1 else -1\n        results.append({'eps': eps, 'min_samples': min_s,\n                        'n_clusters': n_clusters, 'n_noise': n_noise, 'silhouette': round(sil, 3)})\n\ndf = pd.DataFrame(results)\nbest = df[df['n_clusters'] > 1].sort_values('silhouette', ascending=False).head(5)\nprint(best.to_string(index=False))"
+              }
+            },
+            {
+              "h2": "Real-World Use Cases",
+              "body": "**Geospatial clustering**: Group GPS coordinates of taxi pickups into neighbourhoods without specifying how many neighbourhoods exist. Sparse countryside points become noise.\n\n**Fraud detection**: Legitimate transactions form dense clusters; fraudulent ones appear as isolated noise points with label -1.\n\n**Image segmentation**: Cluster pixels by (R, G, B, x, y) — DBSCAN naturally handles irregular colour regions.\n\n**Network intrusion detection**: Normal traffic packets cluster densely; attack vectors appear as outliers.",
+              "tip": "For very large datasets (>100k points), use HDBSCAN (pip install hdbscan) which is DBSCAN with automatic epsilon selection and better scaling.",
+              "code": {
+                "label": "Python - Geospatial clustering with DBSCAN",
+                "src": "import numpy as np\nfrom sklearn.cluster import DBSCAN\n\n# Simulate GPS coordinates (latitude, longitude) for city events\nnp.random.seed(42)\n# Three dense districts + scattered points\ndistrict_a = np.random.randn(80, 2) * 0.05 + [48.85, 2.35]   # Paris centre\ndistrict_b = np.random.randn(60, 2) * 0.04 + [48.87, 2.31]   # Montmartre\ndistrict_c = np.random.randn(40, 2) * 0.06 + [48.83, 2.37]   # Bastille\nscattered  = np.random.uniform([48.80, 2.28], [48.92, 2.44], size=(20, 2))\n\ncoords = np.vstack([district_a, district_b, district_c, scattered])\n\n# eps in degrees (~0.01 deg approx 1km)\ndb = DBSCAN(eps=0.015, min_samples=5)\nlabels = db.fit_predict(coords)\n\nfor cluster_id in sorted(set(labels)):\n    name = 'Noise' if cluster_id == -1 else f'District {cluster_id}'\n    count = (labels == cluster_id).sum()\n    print(f'{name}: {count} events')"
+              }
+            },
+            {
+              "h2": "Exercise",
+              "body": "Load the `make_circles` dataset (sklearn.datasets.make_circles, n_samples=300, noise=0.05). Train K-Means with 2 clusters and DBSCAN with eps=0.15, min_samples=5. Plot both results side by side. Then: (1) calculate the silhouette score for each (excluding DBSCAN noise points), (2) add 20 random noise points outside the circles range and rerun DBSCAN — verify that the noise points get label -1.",
+              "code": {
+                "label": "Python - exercise starter",
+                "src": "from sklearn.datasets import make_circles\nfrom sklearn.cluster import DBSCAN, KMeans\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.metrics import silhouette_score\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nX, _ = make_circles(n_samples=300, noise=0.05, factor=0.4, random_state=42)\nX_scaled = StandardScaler().fit_transform(X)\n\n# TODO 1: fit KMeans(n_clusters=2) and DBSCAN(eps=0.15, min_samples=5)\n# TODO 2: plot side-by-side scatter with colour = cluster label\n# TODO 3: compute silhouette for KMeans; compute silhouette for DBSCAN (non-noise only)\n# TODO 4: add 20 noise points and verify DBSCAN labels them -1\n\n# Expected: DBSCAN perfectly separates the rings; K-Means fails\n# Expected: DBSCAN silhouette > KMeans silhouette by a large margin"
+              }
+            }
+          ]
         }
       ]
     },
