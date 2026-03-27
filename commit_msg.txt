@@ -1,1 +1,1 @@
-Add feature-engineering lesson and fix navigation links
+Add KNN lesson and expand MasterLibrary content
