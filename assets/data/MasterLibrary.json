@@ -916,7 +916,7 @@
           "duration": "35 min",
           "badge": "Intermediate",
           "prev": "pca-dimensionality-reduction",
-          "next": "transformer-architecture",
+          "next": "anomaly-detection",
           "sections": [
             {
               "h2": "Linear Regression: From Equation to Code",
@@ -942,6 +942,52 @@
                 "label": "Python - interpreting regression coefficients",
                 "src": "import pandas as pd\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nfeature_names = ['age', 'income', 'credit_score', 'num_accounts',\n                 'missed_payments', 'loan_amount', 'employment_years',\n                 'debt_ratio', 'assets', 'region_encoded']\n\n# Assume X_train, y_train already defined\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X_train)\n\nclf = LogisticRegression(C=1.0, max_iter=1000)\nclf.fit(X_scaled, y_train)\n\n# Rank features by absolute coefficient (standardized = comparable)\ncoef_df = pd.DataFrame({\n    'feature': feature_names,\n    'coefficient': clf.coef_[0],\n    'abs_importance': np.abs(clf.coef_[0])\n}).sort_values('abs_importance', ascending=False)\n\nprint(coef_df.to_string(index=False))\n# Positive coef \u2192 increases probability of class 1\n# Negative coef \u2192 decreases probability of class 1"
               }
+            }
+          ]
+        },
+        {
+          "id": "anomaly-detection",
+          "title": "Anomaly Detection: Isolation Forest, LOF and Autoencoders",
+          "desc": "Detect outliers and anomalies in tabular and time-series data using Isolation Forest, Local Outlier Factor, and autoencoder-based approaches.",
+          "duration": "35 min",
+          "badge": "Intermediate",
+          "prev": "linear-logistic-regression",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "What Is Anomaly Detection?",
+              "body": "Anomaly detection (also called outlier detection) finds rare data points that differ significantly from the majority. Use cases span fraud detection, network intrusion, manufacturing defects, and predictive maintenance. There are three main paradigms: statistical methods, proximity-based methods (LOF), and isolation-based methods (Isolation Forest).",
+              "tip": "Anomaly detection is inherently unsupervised \u2014 you rarely have labels for rare events. Treat the output score as a ranking, not a hard label, and tune the contamination threshold on domain knowledge."
+            },
+            {
+              "h2": "Isolation Forest",
+              "body": "Isolation Forest isolates anomalies by randomly partitioning features. Normal points require many splits to isolate; anomalies are isolated in very few. The anomaly score is the average path length across all trees \u2014 shorter path = more anomalous. It's fast, scalable, and handles high-dimensional data well.",
+              "code": {
+                "label": "Python - Isolation Forest for fraud detection",
+                "src": "import numpy as np\nfrom sklearn.ensemble import IsolationForest\nfrom sklearn.datasets import make_classification\nfrom sklearn.metrics import classification_report\n\n# Simulate credit card transactions: 95% normal, 5% fraud\nnp.random.seed(42)\nn_normal = 950\nn_fraud = 50\n\nX_normal = np.random.randn(n_normal, 10)\nX_fraud = np.random.randn(n_fraud, 10) * 3 + 4  # shifted distribution\nX = np.vstack([X_normal, X_fraud])\ny_true = np.array([1] * n_normal + [-1] * n_fraud)  # 1=normal, -1=anomaly\n\n# Isolation Forest\niso = IsolationForest(\n    n_estimators=100,\n    contamination=0.05,  # expected fraction of anomalies\n    random_state=42\n)\niso.fit(X)\ny_pred = iso.predict(X)          # 1 = normal, -1 = anomaly\nscores = iso.score_samples(X)    # lower = more anomalous\n\nprint(classification_report(y_true, y_pred, target_names=['anomaly', 'normal']))\nprint(f'Anomaly score range: [{scores.min():.3f}, {scores.max():.3f}]')\n\n# Top 10 most anomalous points\ntop_anomalies = np.argsort(scores)[:10]\nprint(f'\\nTop 10 anomaly indices: {top_anomalies}')"
+              }
+            },
+            {
+              "h2": "Local Outlier Factor (LOF)",
+              "body": "LOF compares the local density of a point to its neighbors. A point in a sparse region surrounded by denser clusters gets a high LOF score. Unlike Isolation Forest, LOF is density-based and works well when anomalies form local clusters rather than being globally rare.",
+              "code": {
+                "label": "Python - LOF for density-based anomaly detection",
+                "src": "from sklearn.neighbors import LocalOutlierFactor\nimport numpy as np\nimport matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\n\nnp.random.seed(0)\n# Two dense clusters + scattered outliers\nX_cluster1 = np.random.randn(200, 2) + np.array([0, 0])\nX_cluster2 = np.random.randn(200, 2) + np.array([8, 8])\nX_outliers = np.random.uniform(-4, 12, size=(20, 2))\nX = np.vstack([X_cluster1, X_cluster2, X_outliers])\n\nlof = LocalOutlierFactor(n_neighbors=20, contamination=0.05)\ny_pred = lof.fit_predict(X)  # -1 = outlier\nneg_scores = lof.negative_outlier_factor_  # more negative = more anomalous\n\nn_outliers = (y_pred == -1).sum()\nprint(f'LOF detected {n_outliers} outliers out of {len(X)} points')\nprint(f'True outliers injected: 20')\n\n# Inspect most extreme outliers\nranked = np.argsort(neg_scores)[:5]\nprint(f'\\n5 most anomalous LOF scores: {neg_scores[ranked].round(2)}')"
+              }
+            },
+            {
+              "h2": "Autoencoder-Based Anomaly Detection",
+              "body": "Autoencoders learn to compress and reconstruct normal data. When fed an anomaly, reconstruction error spikes because the model was never trained to represent it. This approach works especially well for high-dimensional tabular data, images, and time-series where simple statistical methods fail.",
+              "code": {
+                "label": "Python - autoencoder anomaly detection with PyTorch",
+                "src": "import torch\nimport torch.nn as nn\nimport numpy as np\nfrom torch.utils.data import DataLoader, TensorDataset\n\n# ---- Data ----\nnp.random.seed(42)\ntorch.manual_seed(42)\nn_normal = 1000\nX_normal = np.random.randn(n_normal, 20).astype(np.float32)\nX_anomaly = (np.random.randn(50, 20) * 4 + 6).astype(np.float32)\n\ntrain_loader = DataLoader(\n    TensorDataset(torch.from_numpy(X_normal)),\n    batch_size=64, shuffle=True\n)\n\n# ---- Autoencoder ----\nclass Autoencoder(nn.Module):\n    def __init__(self, input_dim, latent_dim=8):\n        super().__init__()\n        self.encoder = nn.Sequential(\n            nn.Linear(input_dim, 16), nn.ReLU(),\n            nn.Linear(16, latent_dim)\n        )\n        self.decoder = nn.Sequential(\n            nn.Linear(latent_dim, 16), nn.ReLU(),\n            nn.Linear(16, input_dim)\n        )\n    def forward(self, x):\n        return self.decoder(self.encoder(x))\n\nmodel = Autoencoder(input_dim=20)\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\nloss_fn = nn.MSELoss()\n\n# ---- Train on normal data only ----\nfor epoch in range(30):\n    for (batch,) in train_loader:\n        recon = model(batch)\n        loss = loss_fn(recon, batch)\n        optimizer.zero_grad(); loss.backward(); optimizer.step()\n    if (epoch + 1) % 10 == 0:\n        print(f'Epoch {epoch+1}/30  loss={loss.item():.4f}')\n\n# ---- Score reconstruction error ----\nwith torch.no_grad():\n    X_all = torch.from_numpy(np.vstack([X_normal, X_anomaly]))\n    recon_all = model(X_all)\n    errors = ((X_all - recon_all) ** 2).mean(dim=1).numpy()\n\nthreshold = np.percentile(errors[:n_normal], 95)  # 95th pct of normal errors\npredictions = (errors > threshold).astype(int)\ntp = predictions[n_normal:].sum()\nprint(f'\\nThreshold: {threshold:.4f}')\nprint(f'True anomalies caught: {tp}/50 ({tp*2}%)')"
+              }
+            },
+            {
+              "h2": "Choosing the Right Method",
+              "body": "| Method | Best For | Pros | Cons |\n|---|---|---|---|\n| Isolation Forest | High-dim tabular | Fast, scalable | Less effective for local anomalies |\n| LOF | Local density anomalies | No training needed | Slow on large datasets |\n| Autoencoder | Complex patterns, images | Learns representations | Needs tuning, more code |\n\n**Rule of thumb**: Start with Isolation Forest. Use LOF if anomalies are locally clustered. Use autoencoders when the feature space is very high-dimensional or you need reconstruction explainability.",
+              "exercise": "Load the KDD Cup 1999 network intrusion dataset (`from sklearn.datasets import fetch_kddcup99`). Apply Isolation Forest with contamination=0.1. Plot the distribution of anomaly scores for the two classes (normal vs attack). Tune the contamination parameter and report Precision, Recall, and F1.",
+              "tip": "Set contamination to match your domain knowledge (e.g., fraud rates are ~0.1\u20132%). Avoid using 0.5 \u2014 that treats half your data as anomalies."
             }
           ]
         }

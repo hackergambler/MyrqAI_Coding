@@ -1,1 +1,1 @@
-Expand and update MasterLibrary lessons and content structure
+Add anomaly detection lesson with Isolation Forest, LOF, autoencoders
