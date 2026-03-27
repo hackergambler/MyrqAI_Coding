@@ -1,1 +1,1 @@
-Fix chat-completions next nav link to embeddings
+Fix Claude tutorial nav order: messages-api → prompt-caching → tool-use
