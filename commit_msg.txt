@@ -1,1 +1,1 @@
-Add Gradient Descent lesson and expand MasterLibrary content
+Add new lessons and update MasterLibrary content
