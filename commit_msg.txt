@@ -1,1 +1,1 @@
-Fix Claude tutorial lesson navigation order
+Fix syntax error in LangChain prompts tutorial code
