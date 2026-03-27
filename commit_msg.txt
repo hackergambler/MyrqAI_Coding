@@ -1,1 +1,1 @@
-Update Claude course sidebar lesson names and descriptions
+Fix lesson count and remove duplicate sidebar entries
