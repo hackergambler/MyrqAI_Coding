@@ -1,1 +1,1 @@
-Add speculative decoding lesson to MasterLibrary
+Add active learning lesson to MasterLibrary
