@@ -498,7 +498,7 @@
           "duration": "30 min",
           "badge": "Intermediate",
           "prev": "model-deployment-fastapi",
-          "next": "transformer-architecture",
+          "next": "xgboost-gradient-boosting",
           "sections": [
             {
               "h2": "Drift Detection with Evidently AI",
@@ -506,6 +506,34 @@
               "code": {
                 "label": "Python - Evidently drift report",
                 "src": "from evidently.report import Report\nfrom evidently.metric_preset import DataDriftPreset, TargetDriftPreset\nfrom evidently.metrics import DatasetSummaryMetric\nimport pandas as pd\n\n# Reference = training data distribution\nreference_data = pd.read_parquet('train_features.parquet')\n# Current = production data from last 7 days\ncurrent_data   = pd.read_parquet('prod_features_7d.parquet')\n\nreport = Report(metrics=[\n    DataDriftPreset(drift_share=0.3),   # alert if >30% features drift\n    TargetDriftPreset(),\n    DatasetSummaryMetric(),\n])\nreport.run(reference_data=reference_data, current_data=current_data)\nreport.save_html('drift_report.html')  # open in browser\n\n# Programmatic access for alerting\nresult = report.as_dict()\ndrift_metrics = result['metrics'][0]['result']\nprint(f\"Drifted features: {drift_metrics['number_of_drifted_columns']}\")\nprint(f\"Share drifted:    {drift_metrics['share_of_drifted_columns']:.1%}\")\nif drift_metrics['dataset_drift']:\n    print('\u26a0\ufe0f  DATASET DRIFT DETECTED \u2014 consider retraining')\n    # send_alert_to_pagerduty()"
+              }
+            }
+          ]
+        },
+        {
+          "id": "xgboost-gradient-boosting",
+          "title": "XGBoost: Gradient Boosting for Tabular Data",
+          "desc": "Master XGBoost — the algorithm that wins Kaggle competitions. Decision tree ensembles, the gradient boosting algorithm, regularization, hyperparameter tuning, and SHAP explainability.",
+          "duration": "35 min",
+          "badge": "Intermediate",
+          "prev": "monitoring-drift",
+          "next": "transformer-architecture",
+          "sections": [
+            {
+              "h2": "How Gradient Boosting Works",
+              "body": "Gradient boosting builds an ensemble by training each new tree on the residual errors of the previous trees. XGBoost adds second-order gradients (Newton boosting), column subsampling, and L1/L2 regularization — giving it a consistent edge over vanilla GBM on tabular data.",
+              "tip": "XGBoost's 'learning_rate' (eta) and 'n_estimators' have an inverse relationship: lower learning rate needs more trees. Use early stopping to find the optimal count automatically.",
+              "code": {
+                "label": "Python - XGBoost with early stopping and cross-validation",
+                "src": "import xgboost as xgb\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split, StratifiedKFold\nfrom sklearn.metrics import roc_auc_score\nimport numpy as np\n\nX, y = make_classification(n_samples=10_000, n_features=20, n_informative=10, random_state=42)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\nX_tr, X_val, y_tr, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42)\n\nmodel = xgb.XGBClassifier(\n    n_estimators=1000,        # set high \u2014 early stopping will cut it down\n    learning_rate=0.05,       # lower rate = more trees needed, better generalization\n    max_depth=6,              # controls tree complexity / overfitting\n    subsample=0.8,            # row subsampling per tree\n    colsample_bytree=0.8,     # feature subsampling per tree\n    reg_alpha=0.1,            # L1 regularization\n    reg_lambda=1.0,           # L2 regularization\n    eval_metric='auc',\n    early_stopping_rounds=50, # stop if val AUC doesn't improve for 50 rounds\n    random_state=42,\n    n_jobs=-1,\n)\n\nmodel.fit(\n    X_tr, y_tr,\n    eval_set=[(X_val, y_val)],\n    verbose=100\n)\n\nprint(f'Best iteration:  {model.best_iteration}')\nprint(f'Test AUC:        {roc_auc_score(y_test, model.predict_proba(X_test)[:,1]):.4f}')"
+              }
+            },
+            {
+              "h2": "SHAP Values: Explaining Model Predictions",
+              "body": "SHAP (SHapley Additive exPlanations) decomposes each prediction into per-feature contributions. Unlike feature importance (which is global), SHAP explains individual predictions — critical for regulated industries and debugging unexpected model behavior.",
+              "code": {
+                "label": "Python - SHAP explainability for XGBoost",
+                "src": "import shap\nimport matplotlib.pyplot as plt\n\n# Tree SHAP is exact and fast for tree-based models\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test[:500])\n\n# Global: which features matter most overall?\nshap.summary_plot(shap_values, X_test[:500], show=False)\nplt.title('SHAP Feature Importance (global)')\nplt.tight_layout()\nplt.savefig('shap_summary.png', dpi=150)\n\n# Local: why did the model predict this specific row?\nrow_idx = 0\nprint(f'Prediction: {model.predict_proba(X_test[[row_idx]])[:,1][0]:.3f}')\nprint('\\nTop 5 feature contributions for this prediction:')\nfeature_contribs = list(zip(range(20), shap_values[row_idx]))\nfeature_contribs.sort(key=lambda x: abs(x[1]), reverse=True)\nfor feat_idx, contrib in feature_contribs[:5]:\n    direction = '+' if contrib > 0 else '-'\n    print(f'  feature_{feat_idx:02d}: {direction}{abs(contrib):.4f}')"
               }
             }
           ]
