@@ -1,1 +1,1 @@
-Update nav search UI in two course pages
+Update nav search placeholders across debugging, projects, and tutorials
