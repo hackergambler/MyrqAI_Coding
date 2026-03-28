@@ -1,1 +1,1 @@
-Update agents.html nav to match site-wide design
+Fix nav links and search placeholder in claude.html
