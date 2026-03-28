@@ -1,1 +1,1 @@
-Add live search input listener to tutorials filter
+Fix nav class name and simplify mobile menu button
