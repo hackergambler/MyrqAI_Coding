@@ -1,1 +1,1 @@
-Fix course lesson counts to accurate values
+Add donation widget script to multiple tutorial pages
