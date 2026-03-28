@@ -1,1 +1,1 @@
-Fix stray closing brace in tutorials/advanced.html CSS
+Add AdSense ad block to personal-assistant project page
