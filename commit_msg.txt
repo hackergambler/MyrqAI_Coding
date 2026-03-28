@@ -1,1 +1,1 @@
-Fix broken tutorial card links in intermediate page
+Update lesson counts for OpenAI and LangChain courses
