@@ -678,6 +678,17 @@
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
     <script>
+        let activeLevel = null;
+
+        function applyFilters() {
+            const query = document.querySelector('.search-box input').value.trim().toLowerCase();
+            document.querySelectorAll('[data-searchable]').forEach(card => {
+                const textMatch = !query || card.textContent.toLowerCase().includes(query);
+                const levelMatch = !activeLevel || card.querySelector('.badge-' + activeLevel);
+                card.style.display = (textMatch && levelMatch) ? '' : 'none';
+            });
+        }
+
         // Filter button active state toggle + level filtering
         document.querySelectorAll('.filter-group').forEach((group, groupIdx) => {
             group.querySelectorAll('.filter-btn').forEach(btn => {
@@ -687,32 +698,15 @@
 
                     // Level filter (first group only)
                     if (groupIdx === 0) {
-                        const levelClass = [...btn.classList].find(c => ['beginner','intermediate','advanced','expert'].includes(c));
-                        document.querySelectorAll('[data-searchable]').forEach(card => {
-                            if (!levelClass) {
-                                card.style.display = '';
-                            } else {
-                                const hasBadge = card.querySelector('.badge-' + levelClass);
-                                card.style.display = hasBadge ? '' : 'none';
-                            }
-                        });
+                        activeLevel = [...btn.classList].find(c => ['beginner','intermediate','advanced','expert'].includes(c)) || null;
+                        applyFilters();
                     }
                 });
             });
         });
 
         // Search box functionality
-        function runSearch() {
-            const query = document.querySelector('.search-box input').value.trim().toLowerCase();
-            const cards = document.querySelectorAll('[data-searchable]');
-            let visibleCount = 0;
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                const matches = !query || text.includes(query);
-                card.style.display = matches ? '' : 'none';
-                if (matches) visibleCount++;
-            });
-        }
+        function runSearch() { applyFilters(); }
 
         document.querySelector('.search-box button').addEventListener('click', runSearch);
         document.querySelector('.search-box input').addEventListener('keydown', function(e) {
