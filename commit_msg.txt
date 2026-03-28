@@ -1,1 +1,1 @@
-Update AI Agents course lesson count to 56
+Fix course lesson counts to accurate values
