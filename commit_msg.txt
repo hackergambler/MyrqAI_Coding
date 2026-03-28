@@ -1,1 +1,1 @@
-Add donation widget script to multiple tutorial pages
+Add copy-to-clipboard functionality to debugging pages

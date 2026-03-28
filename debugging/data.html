@@ -2207,5 +2207,6 @@ obj = json.loads(buffer)  <span class="cm"># parse once, after stream completes<
 
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
+    <script>document.querySelectorAll('.copy-btn').forEach(b=>{b.addEventListener('click',function(){navigator.clipboard.writeText(this.closest('.code-block').querySelector('pre').innerText).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})})});</script>
 </body>
 </html>
