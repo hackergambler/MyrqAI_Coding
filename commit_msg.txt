@@ -1,1 +1,1 @@
-Add search functionality to tutorials index page
+Update gemini.html nav to match site-wide design
