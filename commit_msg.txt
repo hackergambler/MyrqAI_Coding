@@ -1,1 +1,1 @@
-Add active class to Projects nav link in project pages
+Update nav search placeholder to "Search tutorials..." across tutorial pages
