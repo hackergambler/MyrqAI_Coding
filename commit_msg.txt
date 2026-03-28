@@ -1,1 +1,1 @@
-Add Enter key nav search with URL query pre-fill
+Add keyboard arrow navigation to search modal

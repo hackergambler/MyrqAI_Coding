@@ -285,7 +285,13 @@ const Search={
     this._css();document.body.appendChild(this.modal);
     const inp=document.getElementById('ce-si2'),res=document.getElementById('ce-sr2');
     inp.focus();
+    let selectedIdx=-1;
+    const getItems=()=>res.querySelectorAll('.ce-sri2');
+    const highlight=(idx)=>{
+      getItems().forEach((el,i)=>{el.style.background=i===idx?'rgba(0,255,170,.12)':'';});
+      selectedIdx=idx;};
     inp.addEventListener('input',async()=>{
+      selectedIdx=-1;
       const q=inp.value.trim();if(q.length<2){res.innerHTML='';return;}
       const hits=(await Library.search(q)).slice(0,9);
       res.innerHTML=hits.length?hits.map(h=>`
@@ -294,6 +300,11 @@ const Search={
           <span style="flex:1;color:var(--text-primary);font-size:.95rem">${h.title}</span>
           <span style="font-size:.72rem;color:var(--text-muted);font-family:var(--font-mono)">${h.trackId}</span>
         </a>`).join(''):`<div style="padding:1.5rem;text-align:center;color:var(--text-muted);font-style:italic">No results for "${q}"</div>`;});
+    inp.addEventListener('keydown',e=>{
+      const items=getItems();
+      if(e.key==='ArrowDown'){e.preventDefault();highlight(Math.min(selectedIdx+1,items.length-1));}
+      else if(e.key==='ArrowUp'){e.preventDefault();highlight(Math.max(selectedIdx-1,0));}
+      else if(e.key==='Enter'&&selectedIdx>=0){e.preventDefault();items[selectedIdx].click();}});
     this.modal.querySelector('.ce-sb2').addEventListener('click',()=>this.close());
     document.addEventListener('keydown',e=>e.key==='Escape'&&this.close(),{once:true});},
   close(){if(this.modal){this.modal.remove();this.modal=null;}},
@@ -309,7 +320,7 @@ const Search={
       color:var(--text-primary);font-size:1.1rem;font-family:var(--font-mono);outline:none}
     .ce-sri2{display:flex;align-items:center;gap:.75rem;padding:.7rem 1.5rem;
       text-decoration:none;border-top:1px solid rgba(255,255,255,.04);transition:background .15s}
-    .ce-sri2:hover{background:rgba(0,255,170,.06)}
+    .ce-sri2:hover,.ce-sri2:focus{background:rgba(0,255,170,.06)}
     .ce-sri-badge{font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:700;
       text-transform:uppercase;flex-shrink:0}
     .badge-beginner{background:rgba(0,255,170,.15);color:var(--accent-primary)}
