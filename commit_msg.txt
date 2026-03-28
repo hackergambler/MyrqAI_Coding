@@ -1,1 +1,1 @@
-Add copy-to-clipboard functionality to debugging pages
+Update search placeholder to reflect 125+ lessons

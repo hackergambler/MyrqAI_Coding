@@ -280,7 +280,7 @@ const Search={
     if(this.modal){this.modal.remove();this.modal=null;}
     this.modal=document.createElement('div');this.modal.id='ce-sm';
     this.modal.innerHTML=`<div class="ce-sb2"></div><div class="ce-sbox2">
-      <input id="ce-si2" type="text" placeholder="Search 50+ tutorials…" autocomplete="off">
+      <input id="ce-si2" type="text" placeholder="Search 125+ lessons…" autocomplete="off">
       <div id="ce-sr2"></div><div class="ce-sh2">↑↓ navigate · ↵ open · esc close</div></div>`;
     this._css();document.body.appendChild(this.modal);
     const inp=document.getElementById('ce-si2'),res=document.getElementById('ce-sr2');
