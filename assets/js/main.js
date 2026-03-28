@@ -63,6 +63,8 @@ const navSearchInput = document.querySelector('.nav-search input');
 if (navSearchInput) {
     navSearchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
+            // If already on the tutorials page, let the inline script handle in-place filtering
+            if (window.location.pathname.includes('/tutorials/index')) return;
             const query = navSearchInput.value.trim();
             // Find the tutorials nav link to get the correct relative path
             const tutorialsLink = document.querySelector('a[href*="tutorials/index.html"]');
