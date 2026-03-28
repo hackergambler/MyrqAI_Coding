@@ -716,6 +716,7 @@
         function runSearch() { applyFilters(); }
 
         document.querySelector('.search-box button').addEventListener('click', runSearch);
+        document.querySelector('.search-box input').addEventListener('input', runSearch);
         document.querySelector('.search-box input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') runSearch();
         });

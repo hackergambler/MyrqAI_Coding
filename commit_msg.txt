@@ -1,1 +1,1 @@
-Add topic filter support to tutorials page
+Add live search input listener to tutorials filter
