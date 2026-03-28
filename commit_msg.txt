@@ -1,1 +1,1 @@
-Update search placeholder to reflect 125+ lessons
+Add Enter key nav search with URL query pre-fill

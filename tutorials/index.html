@@ -705,6 +705,17 @@
         document.querySelector('.search-box input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') runSearch();
         });
+
+        // Pre-fill search from URL ?q= param (e.g. redirected from homepage nav search)
+        const urlQ = new URLSearchParams(window.location.search).get('q');
+        if (urlQ) {
+            const searchInput = document.querySelector('.search-box input');
+            if (searchInput) {
+                searchInput.value = urlQ;
+                runSearch();
+                searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
     </script>
 </body>
 </html>
