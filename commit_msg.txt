@@ -1,1 +1,1 @@
-Clear commit_msg.txt contents
+Add Local LLMs tutorial section to tutorials index
