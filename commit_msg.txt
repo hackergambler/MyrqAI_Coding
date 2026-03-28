@@ -1,1 +1,1 @@
-Refactor debugging/memory.html with updated content and title
+Update search placeholder to "Search courses..." in course pages
