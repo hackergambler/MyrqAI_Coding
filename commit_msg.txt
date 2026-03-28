@@ -1,1 +1,1 @@
-Add `nav-link` class to Tutorials nav links
+Update projects index with new project cards and descriptions
