@@ -1,1 +1,1 @@
-Fix broken tutorial card link in beginner page
+Fix broken RAG tutorial card link in intermediate page
