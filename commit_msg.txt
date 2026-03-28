@@ -1,1 +1,1 @@
-Fix inflated lesson count in Local LLMs course page
+Fix broken tutorial card links in intermediate page
