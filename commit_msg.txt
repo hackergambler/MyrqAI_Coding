@@ -1,1 +1,1 @@
-Convert "Load More" button to link in tutorials index.
+Add active class to Tutorials nav link in Claude tutorial
