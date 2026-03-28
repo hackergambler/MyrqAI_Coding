@@ -1,1 +1,1 @@
-Add prev/next navigation to memory debugging page
+Add prev/next navigation to API key debugging page
