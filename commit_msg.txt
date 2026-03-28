@@ -1,1 +1,1 @@
-Fix broken tutorial card links in beginner page
+Fix broken tutorial card link in beginner page
