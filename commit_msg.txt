@@ -1,1 +1,1 @@
-Add Open Graph, Twitter meta tags, and canonical URL
+Fix duplicate RAG tutorial card links
