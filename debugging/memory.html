@@ -2,1323 +2,353 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423"
-     crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8668540803235423" crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory & Context Errors - AI Coding Academy Debugging Hub</title>
-    <meta name="description" content="Debug memory and context errors in AI and LLM applications. Fix context window overflow, out-of-memory errors, and token limit issues with real-world examples.">
+    <title>Debugging Memory Issues in AI Apps | AI Coding Academy</title>
+    <meta name="description" content="Fix common memory errors in AI applications: GPU OOM, context window overflow, LangChain memory leaks, and Python RAM exhaustion.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Playfair+Display:ital,opsz,wght@0,5..1200,400..900;1,5..1200,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
-
+    <style>
+        .lesson-container{max-width:900px;margin:0 auto;padding:calc(140px + var(--space-xl)) var(--space-xl) var(--space-4xl)}
+        .lesson-header{margin-bottom:var(--space-3xl)}
+        .lesson-meta{display:flex;gap:var(--space-lg);margin-bottom:var(--space-lg);flex-wrap:wrap}
+        .lesson-title{font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);margin-bottom:var(--space-lg);line-height:1.2}
+        .lesson-description{font-size:1.2rem;color:var(--text-secondary);line-height:1.7}
+        .lesson-content{background:var(--bg-card);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius-lg);padding:var(--space-2xl);margin-bottom:var(--space-2xl)}
+        .lesson-content h2{font-family:var(--font-heading);font-size:1.5rem;margin:var(--space-2xl) 0 var(--space-lg);color:var(--accent-primary)}
+        .lesson-content h2:first-child{margin-top:0}
+        .lesson-content h3{font-family:var(--font-heading);font-size:1.2rem;margin:var(--space-xl) 0 var(--space-md);color:var(--accent-secondary)}
+        .lesson-content p{color:var(--text-secondary);line-height:1.8;margin-bottom:var(--space-lg)}
+        .lesson-content ul,.lesson-content ol{color:var(--text-secondary);line-height:1.8;margin-bottom:var(--space-lg);padding-left:var(--space-xl)}
+        .lesson-content li{margin-bottom:var(--space-sm)}
+        .lesson-content code{background:rgba(0,255,170,.1);color:var(--accent-primary);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:.85em}
+        .code-block{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-md);padding:var(--space-lg);margin:var(--space-lg) 0;overflow-x:auto}
+        .code-block-label{font-size:.75rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--space-sm);display:flex;justify-content:space-between}
+        .copy-btn{cursor:pointer;color:var(--accent-primary);border:1px solid var(--accent-primary);background:transparent;padding:2px 8px;border-radius:4px;font-size:.7rem}
+        .code-block pre{margin:0;font-family:var(--font-mono);font-size:.88rem;line-height:1.65;color:#e6edf3;white-space:pre}
+        .cm{color:#8b949e}.kw{color:#ff7b72}.st{color:#a5d6ff}.fn{color:#d2a8ff}.nu{color:#79c0ff}.cl{color:#ffa657}
+        .tip-box,.warn-box,.info-box,.error-example,.fix-example{border-radius:var(--radius-md);padding:var(--space-lg);margin:var(--space-lg) 0}
+        .tip-box{background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.25)}
+        .tip-box-title{font-family:var(--font-heading);font-weight:600;color:var(--accent-primary);margin-bottom:var(--space-sm)}
+        .warn-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25)}
+        .warn-box-title{font-family:var(--font-heading);font-weight:600;color:var(--accent-warning);margin-bottom:var(--space-sm)}
+        .info-box{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25)}
+        .info-box-title{font-family:var(--font-heading);font-weight:600;color:var(--accent-secondary);margin-bottom:var(--space-sm)}
+        .tip-box p,.warn-box p,.info-box p{margin:0;color:var(--text-secondary);line-height:1.7}
+        .error-example{background:#1a0a0a;border:1px solid rgba(239,68,68,.3)}
+        .error-example-title{font-family:var(--font-heading);color:#ef4444;font-weight:600;margin-bottom:var(--space-sm)}
+        .fix-example{background:#0a1a0a;border:1px solid rgba(34,197,94,.3)}
+        .fix-example-title{font-family:var(--font-heading);color:#22c55e;font-weight:600;margin-bottom:var(--space-sm)}
+        .lesson-nav{display:flex;justify-content:space-between;gap:var(--space-lg);margin-top:var(--space-3xl)}
+        .lesson-nav a{flex:1;background:var(--bg-card);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius-lg);padding:var(--space-lg);text-decoration:none;transition:var(--transition-base)}
+        .lesson-nav a:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+        .lesson-nav-label{font-size:.8rem;color:var(--text-muted);margin-bottom:var(--space-xs)}
+        .lesson-nav-title{font-family:var(--font-heading);font-weight:600;color:var(--text-primary)}
+        .lesson-nav .next{text-align:right}
+        @media(max-width:768px){.lesson-nav{flex-direction:column}.lesson-nav .next{text-align:left}}
+    </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-bar-container">
-            <div class="top-bar-links">
-                <a href="https://library.myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">📚</span>
-                    <span class="link-text">AI Library</span>
-                </a>
-                <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">🪜</span>
-                    <span class="link-text">AI Ladder</span>
-                </a>
-                <a href="https://myrqai.com" target="_blank" rel="noopener">
-                    <span class="link-icon">🏠</span>
-                    <span class="link-text">MYRQAI</span>
-                </a>
-            </div>
-            <div class="top-bar-right">Part of MYRQAI Network</div>
+    <div class="top-bar"><div class="top-bar-container">
+        <div class="top-bar-links">
+            <a href="https://library.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">📚</span><span class="link-text">AI Library</span></a>
+            <a href="https://ailadder.myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🪜</span><span class="link-text">AI Ladder</span></a>
+            <a href="https://myrqai.com" target="_blank" rel="noopener"><span class="link-icon">🏠</span><span class="link-text">MYRQAI</span></a>
         </div>
-    </div>
-    <nav class="nav">
-        <div class="nav-container">
-            <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
-            <ul class="nav-menu">
-                <li><a href="../tutorials/index.html" class="nav-link">Tutorials</a></li>
-                <li><a href="../courses/index.html" class="nav-link">Courses</a></li>
-                <li><a href="../debugging/index.html" class="nav-link active">Debugging</a></li>
-                <li><a href="../projects/index.html" class="nav-link">Projects</a></li>
-            </ul>
-            <button class="nav-toggle" aria-label="Toggle menu">
-                <span></span><span></span><span></span>
-            </button>
+        <div class="top-bar-right">Part of MYRQAI Network</div>
+    </div></div>
+    <div class="bg-pattern"><div class="bg-grid"></div><div class="bg-radial"></div></div>
+    <nav class="nav"><div class="nav-container">
+        <a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a>
+        <ul class="nav-menu">
+            <li><a href="../tutorials/index.html" class="nav-link">Tutorials</a></li>
+            <li><a href="../courses/index.html" class="nav-link">Courses</a></li>
+            <li><a href="../debugging/index.html" class="nav-link active">Debugging</a></li>
+            <li><a href="../projects/index.html" class="nav-link">Projects</a></li>
+        </ul>
+        <div class="nav-actions">
+            <div class="nav-search"><span>🔍</span><input type="text" placeholder="Search..."><kbd>⌘K</kbd></div>
+            <a href="../tutorials/index.html" class="btn btn-primary">Start Free</a>
         </div>
-    </nav>
+        <button class="mobile-menu-btn">&#9776;</button>
+    </div></nav>
 
-    <main class="main">
-        <div class="bg-grid"></div>
-        <div class="bg-orb bg-orb-1"></div>
-        <div class="bg-orb bg-orb-2"></div>
-
-        <!-- Breadcrumb -->
-        <div class="container">
-            <nav class="breadcrumb">
-                <a href="../index.html">Home</a>
-                <span class="breadcrumb-sep">/</span>
-                <a href="index.html">Debugging</a>
-                <span class="breadcrumb-sep">/</span>
-                <span class="breadcrumb-current">Memory & Context</span>
-            </nav>
-        </div>
-
-        <!-- Hero Section -->
-        <section class="section">
-            <div class="container">
-                <div class="page-header reveal">
-                    <span class="badge badge-warning">6,200+ Solutions</span>
-                    <h1 class="page-title">Memory & Context Errors</h1>
-                    <p class="page-subtitle">Debug token limits, context windows, conversation history, and memory management issues in LLM applications</p>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="stats-row reveal">
-                    <div class="stat-item">
-                        <span class="stat-number">6,200+</span>
-                        <span class="stat-label">Solutions</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">98.1%</span>
-                        <span class="stat-label">Resolution Rate</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">~4min</span>
-                        <span class="stat-label">Avg Fix Time</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">12</span>
-                        <span class="stat-label">Subcategories</span>
-                    </div>
-                </div>
-
-                <!-- Search Box -->
-                <div class="search-container reveal">
-                    <div class="search-box">
-                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                        <input type="text" class="search-input" placeholder="Search memory & context errors..." id="errorSearch">
-                    </div>
-                </div>
+    <div class="lesson-container">
+        <div class="breadcrumb"><a href="../index.html">Home</a><span class="separator">/</span><a href="index.html">Debugging</a><span class="separator">/</span><span>Memory Issues</span></div>
+        <header class="lesson-header">
+            <div class="lesson-meta">
+                <span class="badge badge-intermediate">Intermediate</span>
+                <span class="lesson-meta-item" style="font-size:.9rem;color:var(--text-muted)">&#9203; 35 min</span>
             </div>
-        </section>
+            <h1 class="lesson-title">Debugging Memory Issues in AI Apps</h1>
+            <p class="lesson-description">Fix GPU out-of-memory errors, context window overflows, Python RAM exhaustion, and LangChain conversation memory leaks in production AI systems.</p>
+        </header>
 
-        <!-- Error Categories -->
-        <section class="section">
-            <div class="container">
-                <h2 class="section-title reveal">Error Subcategories</h2>
-                
-                <div class="grid grid-4 reveal">
-                    <div class="card card-hover">
-                        <div class="card-icon">📏</div>
-                        <h3 class="card-title">Token Limit Exceeded</h3>
-                        <p class="card-text">Context window overflow, max_tokens errors, input too long</p>
-                        <span class="badge">1,850+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">🔄</div>
-                        <h3 class="card-title">Context Window Management</h3>
-                        <p class="card-text">Sliding windows, truncation strategies, context preservation</p>
-                        <span class="badge">920+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">💬</div>
-                        <h3 class="card-title">Conversation History</h3>
-                        <p class="card-text">Message array issues, role validation, history corruption</p>
-                        <span class="badge">780+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">🧠</div>
-                        <h3 class="card-title">Long-Term Memory</h3>
-                        <p class="card-text">Vector store retrieval, memory persistence, recall failures</p>
-                        <span class="badge">650+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">📊</div>
-                        <h3 class="card-title">Embedding Errors</h3>
-                        <p class="card-text">Dimension mismatches, embedding failures, chunking issues</p>
-                        <span class="badge">520+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">✂️</div>
-                        <h3 class="card-title">Text Chunking</h3>
-                        <p class="card-text">Chunk size optimization, overlap issues, semantic splitting</p>
-                        <span class="badge">480+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">🎯</div>
-                        <h3 class="card-title">Context Relevance</h3>
-                        <p class="card-text">Irrelevant retrieval, context poisoning, noise filtering</p>
-                        <span class="badge">410+ solutions</span>
-                    </div>
-                    <div class="card card-hover">
-                        <div class="card-icon">⚡</div>
-                        <h3 class="card-title">Memory Leaks</h3>
-                        <p class="card-text">Accumulating context, unbounded growth, cleanup failures</p>
-                        <span class="badge">340+ solutions</span>
-                    </div>
-                </div>
+        <div class="lesson-content">
+            <h2>Why AI Apps Run Out of Memory</h2>
+            <p>Memory bugs are especially common in AI development because models are large, context windows grow with every turn, and embeddings accumulate silently. Here are the most frequent causes and their fixes.</p>
+
+            <h2>Bug 1: GPU Out-of-Memory (CUDA OOM)</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; RuntimeError: CUDA out of memory. Tried to allocate 2.50 GiB</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: loads full fp32 weights, no batching limit, keeps all gradients</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer
+<span class="kw">import</span> torch
+
+model = AutoModelForCausalLM.from_pretrained(<span class="st">"meta-llama/Llama-3-8b"</span>)
+model = model.to(<span class="st">"cuda"</span>)
+
+<span class="kw">def</span> <span class="fn">generate</span>(prompts: list) -&gt; list:
+    inputs = tokenizer(prompts, return_tensors=<span class="st">"pt"</span>).to(<span class="st">"cuda"</span>)
+    outputs = model.generate(**inputs, max_new_tokens=<span class="nu">512</span>)
+    <span class="kw">return</span> tokenizer.batch_decode(outputs)</pre></div>
             </div>
-        </section>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Load in 4-bit, disable gradients, process in small batches</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+<span class="kw">import</span> torch
 
-        <!-- Common Errors Section -->
-        <section class="section section-alt">
-            <div class="container">
-                <h2 class="section-title reveal">Most Common Errors</h2>
-
-                <!-- Error 1 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-error">Critical</span>
-                        <h3>InvalidRequestError: This model's maximum context length is 128000 tokens</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Error Message</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>openai.InvalidRequestError: This model's maximum context length is 128000 tokens. 
-However, your messages resulted in 142847 tokens. 
-Please reduce the length of the messages.</code></pre>
-                        </div>
-                        
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Conversation history growing unbounded without trimming</li>
-                            <li>Large documents included in context without chunking</li>
-                            <li>System prompts too verbose</li>
-                            <li>Including entire codebase instead of relevant snippets</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_context_management.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>import tiktoken
-
-def count_tokens(messages, model="gpt-4"):
-    """Count tokens in message array"""
-    encoding = tiktoken.encoding_for_model(model)
-    num_tokens = 0
-    for message in messages:
-        num_tokens += 4  # message overhead
-        for key, value in message.items():
-            num_tokens += len(encoding.encode(value))
-    return num_tokens + 2  # reply priming
-
-def trim_conversation(messages, max_tokens=100000, model="gpt-4"):
-    """Trim conversation to fit within token limit"""
-    # Always keep system message
-    system_msg = [m for m in messages if m["role"] == "system"]
-    other_msgs = [m for m in messages if m["role"] != "system"]
-    
-    # Keep most recent messages that fit
-    trimmed = []
-    current_tokens = count_tokens(system_msg, model)
-    
-    for msg in reversed(other_msgs):
-        msg_tokens = count_tokens([msg], model)
-        if current_tokens + msg_tokens < max_tokens:
-            trimmed.insert(0, msg)
-            current_tokens += msg_tokens
-        else:
-            break
-    
-    return system_msg + trimmed
-
-# Usage
-messages = trim_conversation(messages, max_tokens=100000)
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=messages
-)</code></pre>
-                        </div>
-
-                        <div class="tip-box">
-                            <strong>💡 Pro Tip:</strong> Implement a sliding window with summarization for long conversations. Periodically summarize older messages and replace them with the summary to preserve context while reducing tokens.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 2 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-warning">High</span>
-                        <h3>Context Window Overflow in Streaming Responses</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Error Message</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>anthropic.BadRequestError: prompt is too long: 205432 tokens > 200000 maximum</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Not accounting for output tokens in context budget</li>
-                            <li>Streaming accumulating tokens beyond limit</li>
-                            <li>max_tokens not properly configured</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_safe_context.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>def calculate_safe_context(
-    model_max_tokens: int,
-    desired_output_tokens: int,
-    safety_margin: float = 0.1
-) -> int:
-    """Calculate safe input token limit"""
-    # Reserve space for output and safety margin
-    reserved = desired_output_tokens + int(model_max_tokens * safety_margin)
-    return model_max_tokens - reserved
-
-# Model context limits
-MODEL_LIMITS = {
-    "gpt-4-turbo": 128000,
-    "gpt-4o": 128000,
-    "claude-3-opus": 200000,
-    "claude-3-sonnet": 200000,
-    "claude-3-haiku": 200000,
-    "gemini-1.5-pro": 1000000,
-}
-
-def prepare_messages_for_model(messages, model, max_output=4096):
-    """Prepare messages with safe token limits"""
-    model_limit = MODEL_LIMITS.get(model, 100000)
-    safe_input = calculate_safe_context(model_limit, max_output)
-    
-    return trim_conversation(messages, max_tokens=safe_input)</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 3 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-warning">High</span>
-                        <h3>Messages Array Validation Error</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Error Message</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>openai.BadRequestError: Invalid value for 'messages[3].role': expected one of 
-'system', 'user', 'assistant', 'tool', but got 'AI'.</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Incorrect role names (using "AI" instead of "assistant")</li>
-                            <li>Missing required fields in message objects</li>
-                            <li>Messages not alternating properly (user/assistant/user)</li>
-                            <li>Tool messages without corresponding tool_call_id</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_message_validation.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>from typing import List, Dict, Any
-from pydantic import BaseModel, field_validator
-from enum import Enum
-
-class MessageRole(str, Enum):
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-    TOOL = "tool"
-
-class Message(BaseModel):
-    role: MessageRole
-    content: str
-    name: str | None = None
-    tool_call_id: str | None = None
-    tool_calls: List[Dict] | None = None
-    
-    @field_validator('content')
-    @classmethod
-    def content_not_empty(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Content cannot be empty')
-        return v
-
-def validate_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Validate and normalize message array"""
-    validated = []
-    
-    # Role normalization map
-    role_map = {
-        "ai": "assistant",
-        "bot": "assistant",
-        "human": "user",
-        "person": "user",
-    }
-    
-    for i, msg in enumerate(messages):
-        # Normalize role
-        role = msg.get("role", "").lower()
-        role = role_map.get(role, role)
-        
-        # Validate
-        try:
-            validated_msg = Message(
-                role=role,
-                content=msg.get("content", ""),
-                name=msg.get("name"),
-                tool_call_id=msg.get("tool_call_id"),
-                tool_calls=msg.get("tool_calls")
-            )
-            validated.append(validated_msg.model_dump(exclude_none=True))
-        except Exception as e:
-            print(f"Invalid message at index {i}: {e}")
-            continue
-    
-    return validated
-
-# Usage
-messages = validate_messages(raw_messages)
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=messages
-)</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 4 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-info">Medium</span>
-                        <h3>Embedding Dimension Mismatch</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Error Message</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>ValueError: Embedding dimension 1536 does not match collection dimension 3072</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Changed embedding model without recreating vector store</li>
-                            <li>Different embedding models for indexing vs querying</li>
-                            <li>Using text-embedding-3-large (3072) vs text-embedding-ada-002 (1536)</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_embedding_consistency.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>import chromadb
-from openai import OpenAI
-
-# Embedding model dimensions
-EMBEDDING_DIMS = {
-    "text-embedding-ada-002": 1536,
-    "text-embedding-3-small": 1536,
-    "text-embedding-3-large": 3072,
-}
-
-class ConsistentEmbedder:
-    def __init__(self, model="text-embedding-3-small"):
-        self.client = OpenAI()
-        self.model = model
-        self.dimension = EMBEDDING_DIMS[model]
-    
-    def embed(self, texts: list[str]) -> list[list[float]]:
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=texts
-        )
-        return [e.embedding for e in response.data]
-    
-    def create_collection(self, chroma_client, name: str):
-        """Create collection with correct dimensions"""
-        return chroma_client.create_collection(
-            name=name,
-            metadata={
-                "embedding_model": self.model,
-                "dimension": self.dimension
-            }
-        )
-    
-    def validate_collection(self, collection) -> bool:
-        """Check if collection matches embedder"""
-        meta = collection.metadata or {}
-        return meta.get("dimension") == self.dimension
-
-# Usage - always use same embedder instance
-embedder = ConsistentEmbedder(model="text-embedding-3-small")
-chroma = chromadb.Client()
-
-# Create new collection
-collection = embedder.create_collection(chroma, "my_docs")
-
-# Or validate existing
-if not embedder.validate_collection(existing_collection):
-    raise ValueError("Collection dimension mismatch - recreate with current model")</code></pre>
-                        </div>
-
-                        <div class="warning-box">
-                            <strong>⚠️ Warning:</strong> When changing embedding models, you must re-embed all documents. There's no way to convert embeddings between dimensions.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 5 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-info">Medium</span>
-                        <h3>Chunking Destroys Semantic Meaning</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Problem</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code># Poor retrieval results because chunks break mid-sentence
-# or split related information across chunks</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Fixed-size chunking ignoring sentence/paragraph boundaries</li>
-                            <li>No overlap between chunks losing context</li>
-                            <li>Chunk size too small for semantic meaning</li>
-                            <li>Not using semantic or recursive chunking</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_semantic_chunking.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>from langchain.text_splitter import (
-    RecursiveCharacterTextSplitter,
-    MarkdownHeaderTextSplitter,
-    TokenTextSplitter
-)
-import tiktoken
-
-class SmartChunker:
-    def __init__(self, chunk_size=1000, chunk_overlap=200):
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        
-        # Recursive splitter respects natural boundaries
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            separators=[
-                "\n\n\n",   # Major sections
-                "\n\n",      # Paragraphs
-                "\n",        # Lines
-                ". ",        # Sentences
-                "! ",
-                "? ",
-                "; ",
-                ", ",        # Clauses
-                " ",         # Words
-                ""           # Characters (last resort)
-            ],
-            length_function=self._count_tokens
-        )
-        
-        # Markdown-aware splitter
-        self.md_splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=[
-                ("#", "h1"),
-                ("##", "h2"),
-                ("###", "h3"),
-            ]
-        )
-    
-    def _count_tokens(self, text: str) -> int:
-        enc = tiktoken.get_encoding("cl100k_base")
-        return len(enc.encode(text))
-    
-    def chunk_text(self, text: str) -> list[str]:
-        """Chunk plain text with semantic awareness"""
-        return self.text_splitter.split_text(text)
-    
-    def chunk_markdown(self, markdown: str) -> list[dict]:
-        """Chunk markdown preserving headers as metadata"""
-        # First split by headers
-        header_chunks = self.md_splitter.split_text(markdown)
-        
-        # Then recursively split large sections
-        final_chunks = []
-        for chunk in header_chunks:
-            if self._count_tokens(chunk.page_content) > self.chunk_size:
-                sub_chunks = self.text_splitter.split_text(chunk.page_content)
-                for sub in sub_chunks:
-                    final_chunks.append({
-                        "content": sub,
-                        "metadata": chunk.metadata
-                    })
-            else:
-                final_chunks.append({
-                    "content": chunk.page_content,
-                    "metadata": chunk.metadata
-                })
-        
-        return final_chunks
-    
-    def chunk_code(self, code: str, language: str = "python") -> list[str]:
-        """Chunk code preserving function/class boundaries"""
-        from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
-        
-        lang_map = {
-            "python": Language.PYTHON,
-            "javascript": Language.JS,
-            "typescript": Language.TS,
-            "java": Language.JAVA,
-        }
-        
-        splitter = RecursiveCharacterTextSplitter.from_language(
-            language=lang_map.get(language, Language.PYTHON),
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap
-        )
-        
-        return splitter.split_text(code)
-
-# Usage
-chunker = SmartChunker(chunk_size=1000, chunk_overlap=200)
-
-# For documents
-chunks = chunker.chunk_text(document_text)
-
-# For markdown docs
-md_chunks = chunker.chunk_markdown(readme_content)
-
-# For code
-code_chunks = chunker.chunk_code(python_code, "python")</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 6 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-info">Medium</span>
-                        <h3>Memory Not Persisting Between Sessions</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Problem</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code># Conversation memory lost on restart
-# User preferences not remembered
-# Previous context unavailable</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Using in-memory storage instead of persistent storage</li>
-                            <li>Not serializing conversation state</li>
-                            <li>Session IDs not properly managed</li>
-                            <li>Database connection issues on load</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_persistent_memory.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>import json
-import redis
-from datetime import datetime, timedelta
-from typing import Optional
-import hashlib
-
-class PersistentMemory:
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
-        self.redis = redis.from_url(redis_url)
-        self.ttl = timedelta(days=30)  # Memory retention period
-    
-    def _session_key(self, user_id: str, session_id: str) -> str:
-        return f"memory:{user_id}:{session_id}"
-    
-    def save_conversation(
-        self, 
-        user_id: str, 
-        session_id: str, 
-        messages: list[dict]
-    ) -> None:
-        """Save conversation to Redis"""
-        key = self._session_key(user_id, session_id)
-        data = {
-            "messages": messages,
-            "updated_at": datetime.utcnow().isoformat(),
-            "message_count": len(messages)
-        }
-        self.redis.setex(
-            key, 
-            self.ttl, 
-            json.dumps(data)
-        )
-    
-    def load_conversation(
-        self, 
-        user_id: str, 
-        session_id: str
-    ) -> Optional[list[dict]]:
-        """Load conversation from Redis"""
-        key = self._session_key(user_id, session_id)
-        data = self.redis.get(key)
-        if data:
-            return json.loads(data)["messages"]
-        return None
-    
-    def save_user_preferences(self, user_id: str, prefs: dict) -> None:
-        """Save user preferences"""
-        key = f"prefs:{user_id}"
-        self.redis.set(key, json.dumps(prefs))
-    
-    def get_user_preferences(self, user_id: str) -> dict:
-        """Get user preferences"""
-        key = f"prefs:{user_id}"
-        data = self.redis.get(key)
-        return json.loads(data) if data else {}
-    
-    def get_recent_sessions(self, user_id: str, limit: int = 10) -> list[str]:
-        """Get user's recent session IDs"""
-        pattern = f"memory:{user_id}:*"
-        keys = self.redis.keys(pattern)
-        
-        # Sort by update time
-        sessions = []
-        for key in keys:
-            data = self.redis.get(key)
-            if data:
-                parsed = json.loads(data)
-                sessions.append({
-                    "session_id": key.decode().split(":")[-1],
-                    "updated_at": parsed["updated_at"]
-                })
-        
-        sessions.sort(key=lambda x: x["updated_at"], reverse=True)
-        return [s["session_id"] for s in sessions[:limit]]
-
-# LangChain integration
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import HumanMessage, AIMessage
-
-class PersistentLangChainMemory(ConversationBufferMemory):
-    def __init__(self, user_id: str, session_id: str, **kwargs):
-        super().__init__(**kwargs)
-        self.storage = PersistentMemory()
-        self.user_id = user_id
-        self.session_id = session_id
-        self._load()
-    
-    def _load(self):
-        """Load from persistent storage"""
-        messages = self.storage.load_conversation(
-            self.user_id, 
-            self.session_id
-        )
-        if messages:
-            for msg in messages:
-                if msg["role"] == "user":
-                    self.chat_memory.add_user_message(msg["content"])
-                else:
-                    self.chat_memory.add_ai_message(msg["content"])
-    
-    def save_context(self, inputs, outputs):
-        """Save and persist"""
-        super().save_context(inputs, outputs)
-        
-        # Persist to Redis
-        messages = [
-            {"role": "user" if isinstance(m, HumanMessage) else "assistant", 
-             "content": m.content}
-            for m in self.chat_memory.messages
-        ]
-        self.storage.save_conversation(
-            self.user_id, 
-            self.session_id, 
-            messages
-        )</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error 7 -->
-                <div class="debug-card reveal">
-                    <div class="debug-header">
-                        <span class="badge badge-success">Low</span>
-                        <h3>Retrieval Returning Irrelevant Context</h3>
-                    </div>
-                    <div class="debug-content">
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>Problem</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code># Vector search returns documents that don't answer the question
-# Top-k results are semantically similar but not relevant
-# Context pollution degrading response quality</code></pre>
-                        </div>
-
-                        <h4>Root Causes</h4>
-                        <ul class="debug-list">
-                            <li>Embedding similarity ≠ relevance for the query</li>
-                            <li>k value too high bringing in noise</li>
-                            <li>No re-ranking or filtering of results</li>
-                            <li>Query and documents in different semantic spaces</li>
-                        </ul>
-
-                        <h4>Solutions</h4>
-                        <div class="code-block">
-                            <div class="code-header">
-                                <span>solution_hybrid_retrieval.py</span>
-                                <button class="copy-btn">Copy</button>
-                            </div>
-                            <pre><code>from sentence_transformers import CrossEncoder
-from typing import List, Tuple
-import numpy as np
-
-class HybridRetriever:
-    def __init__(self, vector_store, reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2"):
-        self.vector_store = vector_store
-        self.reranker = CrossEncoder(reranker_model)
-    
-    def retrieve(
-        self, 
-        query: str, 
-        k: int = 5, 
-        initial_k: int = 20,
-        score_threshold: float = 0.5
-    ) -> List[dict]:
-        """Hybrid retrieval with re-ranking"""
-        
-        # Step 1: Initial broad retrieval
-        candidates = self.vector_store.similarity_search_with_score(
-            query, 
-            k=initial_k
-        )
-        
-        # Step 2: Re-rank with cross-encoder
-        if candidates:
-            pairs = [(query, doc.page_content) for doc, _ in candidates]
-            rerank_scores = self.reranker.predict(pairs)
-            
-            # Combine with original scores
-            results = []
-            for (doc, vec_score), rerank_score in zip(candidates, rerank_scores):
-                if rerank_score > score_threshold:
-                    results.append({
-                        "document": doc,
-                        "vector_score": float(vec_score),
-                        "rerank_score": float(rerank_score),
-                        "combined_score": 0.3 * vec_score + 0.7 * rerank_score
-                    })
-            
-            # Sort by combined score and return top k
-            results.sort(key=lambda x: x["combined_score"], reverse=True)
-            return results[:k]
-        
-        return []
-    
-    def retrieve_with_mmr(
-        self, 
-        query: str, 
-        k: int = 5, 
-        diversity: float = 0.5
-    ) -> List[dict]:
-        """Maximal Marginal Relevance for diverse results"""
-        return self.vector_store.max_marginal_relevance_search(
-            query,
-            k=k,
-            fetch_k=k * 4,
-            lambda_mult=diversity  # 0=max diversity, 1=max relevance
-        )
-
-# Usage with filtering
-retriever = HybridRetriever(vector_store)
-
-# Get relevant, high-quality context
-results = retriever.retrieve(
-    query="How do I handle rate limiting in the OpenAI API?",
-    k=5,
-    score_threshold=0.6  # Filter low-relevance results
+<span class="cm"># Load in 4-bit quantization - cuts VRAM use by ~75%</span>
+bnb_config = BitsAndBytesConfig(load_in_4bit=<span class="kw">True</span>, bnb_4bit_compute_dtype=torch.float16)
+model = AutoModelForCausalLM.from_pretrained(
+    <span class="st">"meta-llama/Llama-3-8b"</span>,
+    quantization_config=bnb_config,
+    device_map=<span class="st">"auto"</span>
 )
 
-# Build context from results
-context = "\n\n".join([
-    r["document"].page_content 
-    for r in results
-])</code></pre>
-                        </div>
-
-                        <div class="tip-box">
-                            <strong>💡 Pro Tip:</strong> Use Hypothetical Document Embeddings (HyDE) - generate a hypothetical answer first, then use that for retrieval. This aligns the query embedding with document embeddings better.
-                        </div>
-                    </div>
-                </div>
+<span class="kw">def</span> <span class="fn">generate</span>(prompts: list, batch_size: int = <span class="nu">4</span>) -&gt; list:
+    results = []
+    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="nu">0</span>, len(prompts), batch_size):
+        batch = prompts[i:i + batch_size]
+        inputs = tokenizer(batch, return_tensors=<span class="st">"pt"</span>, padding=<span class="kw">True</span>).to(<span class="st">"cuda"</span>)
+        <span class="kw">with</span> torch.no_grad():
+            outputs = model.generate(**inputs, max_new_tokens=<span class="nu">256</span>)
+        results.extend(tokenizer.batch_decode(outputs, skip_special_tokens=<span class="kw">True</span>))
+        torch.cuda.empty_cache()
+    <span class="kw">return</span> results</pre></div>
             </div>
-        </section>
 
-        <!-- Additional Solutions -->
-        <section class="section">
-            <div class="container">
-                <h2 class="section-title reveal">More Memory Solutions</h2>
-                
-                <div class="accordion reveal">
-                    <div class="accordion-item">
-                        <button class="accordion-header">
-                            <span>Implementing Conversation Summarization</span>
-                            <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="code-block">
-                                <div class="code-header">
-                                    <span>conversation_summarizer.py</span>
-                                    <button class="copy-btn">Copy</button>
-                                </div>
-                                <pre><code>class ConversationSummarizer:
-    def __init__(self, client, summary_threshold=10):
-        self.client = client
-        self.threshold = summary_threshold
-        self.summary = ""
-    
-    def should_summarize(self, messages: list) -> bool:
-        return len(messages) > self.threshold
-    
-    async def summarize_history(self, messages: list) -> str:
-        """Create summary of older messages"""
-        # Keep recent messages, summarize older ones
-        old_messages = messages[:-4]  # Summarize all but last 4
-        
-        summary_prompt = f"""Summarize this conversation history concisely, 
-preserving key information, decisions, and context:
+            <h2>Bug 2: Context Window Overflow</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; openai.BadRequestError: This model's maximum context length is 128000 tokens</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: appends every message forever - context grows without limit</span>
+conversation_history = []
 
-{self._format_messages(old_messages)}
-
-Summary:"""
-        
-        response = await self.client.chat.completions.create(
-            model="gpt-4o-mini",  # Use fast model for summaries
-            messages=[{"role": "user", "content": summary_prompt}],
-            max_tokens=500
-        )
-        
-        return response.choices[0].message.content
-    
-    def get_context_messages(self, messages: list) -> list:
-        """Get messages with summary if needed"""
-        if not self.should_summarize(messages):
-            return messages
-        
-        recent = messages[-4:]
-        
-        return [
-            {"role": "system", "content": f"Previous conversation summary: {self.summary}"},
-            *recent
-        ]</code></pre>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="accordion-item">
-                        <button class="accordion-header">
-                            <span>Multi-Model Token Counting</span>
-                            <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="code-block">
-                                <div class="code-header">
-                                    <span>token_counter.py</span>
-                                    <button class="copy-btn">Copy</button>
-                                </div>
-                                <pre><code>import tiktoken
-from anthropic import Anthropic
-
-class UniversalTokenCounter:
-    """Count tokens for any major LLM provider"""
-    
-    # Model to encoding mapping
-    OPENAI_ENCODINGS = {
-        "gpt-4": "cl100k_base",
-        "gpt-4-turbo": "cl100k_base",
-        "gpt-4o": "o200k_base",
-        "gpt-3.5-turbo": "cl100k_base",
-        "text-embedding-3-small": "cl100k_base",
-        "text-embedding-3-large": "cl100k_base",
-    }
-    
-    def __init__(self):
-        self._encoders = {}
-        self._anthropic = Anthropic()
-    
-    def _get_encoder(self, encoding: str):
-        if encoding not in self._encoders:
-            self._encoders[encoding] = tiktoken.get_encoding(encoding)
-        return self._encoders[encoding]
-    
-    def count_openai(self, text: str, model: str = "gpt-4") -> int:
-        """Count tokens for OpenAI models"""
-        encoding = self.OPENAI_ENCODINGS.get(model, "cl100k_base")
-        encoder = self._get_encoder(encoding)
-        return len(encoder.encode(text))
-    
-    def count_anthropic(self, text: str) -> int:
-        """Count tokens for Claude models"""
-        return self._anthropic.count_tokens(text)
-    
-    def count_messages_openai(self, messages: list, model: str = "gpt-4") -> int:
-        """Count tokens in message array for OpenAI"""
-        encoding = self.OPENAI_ENCODINGS.get(model, "cl100k_base")
-        encoder = self._get_encoder(encoding)
-        
-        tokens = 0
-        for msg in messages:
-            tokens += 4  # Message overhead
-            for key, value in msg.items():
-                if isinstance(value, str):
-                    tokens += len(encoder.encode(value))
-                elif isinstance(value, list):  # Tool calls
-                    tokens += len(encoder.encode(str(value)))
-        
-        tokens += 2  # Reply priming
-        return tokens
-    
-    def estimate_cost(
-        self, 
-        input_tokens: int, 
-        output_tokens: int, 
-        model: str
-    ) -> float:
-        """Estimate API cost"""
-        # Prices per 1M tokens (as of 2024)
-        PRICES = {
-            "gpt-4-turbo": {"input": 10, "output": 30},
-            "gpt-4o": {"input": 5, "output": 15},
-            "gpt-4o-mini": {"input": 0.15, "output": 0.6},
-            "claude-3-opus": {"input": 15, "output": 75},
-            "claude-3-sonnet": {"input": 3, "output": 15},
-            "claude-3-haiku": {"input": 0.25, "output": 1.25},
-        }
-        
-        prices = PRICES.get(model, {"input": 1, "output": 1})
-        return (
-            (input_tokens / 1_000_000) * prices["input"] +
-            (output_tokens / 1_000_000) * prices["output"]
-        )
-
-# Usage
-counter = UniversalTokenCounter()
-
-# Count for different providers
-openai_tokens = counter.count_openai(text, "gpt-4o")
-claude_tokens = counter.count_anthropic(text)
-
-# Estimate costs
-cost = counter.estimate_cost(10000, 2000, "gpt-4o")
-print(f"Estimated cost: ${cost:.4f}")</code></pre>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="accordion-item">
-                        <button class="accordion-header">
-                            <span>Contextual Compression for RAG</span>
-                            <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="code-block">
-                                <div class="code-header">
-                                    <span>context_compression.py</span>
-                                    <button class="copy-btn">Copy</button>
-                                </div>
-                                <pre><code>from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import LLMChainExtractor
-from langchain_openai import ChatOpenAI
-
-class CompressedRetriever:
-    """Extract only relevant parts from retrieved documents"""
-    
-    def __init__(self, base_retriever, model="gpt-4o-mini"):
-        self.llm = ChatOpenAI(model=model, temperature=0)
-        self.compressor = LLMChainExtractor.from_llm(self.llm)
-        self.retriever = ContextualCompressionRetriever(
-            base_compressor=self.compressor,
-            base_retriever=base_retriever
-        )
-    
-    def retrieve(self, query: str) -> list:
-        """Get compressed, relevant context"""
-        return self.retriever.get_relevant_documents(query)
-
-# Custom extraction prompt for better compression
-EXTRACTION_TEMPLATE = """Given the following question and document, 
-extract ONLY the sentences that directly help answer the question.
-If no part of the document is relevant, return "NOT_RELEVANT".
-
-Question: {question}
-Document: {context}
-
-Relevant extract:"""
-
-# Usage
-compressed = CompressedRetriever(base_retriever)
-docs = compressed.retrieve("How do I handle timeouts?")
-
-# Results contain only relevant sentences, not full documents</code></pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- Structured Bug Examples -->
-        <section class="section">
-            <div class="container">
-                <h2 class="section-title reveal">Common Memory Bugs — With Fixes</h2>
-
-                <div class="error-card reveal" style="background:#1a0a0a;border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:2rem;margin-bottom:1.5rem">
-                    <h3 style="font-family:var(--font-heading);color:#ef4444;margin-bottom:.75rem">Bug 1: Context Not Passed Between Agent Steps</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:1rem">Each LLM call starts fresh with no history — the agent cannot remember what happened in previous steps.</p>
-                    <div class="code-block"><div class="code-block-label"><span>Python - broken</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: every step forgets everything</span>
-<span class="kw">def</span> <span class="fn">agent_step</span>(task: str) -> str:
-    resp = client.chat.completions.create(
-        model=<span class="st">"gpt-4o-mini"</span>,
-        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: task}]  <span class="cm"># no history!</span>
+<span class="kw">def</span> <span class="fn">chat</span>(user_message: str) -&gt; str:
+    conversation_history.append({"role": <span class="st">"user"</span>, "content": user_message})
+    response = client.chat.completions.create(
+        model=<span class="st">"gpt-4o"</span>,
+        messages=conversation_history  <span class="cm"># after 100+ turns this explodes</span>
     )
-    <span class="kw">return</span> resp.choices[<span class="nu">0</span>].message.content
+    reply = response.choices[<span class="nu">0</span>].message.content
+    conversation_history.append({"role": <span class="st">"assistant"</span>, "content": reply})
+    <span class="kw">return</span> reply</pre></div>
+            </div>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Sliding window - keep system prompt and last N messages</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">import</span> tiktoken
 
-agent_step(<span class="st">"The user is Alice, age 30."</span>)
-agent_step(<span class="st">"What is the user's name?"</span>)  <span class="cm"># has no idea — returns wrong answer</span></pre></div>
-                    <div style="background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;margin-top:1rem">
-                        <p style="font-family:var(--font-heading);font-weight:600;color:#22c55e;margin-bottom:.5rem">✅ Fix — accumulate history across steps</p>
-                        <div class="code-block"><div class="code-block-label"><span>Python - fixed</span><button class="copy-btn">Copy</button></div><pre>history = []
+SYSTEM_PROMPT = {"role": <span class="st">"system"</span>, "content": <span class="st">"You are a helpful assistant."</span>}
+MAX_TOKENS = <span class="nu">100_000</span>
+conversation_history = []
 
-<span class="kw">def</span> <span class="fn">agent_step</span>(task: str) -> str:
-    history.append({<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: task})
-    resp = client.chat.completions.create(
-        model=<span class="st">"gpt-4o-mini"</span>, messages=history
+<span class="kw">def</span> <span class="fn">count_tokens</span>(messages: list) -&gt; int:
+    enc = tiktoken.encoding_for_model(<span class="st">"gpt-4o"</span>)
+    <span class="kw">return</span> sum(len(enc.encode(m[<span class="st">"content"</span>])) <span class="kw">for</span> m <span class="kw">in</span> messages)
+
+<span class="kw">def</span> <span class="fn">trim_history</span>(history: list) -&gt; list:
+    <span class="kw">while</span> count_tokens([SYSTEM_PROMPT] + history) &gt; MAX_TOKENS <span class="kw">and</span> len(history) &gt; <span class="nu">2</span>:
+        history = history[<span class="nu">2</span>:]  <span class="cm"># drop oldest user+assistant pair</span>
+    <span class="kw">return</span> history
+
+<span class="kw">def</span> <span class="fn">chat</span>(user_message: str) -&gt; str:
+    conversation_history.append({"role": <span class="st">"user"</span>, "content": user_message})
+    trimmed = trim_history(conversation_history.copy())
+    response = client.chat.completions.create(
+        model=<span class="st">"gpt-4o"</span>,
+        messages=[SYSTEM_PROMPT] + trimmed
     )
-    answer = resp.choices[<span class="nu">0</span>].message.content
-    history.append({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: answer})
-    <span class="kw">return</span> answer</pre></div>
-                    </div>
-                </div>
+    reply = response.choices[<span class="nu">0</span>].message.content
+    conversation_history.append({"role": <span class="st">"assistant"</span>, "content": reply})
+    <span class="kw">return</span> reply</pre></div>
+            </div>
 
-                <div class="error-card reveal" style="background:#1a0a0a;border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:2rem;margin-bottom:1.5rem">
-                    <h3 style="font-family:var(--font-heading);color:#ef4444;margin-bottom:.75rem">Bug 2: Vector Store Query Returns Empty — Documents Never Added</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:1rem">Vector store created but documents never indexed — all similarity queries return empty results.</p>
-                    <div class="code-block"><div class="code-block-label"><span>Python - broken</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: forgot to call from_documents() or add_documents()</span>
-<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> Chroma
-<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings
+            <div class="tip-box">
+                <div class="tip-box-title">&#128161; Token Counting Rule of Thumb</div>
+                <p>1 token is roughly 4 characters in English. Always track token usage with <code>tiktoken</code> before hitting the API limit. Leave a buffer of at least 20% for the model's output.</p>
+            </div>
 
-vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
-<span class="cm"># documents never added!</span>
-results = vectorstore.similarity_search(<span class="st">"Python tutorial"</span>)  <span class="cm"># returns []</span></pre></div>
-                    <div style="background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;margin-top:1rem">
-                        <p style="font-family:var(--font-heading);font-weight:600;color:#22c55e;margin-bottom:.5rem">✅ Fix — use from_documents() or verify count before querying</p>
-                        <div class="code-block"><div class="code-block-label"><span>Python - fixed</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> langchain_core.documents <span class="kw">import</span> Document
+            <h2>Bug 3: LangChain ConversationBufferMemory Leak</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; Shared memory accumulates all users' messages - OOM after many sessions</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> langchain.memory <span class="kw">import</span> ConversationBufferMemory
+<span class="kw">from</span> langchain.chains <span class="kw">import</span> ConversationChain
 
-docs = [Document(page_content=<span class="st">"Python is great for AI"</span>), ...]
+<span class="cm"># WRONG: one shared memory object for ALL users</span>
+shared_memory = ConversationBufferMemory()
+chain = ConversationChain(llm=llm, memory=shared_memory)
 
-<span class="cm"># Build index from documents</span>
-vectorstore = Chroma.from_documents(docs, OpenAIEmbeddings())
-print(<span class="st">f"Indexed: {vectorstore._collection.count()} docs"</span>)  <span class="cm"># always verify</span>
+<span class="kw">def</span> <span class="fn">handle_request</span>(user_id: str, message: str) -&gt; str:
+    <span class="kw">return</span> chain.predict(input=message)  <span class="cm"># all users share same history!</span></pre></div>
+            </div>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Per-session memory with token limit via ConversationTokenBufferMemory</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> langchain.memory <span class="kw">import</span> ConversationTokenBufferMemory
+<span class="kw">from</span> langchain.chains <span class="kw">import</span> ConversationChain
 
-results = vectorstore.similarity_search(<span class="st">"Python tutorial"</span>)
-print(<span class="st">f"Found: {len(results)} results"</span>)</pre></div>
-                    </div>
-                </div>
+sessions: dict = {}
 
-                <div class="error-card reveal" style="background:#1a0a0a;border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:2rem;margin-bottom:1.5rem">
-                    <h3 style="font-family:var(--font-heading);color:#ef4444;margin-bottom:.75rem">Bug 3: LangChain Memory Not Persisted — Lost on Restart</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:1rem">In-memory ConversationBufferMemory is lost every time the app restarts. Users lose their entire conversation history.</p>
-                    <div class="code-block"><div class="code-block-label"><span>Python - broken</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> langchain.memory <span class="kw">import</span> ConversationBufferMemory
-memory = ConversationBufferMemory()  <span class="cm"># in-RAM only — gone on restart</span>
-memory.save_context({<span class="st">"input"</span>: <span class="st">"hi"</span>}, {<span class="st">"output"</span>: <span class="st">"hello!"</span>})
-<span class="cm"># App restarts... conversation lost</span></pre></div>
-                    <div style="background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;margin-top:1rem">
-                        <p style="font-family:var(--font-heading);font-weight:600;color:#22c55e;margin-bottom:.5rem">✅ Fix — use Redis-backed or SQLite-backed message history</p>
-                        <div class="code-block"><div class="code-block-label"><span>Python - fixed</span><button class="copy-btn">Copy</button></div><pre><span class="kw">import</span> os
-<span class="kw">from</span> langchain_community.chat_message_histories <span class="kw">import</span> RedisChatMessageHistory
+<span class="kw">def</span> <span class="fn">get_chain</span>(user_id: str) -&gt; ConversationChain:
+    <span class="kw">if</span> user_id <span class="kw">not in</span> sessions:
+        memory = ConversationTokenBufferMemory(
+            llm=llm,
+            max_token_limit=<span class="nu">4000</span>  <span class="cm"># auto-trims old messages</span>
+        )
+        sessions[user_id] = ConversationChain(llm=llm, memory=memory)
+    <span class="kw">return</span> sessions[user_id]
 
-history = RedisChatMessageHistory(
-    session_id=<span class="st">"user_alice_session_1"</span>,
-    url=os.environ[<span class="st">"REDIS_URL"</span>],
-    ttl=<span class="nu">86400</span>  <span class="cm"># expire after 24 hours</span>
-)
-<span class="cm"># Survives restarts — stored in Redis</span>
-history.add_user_message(<span class="st">"What is Python?"</span>)
-history.add_ai_message(<span class="st">"Python is a programming language."</span>)
-print(<span class="st">f"History has {len(history.messages)} messages"</span>)</pre></div>
-                    </div>
-                </div>
+<span class="kw">def</span> <span class="fn">handle_request</span>(user_id: str, message: str) -&gt; str:
+    <span class="kw">return</span> get_chain(user_id).predict(input=message)
 
-                <div class="error-card reveal" style="background:#1a0a0a;border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:2rem;margin-bottom:1.5rem">
-                    <h3 style="font-family:var(--font-heading);color:#ef4444;margin-bottom:.75rem">Bug 4: Duplicate Context From Semantic Retrieval</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:1rem">The same document chunk is retrieved multiple times because it matches multiple aspects of the query, wasting tokens and confusing the LLM.</p>
-                    <div class="code-block"><div class="code-block-label"><span>Python - broken</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: no deduplication — same chunk appears 3x</span>
-docs = retriever.invoke(<span class="st">"Python decorators"</span>)
-context = <span class="st">"\n\n"</span>.join(d.page_content <span class="kw">for</span> d <span class="kw">in</span> docs)
-<span class="cm"># context repeats "Python decorators are functions..." three times</span></pre></div>
-                    <div style="background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;margin-top:1rem">
-                        <p style="font-family:var(--font-heading);font-weight:600;color:#22c55e;margin-bottom:.5rem">✅ Fix — deduplicate by content hash before building context</p>
-                        <div class="code-block"><div class="code-block-label"><span>Python - fixed</span><button class="copy-btn">Copy</button></div><pre><span class="kw">def</span> <span class="fn">deduplicate_docs</span>(docs: list) -> list:
-    seen, unique = set(), []
+<span class="kw">def</span> <span class="fn">evict_session</span>(user_id: str):
+    sessions.pop(user_id, <span class="kw">None</span>)  <span class="cm"># call this on session end to free RAM</span></pre></div>
+            </div>
+
+            <h2>Bug 4: Embedding Vectors Filling RAM</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; MemoryError: Unable to allocate 12 GiB for array</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="cm"># WRONG: 500k docs x 1536 floats x 4 bytes = ~3 GB stored in a Python list</span>
+<span class="kw">def</span> <span class="fn">embed_all</span>(docs: list) -&gt; np.ndarray:
+    embeddings = []
     <span class="kw">for</span> doc <span class="kw">in</span> docs:
-        h = hash(doc.page_content[:<span class="nu">200</span>])
-        <span class="kw">if</span> h <span class="kw">not in</span> seen:
-            seen.add(h); unique.append(doc)
-    <span class="kw">return</span> unique
-
-docs = retriever.invoke(<span class="st">"Python decorators"</span>)
-context = <span class="st">"\n\n"</span>.join(d.page_content <span class="kw">for</span> d <span class="kw">in</span> deduplicate_docs(docs))
-print(<span class="st">f"Using {len(deduplicate_docs(docs))} unique chunks"</span>)</pre></div>
-                    </div>
-                </div>
-
-                <div class="error-card reveal" style="background:#1a0a0a;border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:2rem;margin-bottom:1.5rem">
-                    <h3 style="font-family:var(--font-heading);color:#ef4444;margin-bottom:.75rem">Bug 5: Embedding Cache Miss — Same Text Re-Embedded Every Call</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:1rem">No caching on embedding calls means identical text strings are sent to the API repeatedly, wasting money.</p>
-                    <div class="code-block"><div class="code-block-label"><span>Python - broken</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: same system prompt embedded on every single request</span>
-<span class="kw">def</span> <span class="fn">get_embedding</span>(text: str) -> list:
-    resp = client.embeddings.create(model=<span class="st">"text-embedding-3-small"</span>, input=text)
-    <span class="kw">return</span> resp.data[<span class="nu">0</span>].embedding  <span class="cm"># called 1000x with same text = $$ wasted</span></pre></div>
-                    <div style="background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;margin-top:1rem">
-                        <p style="font-family:var(--font-heading);font-weight:600;color:#22c55e;margin-bottom:.5rem">✅ Fix — cache embeddings with functools.lru_cache or Redis</p>
-                        <div class="code-block"><div class="code-block-label"><span>Python - fixed</span><button class="copy-btn">Copy</button></div><pre><span class="kw">from</span> functools <span class="kw">import</span> lru_cache
-<span class="kw">import</span> hashlib, json
-
-<span class="cm"># In-memory LRU cache (fast, lost on restart)</span>
-@lru_cache(maxsize=<span class="nu">1000</span>)
-<span class="kw">def</span> <span class="fn">get_embedding_cached</span>(text: str) -> tuple:
-    resp = client.embeddings.create(model=<span class="st">"text-embedding-3-small"</span>, input=text)
-    <span class="kw">return</span> tuple(resp.data[<span class="nu">0</span>].embedding)  <span class="cm"># tuple is hashable for lru_cache</span>
-
-<span class="cm"># Check cache stats</span>
-print(get_embedding_cached.cache_info())</pre></div>
-                    </div>
-                </div>
-
+        resp = client.embeddings.create(model=<span class="st">"text-embedding-3-small"</span>, input=doc)
+        embeddings.append(resp.data[<span class="nu">0</span>].embedding)
+    <span class="kw">return</span> np.array(embeddings, dtype=np.float32)  <span class="cm"># crashes here</span></pre></div>
             </div>
-        </section>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Stream embeddings to disk with numpy memmap or use a vector DB</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
 
-        <!-- Prev / Next Navigation -->
-        <nav style="display:flex;justify-content:space-between;gap:1.5rem;margin:3rem 1.5rem 2rem;max-width:900px;margin-left:auto;margin-right:auto">
-            <a href="data.html" style="flex:1;background:var(--bg-card,#1a1a2e);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:1.25rem;text-decoration:none;transition:border-color .2s,transform .2s" onmouseover="this.style.borderColor='var(--accent-primary,#00ffaa)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.05)';this.style.transform='none'">
-                <div style="font-size:.8rem;color:var(--text-muted,#888);margin-bottom:.25rem">← Previous</div>
-                <div style="font-family:var(--font-heading,sans-serif);font-weight:600;color:var(--text-primary,#fff)">Data Format Errors</div>
-            </a>
-            <a href="vectordb.html" style="flex:1;background:var(--bg-card,#1a1a2e);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:1.25rem;text-decoration:none;transition:border-color .2s,transform .2s;text-align:right" onmouseover="this.style.borderColor='var(--accent-primary,#00ffaa)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,.05)';this.style.transform='none'">
-                <div style="font-size:.8rem;color:var(--text-muted,#888);margin-bottom:.25rem">Next →</div>
-                <div style="font-family:var(--font-heading,sans-serif);font-weight:600;color:var(--text-primary,#fff)">Vector DB Errors</div>
-            </a>
-        </nav>
+EMBEDDING_DIM = <span class="nu">1536</span>
+BATCH_SIZE = <span class="nu">100</span>
 
-        <!-- Related Categories -->
-        <section class="section section-alt">
-            <div class="container">
-                <h2 class="section-title reveal">Related Error Categories</h2>
-                
-                <div class="grid grid-4 reveal">
-                    <a href="api-keys.html" class="card card-hover">
-                        <div class="card-icon">🔑</div>
-                        <h3 class="card-title">API Key Errors</h3>
-                        <p class="card-text">Authentication and authorization issues</p>
-                    </a>
-                    <a href="network.html" class="card card-hover">
-                        <div class="card-icon">🌐</div>
-                        <h3 class="card-title">Network Errors</h3>
-                        <p class="card-text">Connection and timeout problems</p>
-                    </a>
-                    <a href="vectordb.html" class="card card-hover">
-                        <div class="card-icon">🗄️</div>
-                        <h3 class="card-title">Vector DB Errors</h3>
-                        <p class="card-text">Vector store and similarity search issues</p>
-                    </a>
-                    <a href="data.html" class="card card-hover">
-                        <div class="card-icon">📋</div>
-                        <h3 class="card-title">Data Format Errors</h3>
-                        <p class="card-text">JSON, schema, and parsing issues</p>
-                    </a>
-                </div>
+<span class="kw">def</span> <span class="fn">embed_to_disk</span>(docs: list, path: str = <span class="st">"embeddings.npy"</span>) -&gt; np.memmap:
+    <span class="cm"># Memory-mapped file: data lives on disk, not in RAM</span>
+    arr = np.memmap(path, dtype=np.float32, mode=<span class="st">"w+"</span>,
+                    shape=(len(docs), EMBEDDING_DIM))
+    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="nu">0</span>, len(docs), BATCH_SIZE):
+        batch = docs[i:i + BATCH_SIZE]
+        resp = client.embeddings.create(
+            model=<span class="st">"text-embedding-3-small"</span>, input=batch)
+        <span class="kw">for</span> j, item <span class="kw">in</span> enumerate(resp.data):
+            arr[i + j] = item.embedding
+    arr.flush()
+    <span class="kw">return</span> arr
+
+<span class="cm"># Or use a vector DB (Chroma, Pinecone, Qdrant) which handles</span>
+<span class="cm"># persistence and efficient retrieval automatically.</span></pre></div>
             </div>
-        </section>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <a href="../index.html" class="footer-logo">AI Coding Academy</a>
-                    <p class="footer-tagline">Master AI-assisted development with comprehensive tutorials and real-world projects.</p>
-                </div>
-                <div class="footer-links">
-                    <h4>Learning</h4>
-                    <ul>
-                        <li><a href="../tutorials/index.html">Tutorials</a></li>
-                        <li><a href="../courses/index.html">Courses</a></li>
-                        <li><a href="../projects/index.html">Projects</a></li>
-                    </ul>
-                </div>
-                <div class="footer-links">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="index.html">Debugging Hub</a></li>
-                        <li><a href="https://myrqai.com" target="_blank">API Reference</a></li>
-                        <li><a href="https://myrqai.com" target="_blank">Community</a></li>
-                    </ul>
-                </div>
-                <div class="footer-links">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="https://myrqai.com" target="_blank">About</a></li>
-                        <li><a href="https://myrqai.com" target="_blank">Blog</a></li>
-                        <li><a href="https://myrqai.com" target="_blank">Contact</a></li>
-                    </ul>
-                </div>
+            <h2>Bug 5: Hugging Face Model Not Released from VRAM</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; Loading a second model fails - first model still holds GPU memory</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: model goes out of scope but CUDA memory is not freed</span>
+<span class="kw">def</span> <span class="fn">run_experiment</span>():
+    model = AutoModelForCausalLM.from_pretrained(<span class="st">"mistralai/Mistral-7B-v0.1"</span>).cuda()
+    outputs = model.generate(...)
+    <span class="cm"># model deleted here but CUDA allocator still holds the pages</span>
+
+run_experiment()
+<span class="cm"># Fails: CUDA OOM because VRAM was never returned</span>
+model2 = AutoModelForCausalLM.from_pretrained(<span class="st">"meta-llama/Llama-3-8b"</span>).cuda()</pre></div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 AI Coding Academy. All rights reserved.</p>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Delete the model, collect garbage, then empty the cache</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="kw">import</span> torch, gc
+
+<span class="kw">def</span> <span class="fn">run_experiment</span>():
+    model = AutoModelForCausalLM.from_pretrained(<span class="st">"mistralai/Mistral-7B-v0.1"</span>).cuda()
+    <span class="kw">try</span>:
+        outputs = model.generate(...)
+    <span class="kw">finally</span>:
+        <span class="kw">del</span> model                 <span class="cm"># remove Python reference</span>
+        gc.collect()              <span class="cm"># run Python garbage collector</span>
+        torch.cuda.empty_cache()  <span class="cm"># release cached CUDA blocks</span>
+
+run_experiment()
+model2 = AutoModelForCausalLM.from_pretrained(<span class="st">"meta-llama/Llama-3-8b"</span>).cuda()  <span class="cm"># works!</span></pre></div>
+            </div>
+
+            <div class="warn-box">
+                <div class="warn-box-title">&#9888; torch.cuda.empty_cache() Does Not Free Everything</div>
+                <p><code>empty_cache()</code> releases the PyTorch allocator's cache back to CUDA, but memory held by live tensors is unaffected. Always <code>del</code> the model first, run <code>gc.collect()</code>, then call <code>empty_cache()</code>.</p>
+            </div>
+
+            <h2>Bug 6: Streaming Chunks Accumulating in a Global List</h2>
+            <div class="error-example">
+                <div class="error-example-title">&#10060; RAM grows continuously during long-running streaming sessions</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - broken code</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># WRONG: global list keeps every chunk from every call forever</span>
+all_chunks = []
+
+<span class="kw">def</span> <span class="fn">stream_response</span>(prompt: str) -&gt; str:
+    stream = client.chat.completions.create(
+        model=<span class="st">"gpt-4o"</span>,
+        messages=[{"role": <span class="st">"user"</span>, "content": prompt}],
+        stream=<span class="kw">True</span>
+    )
+    <span class="kw">for</span> chunk <span class="kw">in</span> stream:
+        text = chunk.choices[<span class="nu">0</span>].delta.content <span class="kw">or</span> <span class="st">""</span>
+        all_chunks.append(text)  <span class="cm"># accumulates forever in production!</span>
+    <span class="kw">return</span> <span class="st">""</span>.join(all_chunks)</pre></div>
+            </div>
+            <div class="fix-example">
+                <div class="fix-example-title">&#10003; Use a local variable or generator - never accumulate across calls</div>
+                <div class="code-block"><div class="code-block-label"><span>Python - fixed code</span><button class="copy-btn">Copy</button></div><pre><span class="cm"># Option A: collect locally, garbage collected after each call</span>
+<span class="kw">def</span> <span class="fn">stream_response</span>(prompt: str) -&gt; str:
+    chunks = []  <span class="cm"># local variable, not global</span>
+    stream = client.chat.completions.create(
+        model=<span class="st">"gpt-4o"</span>,
+        messages=[{"role": <span class="st">"user"</span>, "content": prompt}],
+        stream=<span class="kw">True</span>
+    )
+    <span class="kw">for</span> chunk <span class="kw">in</span> stream:
+        chunks.append(chunk.choices[<span class="nu">0</span>].delta.content <span class="kw">or</span> <span class="st">""</span>)
+    <span class="kw">return</span> <span class="st">""</span>.join(chunks)
+
+<span class="cm"># Option B: generator - zero accumulation, ideal for SSE / WebSocket</span>
+<span class="kw">def</span> <span class="fn">stream_tokens</span>(prompt: str):
+    stream = client.chat.completions.create(
+        model=<span class="st">"gpt-4o"</span>,
+        messages=[{"role": <span class="st">"user"</span>, "content": prompt}],
+        stream=<span class="kw">True</span>
+    )
+    <span class="kw">for</span> chunk <span class="kw">in</span> stream:
+        <span class="kw">yield</span> chunk.choices[<span class="nu">0</span>].delta.content <span class="kw">or</span> <span class="st">""</span></pre></div>
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-box-title">&#128161; Quick Diagnostics</div>
+                <p>Use <code>torch.cuda.memory_summary()</code> for GPU stats, <code>tracemalloc</code> for Python heap leaks, and <code>psutil.Process().memory_info().rss</code> to monitor RAM over time in production.</p>
             </div>
         </div>
-    </footer>
 
+        <nav class="lesson-nav">
+            <a href="vectordb.html" class="prev"><div class="lesson-nav-label">&larr; Previous</div><div class="lesson-nav-title">Vector DB Errors</div></a>
+            <a href="async.html" class="next"><div class="lesson-nav-label">Next &rarr;</div><div class="lesson-nav-title">Async Errors</div></a>
+        </nav>
+    </div>
+
+    <footer><div class="footer-container"><div class="footer-grid">
+        <div class="footer-brand"><a href="../index.html" class="nav-logo"><div class="logo-mark">&lt;/&gt;</div><div class="logo-text">AI <span>Coding</span></div></a><p>The most comprehensive AI coding learning platform.</p></div>
+        <div class="footer-column"><h4>Learn</h4><ul><li><a href="../tutorials/index.html">All Tutorials</a></li><li><a href="../courses/index.html">Courses</a></li><li><a href="../debugging/index.html">Debugging</a></li></ul></div>
+        <div class="footer-column"><h4>MYRQAI Network</h4><ul><li><a href="https://library.myrqai.com" target="_blank">AI Library</a></li><li><a href="https://myrqai.com" target="_blank">MYRQAI Home</a></li></ul></div>
+        <div class="footer-column"><h4>Legal</h4><ul><li><a href="https://myrqai.com/admin/privacy" target="_blank">Privacy Policy</a></li><li><a href="https://myrqai.com/admin/terms" target="_blank">Terms of Service</a></li></ul></div>
+    </div><div class="footer-bottom"><p>&copy; 2026 AI Coding Academy by <a href="https://myrqai.com" target="_blank" style="color:var(--accent-primary)">MYRQAI</a>.</p></div></div></footer>
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
-</body>
-</html>
+    <script>document.querySelectorAll(".copy-btn").forEach(b=>{b.addEventListener("click",function(){navigator.clipboard.writeText(this.closest(".code-block").querySelector("pre").innerText).then(()=>{this.textContent="Copied";setTimeout(()=>this.textContent="Copy",1500)})})})</script>
+</body></html>

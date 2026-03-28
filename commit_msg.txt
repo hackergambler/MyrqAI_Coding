@@ -1,1 +1,1 @@
-Add meta description tags to five HTML pages
+Refactor debugging/memory.html with updated content and title
