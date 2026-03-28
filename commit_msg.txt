@@ -1,1 +1,1 @@
-Skip nav redirect when already on tutorials page
+Update tutorial count from 200+ to 1000+ across homepage
