@@ -1,1 +1,1 @@
-Update ContentEngine comment to reflect 125 lessons
+Add search functionality to tutorials index page

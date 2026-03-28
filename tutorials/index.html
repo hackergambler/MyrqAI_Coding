@@ -687,6 +687,24 @@
                 });
             });
         });
+
+        // Search box functionality
+        function runSearch() {
+            const query = document.querySelector('.search-box input').value.trim().toLowerCase();
+            const cards = document.querySelectorAll('[data-searchable]');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const matches = !query || text.includes(query);
+                card.style.display = matches ? '' : 'none';
+                if (matches) visibleCount++;
+            });
+        }
+
+        document.querySelector('.search-box button').addEventListener('click', runSearch);
+        document.querySelector('.search-box input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') runSearch();
+        });
     </script>
 </body>
 </html>
