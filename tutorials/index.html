@@ -678,12 +678,25 @@
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/donation-widget.js" defer></script>
     <script>
-        // Filter button active state toggle within each group
-        document.querySelectorAll('.filter-group').forEach(group => {
+        // Filter button active state toggle + level filtering
+        document.querySelectorAll('.filter-group').forEach((group, groupIdx) => {
             group.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
+
+                    // Level filter (first group only)
+                    if (groupIdx === 0) {
+                        const levelClass = [...btn.classList].find(c => ['beginner','intermediate','advanced','expert'].includes(c));
+                        document.querySelectorAll('[data-searchable]').forEach(card => {
+                            if (!levelClass) {
+                                card.style.display = '';
+                            } else {
+                                const hasBadge = card.querySelector('.badge-' + levelClass);
+                                card.style.display = hasBadge ? '' : 'none';
+                            }
+                        });
+                    }
                 });
             });
         });
