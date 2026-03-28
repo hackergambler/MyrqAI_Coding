@@ -1,1 +1,1 @@
-Fix duplicate RAG tutorial card links
+Fix broken tutorial card links in beginner page
