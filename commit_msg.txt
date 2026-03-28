@@ -1,1 +1,1 @@
-Fix debugging nav order and add prev/next to data page
+Update Anthropic model list to claude-opus-4-6
