@@ -1,1 +1,1 @@
-Sync navbar search input with tutorials hero search
+Initialize tutorial count on page load
