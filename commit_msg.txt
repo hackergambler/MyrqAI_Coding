@@ -1,1 +1,1 @@
-Update Anthropic model list to claude-opus-4-6
+Update homepage stats to reflect accurate content counts
