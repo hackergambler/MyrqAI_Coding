@@ -1,1 +1,1 @@
-Update gemini.html nav to match site-wide design
+Update agents.html nav to match site-wide design
