@@ -1,1 +1,1 @@
-Add Local LLMs tutorial section to tutorials index
+Add HuggingFace and LangChain local LLM tutorial cards
