@@ -1,1 +1,1 @@
-Fix broken RAG tutorial card link in intermediate page
+Update OpenAI API course lesson count to 8
