@@ -1,1 +1,1 @@
-Update tutorial counts per difficulty level on homepage
+Add Open Graph, Twitter meta tags, and canonical URL
