@@ -1,1 +1,1 @@
-Fix nav links and search placeholder in claude.html
+Add meta description tags to five HTML pages
