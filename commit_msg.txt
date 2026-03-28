@@ -1,1 +1,1 @@
-Add AdSense ad block to personal-assistant project page
+Update nav search UI in two course pages
