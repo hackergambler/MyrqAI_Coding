@@ -364,7 +364,7 @@
     <script src="../assets/js/main.js"></script>
     <script src="../assets/js/ContentEngine.js"></script>
     <script>
-    // Extend CE.Renderer to also populate the info bar for projects
+    // Extend CE.Renderer to also populate the info bar and sidebar for projects
     const _origRenderProject = CE.Renderer.renderProject.bind(CE.Renderer);
     CE.Renderer.renderProject = function(data) {
         _origRenderProject(data);
@@ -394,6 +394,48 @@
                     <div class="info-bar-value">${data.category || 'AI App'}</div>
                 </div>`;
         }
+
+        // Sidebar — replace skeleton with related projects
+        CE.Library.loadProjects().then(projects => {
+            const sb = document.getElementById('ce-sidebar');
+            if (!sb || !projects.length) return;
+            const related = projects
+                .filter(p => p.id !== data.id && p.difficulty === data.difficulty)
+                .slice(0, 8);
+            const diffColor = {
+                'Beginner': 'var(--accent-primary)',
+                'Intermediate': 'var(--accent-warning)',
+                'Advanced': 'var(--accent-tertiary)',
+                'Expert': 'var(--accent-error)'
+            }[data.difficulty] || 'var(--accent-primary)';
+            sb.innerHTML = `
+                <div style="font-family:var(--font-heading);font-weight:700;font-size:.9rem;color:${diffColor};text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">
+                    ${data.difficulty} Projects
+                </div>
+                <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-bottom:1.25rem;overflow:hidden">
+                    <div style="height:100%;width:100%;background:${diffColor};border-radius:2px"></div>
+                </div>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px">
+                    <li style="font-weight:600">
+                        <a href="?id=${data.id}&type=project" style="display:flex;align-items:center;gap:.5rem;padding:.4rem .75rem;border-radius:6px;text-decoration:none;background:rgba(0,255,170,.1);color:${diffColor};font-size:.875rem">
+                            <span style="font-size:.85rem;flex-shrink:0">▶</span>
+                            <span style="flex:1;line-height:1.4">${data.title}</span>
+                        </a>
+                    </li>
+                    ${related.map(p => `
+                    <li>
+                        <a href="?id=${p.id}&type=project" style="display:flex;align-items:center;gap:.5rem;padding:.4rem .75rem;border-radius:6px;text-decoration:none;color:var(--text-secondary);font-size:.875rem;transition:all .2s" onmouseover="this.style.background='rgba(0,255,170,.06)';this.style.color='var(--text-primary)'" onmouseout="this.style.background='';this.style.color='var(--text-secondary)'">
+                            <span style="font-size:.85rem;flex-shrink:0">○</span>
+                            <span style="flex:1;line-height:1.4">${p.title}</span>
+                        </a>
+                    </li>`).join('')}
+                </ul>
+                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06)">
+                    <a href="../projects/index.html" style="display:block;text-align:center;padding:.5rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--text-muted);font-size:.8rem;text-decoration:none;font-family:var(--font-mono)" onmouseover="this.style.borderColor='var(--accent-primary)';this.style.color='var(--accent-primary)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='var(--text-muted)'">
+                        ← All Projects
+                    </a>
+                </div>`;
+        });
     };
     </script>
 

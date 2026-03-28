@@ -1,1 +1,1 @@
-Update projects index with new project cards and descriptions
+Add related projects sidebar to project detail page
