@@ -679,26 +679,33 @@
     <script src="../assets/js/donation-widget.js" defer></script>
     <script>
         let activeLevel = null;
+        let activeTopic = null;
 
         function applyFilters() {
             const query = document.querySelector('.search-box input').value.trim().toLowerCase();
             document.querySelectorAll('[data-searchable]').forEach(card => {
                 const textMatch = !query || card.textContent.toLowerCase().includes(query);
                 const levelMatch = !activeLevel || card.querySelector('.badge-' + activeLevel);
-                card.style.display = (textMatch && levelMatch) ? '' : 'none';
+                const topicMatch = !activeTopic || card.textContent.toLowerCase().includes(activeTopic.toLowerCase());
+                card.style.display = (textMatch && levelMatch && topicMatch) ? '' : 'none';
             });
         }
 
-        // Filter button active state toggle + level filtering
+        // Filter button active state toggle + level + topic filtering
         document.querySelectorAll('.filter-group').forEach((group, groupIdx) => {
             group.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
 
-                    // Level filter (first group only)
                     if (groupIdx === 0) {
+                        // Level filter
                         activeLevel = [...btn.classList].find(c => ['beginner','intermediate','advanced','expert'].includes(c)) || null;
+                        applyFilters();
+                    } else if (groupIdx === 1) {
+                        // Topic filter
+                        const label = btn.textContent.trim();
+                        activeTopic = label === 'All' ? null : label;
                         applyFilters();
                     }
                 });
