@@ -135,7 +135,49 @@ AGENTS = {
     <span class="kw">return</span> report
 
 report = asyncio.run(research_crew(<span class="st">"AI agents in software development 2025"</span>))
-print(report)</pre></div><div class="tip-box"><div class="tip-box-title">💡 Cost optimization</div><p>Use gpt-4o for the Searcher and Writer (quality matters), but gpt-4o-mini for Synthesizer and Fact-Checker (speed + cost). This cuts cost by ~70% vs all-gpt-4o.</p></div></div>
+print(report)</pre></div><div class="tip-box"><div class="tip-box-title">💡 Cost optimization</div><p>Use gpt-4o for the Searcher and Writer (quality matters), but gpt-4o-mini for Synthesizer and Fact-Checker (speed + cost). This cuts cost by ~70% vs all-gpt-4o.</p></div>
+
+<h2>Step-by-Step Guide</h2>
+<ol>
+    <li><strong>Install dependencies</strong> — <code>pip install openai</code> and set <code>OPENAI_API_KEY</code> in your environment.</li>
+    <li><strong>Copy the code above</strong> into <code>research_crew.py</code>.</li>
+    <li><strong>Run it</strong> — <code>python research_crew.py</code>. The Searcher runs first (gpt-4o, ~15s), then the Synthesizer and Fact-Checker run in parallel (~8s together), then the Writer produces the final report.</li>
+    <li><strong>Swap the topic</strong> — change the last line to any research question: <code>research_crew("LLM fine-tuning best practices 2026")</code>.</li>
+    <li><strong>Save to file</strong> — add <code>Path("report.md").write_text(report)</code> after the final line to persist results.</li>
+</ol>
+
+<h2>How It Works</h2>
+<p>The crew uses a <strong>fan-out / fan-in</strong> pattern. The Searcher runs first because the Synthesizer and Fact-Checker both need its output. Then <code>asyncio.gather()</code> runs those two agents simultaneously — cutting total time roughly in half compared to sequential execution. Finally the Writer receives all three outputs and composes the report.</p>
+<div class="code-block"><div class="code-block-label"><span>Text - execution timeline</span><button class="copy-btn">Copy</button></div><pre>0s   Searcher starts    (gpt-4o, ~15s)
+15s  Synthesizer starts │ Fact-Checker starts  (parallel, ~8s each)
+23s  Writer starts with all outputs           (gpt-4o, ~12s)
+35s  Final report ready</pre></div>
+
+<h2>Final Output</h2>
+<p>Running the crew on <em>"AI agents in software development 2025"</em> produces a structured markdown report. Example (abbreviated):</p>
+<div class="code-block"><div class="code-block-label"><span>Text - example final report excerpt</span><button class="copy-btn">Copy</button></div><pre>[Searcher] Done (1842 tokens)
+[Synthesizer] Done
+[Fact-Checker] Done
+[Writer] Done (2104 tokens)
+
+# AI Agents in Software Development — 2025 State of the Field
+
+## Key Findings
+- 63% of Fortune 500 companies piloted autonomous coding agents in 2025 (Gartner)
+- Mean time-to-PR dropped 40% for teams using agentic code review
+- Top frameworks: LangGraph, AutoGen 0.4, CrewAI 0.8
+
+## Critical Insights
+1. Agents excel at repetitive refactoring but require human oversight for architecture decisions
+2. Tool-use reliability is the primary bottleneck — agents fail when APIs change silently
+...
+
+## Fact-Checker Flags
+- "63% of Fortune 500" — verify against primary Gartner report (not independently confirmed)
+- "40% drop in time-to-PR" — internal survey data only, not peer-reviewed</pre></div>
+
+<div class="info-box"><div class="info-box-title">Extensions to try</div><p>Add a fifth <strong>Critic</strong> agent that scores the report 1–10 and requests rewrites until it scores above 8. This turns the crew into a self-improving pipeline.</p></div>
+</div>
         <nav class="lesson-nav">
             <a href="personal-assistant.html" class="prev"><div class="lesson-nav-label">← Previous</div><div class="lesson-nav-title">Personal Assistant</div></a>
             <a href="dev-agent.html" class="next"><div class="lesson-nav-label">Next →</div><div class="lesson-nav-title">Coding Agent</div></a>
