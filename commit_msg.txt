@@ -1,1 +1,1 @@
-Hide empty category sections after tutorials filter
+Add dynamic tutorials count display on filter

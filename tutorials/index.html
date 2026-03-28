@@ -541,7 +541,7 @@
             </div>
 
             <div class="load-more">
-                <p style="color: var(--text-muted); margin-bottom: var(--space-md);">Showing 21 of 1000 + tutorials</p>
+                <p id="tutorials-count-text" style="color: var(--text-muted); margin-bottom: var(--space-md);">Showing 21 tutorials</p>
                 <a href="beginner.html" class="btn btn-primary btn-lg">Load More Tutorials</a>
             </div>
         </div>
@@ -683,11 +683,15 @@
 
         function applyFilters() {
             const query = document.querySelector('.search-box input').value.trim().toLowerCase();
-            document.querySelectorAll('[data-searchable]').forEach(card => {
+            let visibleCount = 0;
+            const allCards = document.querySelectorAll('[data-searchable]');
+            allCards.forEach(card => {
                 const textMatch = !query || card.textContent.toLowerCase().includes(query);
                 const levelMatch = !activeLevel || card.querySelector('.badge-' + activeLevel);
                 const topicMatch = !activeTopic || card.textContent.toLowerCase().includes(activeTopic.toLowerCase());
-                card.style.display = (textMatch && levelMatch && topicMatch) ? '' : 'none';
+                const show = textMatch && levelMatch && topicMatch;
+                card.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
             });
             // Hide category sections where all cards are filtered out
             document.querySelectorAll('.category-section').forEach(section => {
@@ -695,6 +699,14 @@
                 const anyVisible = Array.from(cards).some(c => c.style.display !== 'none');
                 section.style.display = anyVisible ? '' : 'none';
             });
+            // Update count text
+            const countEl = document.getElementById('tutorials-count-text');
+            if (countEl) {
+                const isFiltered = query || activeLevel || activeTopic;
+                countEl.textContent = isFiltered
+                    ? `Showing ${visibleCount} of ${allCards.length} tutorials`
+                    : `Showing ${allCards.length} tutorials`;
+            }
         }
 
         // Filter button active state toggle + level + topic filtering
