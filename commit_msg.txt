@@ -1,1 +1,1 @@
-Add HuggingFace and LangChain local LLM tutorial cards
+Reorder Local LLMs tutorial cards by difficulty level
