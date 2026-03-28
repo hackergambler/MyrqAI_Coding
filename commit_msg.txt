@@ -1,1 +1,1 @@
-Update copyright year to 2026 in debugging pages
+Add prev/next navigation to memory debugging page
