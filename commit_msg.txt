@@ -1,1 +1,1 @@
-Add dynamic tutorials count display on filter
+Sync navbar search input with tutorials hero search
