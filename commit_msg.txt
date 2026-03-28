@@ -1,1 +1,1 @@
-Update tutorial count from 200+ to 1000+ across homepage
+Update tutorial counts per difficulty level on homepage
