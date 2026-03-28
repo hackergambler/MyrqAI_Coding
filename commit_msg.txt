@@ -1,1 +1,1 @@
-Update AI Agents tutorial count to 60
+Correct AI Agents lesson count to 56
