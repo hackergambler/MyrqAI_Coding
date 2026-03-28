@@ -1,1 +1,1 @@
-Update nav search placeholder to "Search tutorials..." across tutorial pages
+Convert "Load More" button to link in tutorials index.
