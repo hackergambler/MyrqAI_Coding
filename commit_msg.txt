@@ -1,1 +1,1 @@
-Update agents course lesson count to 60
+Update AI Agents course lesson count to 60
