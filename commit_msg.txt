@@ -1,1 +1,1 @@
-Update OpenAI API course lesson count to 8
+Fix inflated lesson count in Local LLMs course page
