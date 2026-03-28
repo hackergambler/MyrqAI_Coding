@@ -1,1 +1,1 @@
-Add active class to Debugging nav link in debugging pages
+Add active class to Projects nav link in project pages
