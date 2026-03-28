@@ -1,1 +1,1 @@
-Fix "Start Free" button link in courses index
+Update agents course lesson count to 60
