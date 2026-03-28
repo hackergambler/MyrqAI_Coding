@@ -1,1 +1,1 @@
-Add quick-nav links to debugging index page
+Update copyright year to 2026 in debugging pages
