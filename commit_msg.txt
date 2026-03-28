@@ -1,1 +1,1 @@
-Add related projects sidebar to project detail page
+Fix "Start Free" button link in courses index
