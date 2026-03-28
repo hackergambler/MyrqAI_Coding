@@ -689,6 +689,12 @@
                 const topicMatch = !activeTopic || card.textContent.toLowerCase().includes(activeTopic.toLowerCase());
                 card.style.display = (textMatch && levelMatch && topicMatch) ? '' : 'none';
             });
+            // Hide category sections where all cards are filtered out
+            document.querySelectorAll('.category-section').forEach(section => {
+                const cards = section.querySelectorAll('[data-searchable]');
+                const anyVisible = Array.from(cards).some(c => c.style.display !== 'none');
+                section.style.display = anyVisible ? '' : 'none';
+            });
         }
 
         // Filter button active state toggle + level + topic filtering

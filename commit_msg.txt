@@ -1,1 +1,1 @@
-Fix nav class name and simplify mobile menu button
+Hide empty category sections after tutorials filter
