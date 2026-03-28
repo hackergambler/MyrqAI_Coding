@@ -2,7 +2,7 @@
  * ContentEngine.js — AI Coding Academy v4.0.0
  * library.myrqai.com
  *
- * Loads MasterLibrary.json once, caches all 50 lessons.
+ * Loads MasterLibrary.json once, caches all 125 lessons.
  * Single router: ?id=<lessonId>&type=lesson|project
  * Sidebar sticky, ⌘K search, AdSense slot injection,
  * 4-tier TrackIndex for tutorials/index.html.
